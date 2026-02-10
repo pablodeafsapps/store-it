@@ -1,0 +1,9 @@
+# Please, take the role of an Android software architect
+
+# I want you to create a `WORKFLOW_UNIT_TEST.md` file in which you document a rigorous, repeatable workflow for designing, implementing, and validating unit tests for any logic-bearing KMP (Kotlin/Swift) file (e.g., use cases, repositories, domain models). The workflow ensures high coverage, deterministic results, and maintainable test suites for business-critical logic.
+
+# The target audience is seasoned Android engineers, so don't hesitate tp go to technical.
+
+# The output should be a markdown document (`WORKFLOW_UNIT_TEST.md`), and should be placed inside a new folder called `.ai`, in the project root.
+
+# Please, don't make any reference to the current project or its state. This is a general-purpose file for use in any KMP (Kotlin/Swift) project, regardless of any dependency or product type. Bear in mind that version control is a must, so please include any action related to this matter, preferably using Git. Favour popular frameworks and libraries, such as JUnit, Mockito, Mockk, etc., and always use the GIVEN-WHEN-THEN pattern.

@@ -1,0 +1,11 @@
+# Please, take the role of an Android software architect
+
+# I want you to create an `AGENTS.md` file in which you document a Kotlin Multi-Platform project by the book, following the standards found in https://kotlinlang.org/docs/multiplatform.html  regarding structure, dependencies, and tech stack. Bear in mind the project must stick to the Clean Architecture paradigm, as well as other state-of-the-art practices in the KMP (Android/iOS) ecosystem.
+
+# The target audience is seasoned Android engineers, so don't hesitate to go too technical.
+
+# The output should be a markdown document (`AGENTS.md`), and should be placed inside a new folder called `.ai`, in the project root.
+
+-----
+
+I'd like to propose a few changes to @.ai/AGENTS.md , so that it states that the project will heavily rely on sum types to model the happy-path/unhappy-path scenarios. For instance, using [Arrow Either](https://apidocs.arrow-kt.io/arrow-core/arrow.core/-either/index.html ) or any other monadic result data type
