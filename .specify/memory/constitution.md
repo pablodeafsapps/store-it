@@ -1,50 +1,66 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+  Sync Impact Report
+  Version change: (none) → 1.0.0
+  Modified principles: N/A (initial fill)
+  Added sections: N/A
+  Removed sections: N/A
+  Templates: plan-template.md ✅ (Constitution Check references constitution file);
+    spec-template.md ✅ (no mandatory sections changed);
+    tasks-template.md ✅ (task types align with documentation + test principles);
+    commands: .specify/templates/ has no commands/ subdir; .claude/commands/ not constitution-coupled.
+  Follow-up TODOs: None. RATIFICATION_DATE set to first adoption date.
+-->
+
+# Store it! Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. User Experience First
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+The product MUST be easy to use: UX is highly optimised so users can start using it with no previous training. Every feature MUST be designed for clarity, minimal cognitive load, and discoverability. Complexity that does not serve the user is out of scope.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: "Store it!" is defined as an easy-to-use application; this principle makes that a non-negotiable standard for design and implementation.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Full Documentation
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+Code MUST be fully documented. Public APIs, modules, and non-obvious behaviour MUST have concise, accurate documentation (e.g. KDoc, README, or equivalent). Documentation MUST be kept in sync with code changes.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: Ensures maintainability, onboarding, and safe evolution; supports compliance and auditability.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Test Coverage (NON-NEGOTIABLE)
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Code MUST be properly covered by tests. Business-critical and user-facing behaviour MUST have automated tests (unit, integration, or E2E as appropriate). New behaviour MUST not be merged without corresponding tests. Test quality and stability (e.g. no flakiness) are part of this requirement.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**Rationale**: Prevents regressions, enables confident refactoring, and aligns with the project’s quality bar.
+
+### IV. Simplicity
+
+Prefer the simplest design that satisfies requirements (YAGNI). Avoid unnecessary abstraction, indirection, or scope creep. When in doubt, choose the option that is easier to read, test, and change.
+
+**Rationale**: Supports User Experience First and Full Documentation by keeping the codebase understandable and documentable.
+
+### V. Quality Gates & Compliance
+
+All changes MUST comply with this constitution. Pull requests and reviews MUST verify adherence to Principles I–IV. Exceptions or violations MUST be explicitly justified and documented (e.g. in plan complexity tracking). Regular compliance checks (e.g. doc coverage, test coverage, UX review) are expected.
+
+**Rationale**: Makes the constitution enforceable and keeps quality consistent over time.
+
+## Additional Constraints
+
+- **Technology**: Align with the project’s chosen stack (e.g. Kotlin Multiplatform, Android, iOS) and with architecture guidance (e.g. `.ai/AGENTS.md`, `.ai/CONVENTIONS.md`) where present.
+- **Security & data**: Sensitive data and credentials MUST follow platform best practices; no secrets in code or in unencrypted storage.
+- **Accessibility**: UX decisions MUST consider accessibility so the app remains usable for people with disabilities, in line with “User Experience First”.
+
+## Development Workflow
+
+- **Before merge**: Code review MUST confirm documentation and test coverage for changed code; UX-impacting changes SHOULD be reviewed for Principle I.
+- **Definition of done**: A change is done when it meets acceptance criteria, is documented, has appropriate tests, and passes the constitution check.
+- **Constitution check**: Plans and feature specs SHOULD include a constitution check (e.g. in implementation plans) that verifies Principles I–V for the scope of the work.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution supersedes conflicting local or ad-hoc practices for this project.
+- **Amendments**: Require a documented proposal, rationale, and (where applicable) a short migration note. Version MUST be updated per semantic versioning (MAJOR: incompatible principle change; MINOR: new principle or material expansion; PATCH: clarifications, typos).
+- **Compliance**: All contributors and agents MUST follow this constitution; reviewers MUST flag violations. Use `.ai/AGENTS.md` and `.ai/CONVENTIONS.md` for development and coding guidance.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-02-10 | **Last Amended**: 2025-02-10

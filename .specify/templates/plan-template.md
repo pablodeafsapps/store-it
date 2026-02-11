@@ -31,7 +31,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify compliance with `.specify/memory/constitution.md`: **I. User Experience First**, **II. Full Documentation**, **III. Test Coverage**, **IV. Simplicity**, **V. Quality Gates & Compliance**. Document any exception in Complexity Tracking.
 
 ## Project Structure
 
