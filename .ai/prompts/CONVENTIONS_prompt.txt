@@ -1,0 +1,24 @@
+# Please, take the role of an Android software architect
+
+# I want you to create a `CONVENTIONS.md` file in which you document code conventions, naming, and design patterns which must be followed to comply with both Kotlin and Swift code-styles within a Kotlin Multi-Platform (KMP) application, in order to achieve clarity and consistency. Don't hesitate to add references and hints from both Clean Architecture Paradigm and SOLID Principles.
+
+# The target audience are seasoned Android engineers, so don't hesitate to go too technical.
+
+# The output should be a markdown document (`CONVENTIONS.md`), and should be placed inside a new folder called `.ai`, in the project root.
+
+# Please, don't make any reference to the current project or its state. This is a general-purpose file to be used on any Android project, regardless of any dependency or product type.
+
+-----
+
+I'd like you to review section 1.1, since I want package structure to take into account multi-modular projects. Thus, the feature should be right below the package name. Any other layer (`di`, `domain`, etc.) should be hanging from it.
+
+Include as well the possibility of having a `:core` module in which it's possible to have some common utilities and base classes.
+
+-----
+
+Regarding section 1.1 from #file:CONVENTIONS.md , I'd like you to document to communicate modules, so that there are no circular dependencies and structure remains clear and legible during time.
+
+This strategy is based on "gateways", which is fundamentally based on the Strategy design pattern and the DI engine (Koin in our case).
+
+The idea is that every feature module which requires data/functionality from another feature module must implement an interface, with some functions of interest, which is declared in the :core module. Doing so, this interface gets accessible by any other module depending on :core, which happens by default. The DI engine is in charge to resolve this interface to the actual implementation defined in the feature module which owns the data/functionality.
+

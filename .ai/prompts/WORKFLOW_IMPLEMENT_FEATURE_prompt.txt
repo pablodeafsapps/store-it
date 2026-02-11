@@ -1,0 +1,9 @@
+# Please, take the role of an Android software architect
+
+# I want you to create a `WORKFLOW_IMPLEMENT_FEATURE.md` file in which you document the goal, prerequisites, steps or phases, checkpoints, KPIs or assessment indicators, time estimation, etc. of any new feature to be developed and included in any Android/Kotlin project, such as this one.
+
+# The target audience is seasoned Android engineers, so don't hesitate tp go too technical.
+
+# The output should be a markdown document (`WORKFLOW_IMPLEMENT_FEATURE.md`), and should be placed inside a new folder called `.ai`, in the project root.
+
+# Please, don't make any reference to the current project or its state. This is a general-purpose file for use in any Android/Kotlin project, regardless of any dependency or product type. Bear in mind that version control is a must, so please include any action related to this matter, preferably using Git. Furthermore, when describing the steps or phases to be carried out, favour TDD as much as possible.
