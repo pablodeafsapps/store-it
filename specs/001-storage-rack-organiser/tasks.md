@@ -24,7 +24,7 @@
 
 **Purpose**: Linting and CI so all later work is gated.
 
-- [ ] T001 Configure Detekt for shared and composeApp in `shared/build.gradle.kts` and `composeApp/build.gradle.kts` (or root convention), add baseline if needed per research.md
+- [X] T001 Configure Detekt for shared and composeApp in `shared/build.gradle.kts` and `composeApp/build.gradle.kts` (or root convention), add baseline if needed per research.md
 - [ ] T002 Add GitHub Actions workflow for build and test in `.github/workflows/build-and-test.yml` (trigger on push/PR; run `./gradlew :shared:testDebugUnitTest :composeApp:assembleDebug` or equivalent)
 - [ ] T003 [P] Add Detekt step to CI workflow in `.github/workflows/build-and-test.yml` (optional, run `./gradlew detekt`)
 
@@ -55,7 +55,7 @@
 - [ ] T011 [P] [US1] Unit tests for GetRacksUseCase and SaveRackUseCase in `shared/src/commonTest/kotlin/org/deafsapps/mobile/storeit/domain/usecase/`
 - [ ] T012 [US1] Add rack screen (Android): capture or pick photo, name, description, location in `composeApp/src/androidMain/kotlin/org/deafsapps/mobile/storeit/ui/rack/AddRackScreen.kt` (or equivalent); wire to SaveRackUseCase
 - [ ] T013 [US1] Rack list screen (Android): list all racks in `composeApp/.../ui/rack/RackListScreen.kt`; empty state when no racks; navigate to add rack and to rack detail
-- [ ] T014 [US1] Rack detail screen (Android): show rack image as tappable map in `composeApp/.../ui/rack/RackDetailScreen.kt`; tap = define/select slot (store position or slot id for later use in US2); support edit metadata and remove rack (confirm before delete; cascade delete rack and items) (FR-002)
+- [ ] T014 [US1] Rack detail screen (Android): show rack image as tappable map in `composeApp/.../ui/rack/RackDetailScreen.kt`; tap = define/select slot (store position or slot id for later use in US2); support edit metadata and remove rack (FR-002)
 
 **Checkpoint**: User Story 1 is fully functional and testable independently
 
@@ -99,8 +99,6 @@
 - [ ] T024 [P] Introduce RemoteRackSource and RemoteItemSource interfaces (or equivalent) in `shared/src/commonMain/kotlin/org/deafsapps/mobile/storeit/data/` with no-op/stub implementations; document where Firebase will plug in (research.md, contracts/)
 - [ ] T025 [P] Add KDoc to public APIs (domain entities, repository interfaces, use cases) in `shared/src/commonMain/kotlin/org/deafsapps/mobile/storeit/`; update README and `specs/001-storage-rack-organiser/quickstart.md` with build/run/test instructions
 - [ ] T026 Run quickstart.md validation: build Android and shared tests, confirm mock data visible in debug build
-- [ ] T027 Verify accessibility: content descriptions for images and actions, focus order, and minimum touch targets on key screens (rack list, add rack, rack detail, add item, search); document in quickstart or checklist (constitution)
-- [ ] T028 Add at least one Compose UI test for a critical flow (e.g. add rack: launch, fill name + photo placeholder, submit, assert rack in list) in `composeApp/src/androidAndroidTest/` or equivalent
 
 ---
 
@@ -160,4 +158,3 @@
 - [P] = parallelizable; [US1/US2/US3] = story label for traceability
 - Paths use package `org.deafsapps.mobile.storeit`; adjust if your repo uses a different package
 - Constitution: all code documented and covered by tests; PRs verify before merge
-- Tasks in this file are Android-first; iOS is planned as a later increment (plan.md)

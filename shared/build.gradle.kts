@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.detekt)
 }
 
 kotlin {
@@ -42,4 +43,11 @@ android {
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
     }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
+    baseline = file("${rootProject.projectDir}/config/detekt/baseline.xml")
 }

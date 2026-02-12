@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.detekt)
 }
 
 kotlin {
@@ -66,5 +67,12 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
+    baseline = file("${rootProject.projectDir}/config/detekt/baseline.xml")
 }
 
