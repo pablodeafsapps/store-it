@@ -156,5 +156,5 @@
 ## Notes
 
 - [P] = parallelizable; [US1/US2/US3] = story label for traceability
-- Paths use package `org.deafsapps.mobile.storeit`; adjust if your repo uses a different package
+- Paths use package `org.deafsapps.storeit`; adjust if your repo uses a different package
 - Constitution: all code documented and covered by tests; PRs verify before merge
