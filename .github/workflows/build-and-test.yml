@@ -29,6 +29,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Run Detekt
+        run: ./gradlew detekt --no-daemon
+
       - name: Run unit tests (composeApp + androidApp)
         run: ./gradlew :composeApp:allTests :androidApp:testDebugUnitTest --no-daemon
 

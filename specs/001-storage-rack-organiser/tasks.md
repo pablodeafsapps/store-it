@@ -27,7 +27,7 @@
 
 - [X] T001 Configure Detekt for composeApp in `composeApp/build.gradle.kts` (or root convention), add baseline if needed per research.md. Post-AGP 9.0: no separate :shared module.
 - [X] T002 Add GitHub Actions workflow for build and test in `.github/workflows/build-and-test.yml` (trigger on push/PR; run `./gradlew :composeApp:testDebugUnitTest :composeApp:assembleDebug` or equivalent; no :shared)
-- [ ] T003 [P] Add Detekt step to CI workflow in `.github/workflows/build-and-test.yml` (optional, run `./gradlew detekt`)
+- [X] T003 [P] Add Detekt step to CI workflow in `.github/workflows/build-and-test.yml` (optional, run `./gradlew detekt`)
 
 ---
 

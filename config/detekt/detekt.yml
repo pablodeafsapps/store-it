@@ -18,20 +18,11 @@ processors:
 
 console-reports:
   active: true
-  exclude:
-  include:
-    - 'ProjectStatisticsReport'
-    - 'ComplexityReport'
-    - 'NotificationReport'
-    - 'FindingsReport'
+  exclude: []
 
 output-reports:
   active: true
-  exclude:
-  include:
-    - 'txt:reports/detekt/detekt.txt'
-    - 'xml:reports/detekt/detekt.xml'
-    - 'html:reports/detekt/detekt.html'
+  exclude: []
 
 complexity:
   active: true
@@ -45,22 +36,19 @@ complexity:
     threshold: 60
   LongParameterList:
     active: true
-    threshold: 6
+    functionThreshold: 6
+    constructorThreshold: 6
     ignoreDefaultParameters: true
   LargeClass:
     active: true
     threshold: 600
   TooManyFunctions:
     active: true
-    threshold: 10
+    thresholdInFiles: 20
     thresholdInClasses: 10
     thresholdInInterfaces: 10
     thresholdInObjects: 10
     thresholdInEnums: 10
-  NestingDepth:
-    active: true
-    threshold: 4
-
 naming:
   active: true
   ClassNaming:
@@ -74,22 +62,15 @@ naming:
     active: true
     functionPattern: '^([a-z][a-zA-Z0-9]*)|(`.*`)$'
     excludeClassPattern: '$^'
-    ignoreOverriddenFunction: true
+    ignoreAnnotated: ['Composable', 'Preview']
   VariableNaming:
     active: true
     variablePattern: '^[a-z][a-zA-Z0-9]*$'
     privateVariablePattern: '^(_)?[a-z][a-zA-Z0-9]*$'
     excludeClassPattern: '$^'
-    ignoreOverriddenFunction: true
-  ConstantNaming:
-    active: true
-    constantPattern: '^[A-Z][A-Z_0-9]*$'
-    privateConstantPattern: '^(_)?[A-Z][A-Z_0-9]*$'
-    acceptableConstantNames: ['Composable']
   TopLevelPropertyNaming:
     active: true
     constantPattern: '^[A-Z][A-Z_0-9]*$'
-    privateConstantPattern: '^(_)?[A-Z][A-Z_0-9]*$'
     propertyPattern: '^[a-z][a-zA-Z0-9]*$'
     privatePropertyPattern: '^(_)?[a-z][a-zA-Z0-9]*$'
 
@@ -108,8 +89,6 @@ style:
     ignoreEnums: true
     ignoreRanges: false
     ignoreExtensionFunctions: false
-    ignoreDataClasses: false
-    ignoreSealedClasses: false
   MaxLineLength:
     active: true
     maxLineLength: 120
@@ -123,10 +102,7 @@ style:
   ReturnCount:
     active: true
     max: 3
-    maxForFunctions: 3
-    maxForMethods: 3
     excludedFunctions: ['equals', 'toString']
-    excludedMethods: ['equals', 'toString']
   WildcardImport:
     active: true
     excludeImports: ['java.util.*', 'kotlinx.coroutines.*']
@@ -135,9 +111,6 @@ style:
   UnusedImports:
     active: true
   ExpressionBodySyntax:
-    active: true
-    expressionBodyThreshold: 4
-  OptionalWhenBraces:
     active: true
   OptionalAbstractKeyword:
     active: true
@@ -157,10 +130,6 @@ style:
     active: true
   UnusedPrivateMember:
     active: true
-    searchInNestedClass: true
-    searchInInnerClass: true
-    searchInInnerObject: true
-    searchInInnerInterface: true
     ignoreAnnotated: ['Suppress', 'VisibleForTesting']
   UseCheckOrError:
     active: true
@@ -175,10 +144,6 @@ style:
   UseIsNullOrEmpty:
     active: true
   UseOrEmpty:
-    active: true
-  UseSafeCall:
-    active: true
-  UseWhenInsteadOfIf:
     active: true
 
 comments:
@@ -198,37 +163,12 @@ potential-bugs:
   active: true
   UnreachableCode:
     active: true
-  UnusedPrivateMember:
-    active: true
-    searchInNestedClass: true
-    searchInInnerClass: true
-    searchInInnerObject: true
-    searchInInnerInterface: true
-    ignoreAnnotated: ['Suppress', 'VisibleForTesting']
-  UnusedPrivateClass:
-    active: true
-  UnusedPrivateProperty:
-    active: true
-  UnusedPrivateFunction:
-    active: true
-  UnusedReturnValue:
-    active: true
-  UnusedVariable:
-    active: true
-  UnusedImport:
-    active: true
-  UnusedExpression:
-    active: true
 
 coroutines:
   active: true
   RedundantSuspendModifier:
     active: true
   SuspendFunWithFlowReturnType:
-    active: true
-  SwallowedException:
-    active: true
-  UnnecessaryCoroutine:
     active: true
 
 empty-blocks:
@@ -253,8 +193,6 @@ empty-blocks:
     active: true
   EmptyInitBlock:
     active: true
-  EmptyKotlinFile:
-    active: true
   EmptySecondaryConstructor:
     active: true
   EmptyWhenBlock:
@@ -277,7 +215,6 @@ exceptions:
     active: true
     ignoredExceptionTypes: ['InterruptedException', 'NumberFormatException']
     allowedExceptionNameRegex: '^(ignore|expected).*'
-    exceptionMessageRegex: '.*(ignore|expected).*'
 
 performance:
   active: true
@@ -288,8 +225,4 @@ performance:
   ForEachOnRange:
     active: true
   UnnecessaryPartOfBinaryExpression:
-    active: true
-  UnnecessaryStringTemplate:
-    active: true
-  UnnecessaryVariable:
     active: true
