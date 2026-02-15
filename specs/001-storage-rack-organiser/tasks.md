@@ -13,8 +13,8 @@
 
 ## Path Conventions (post-AGP 9.0: no :shared module)
 
-- **Common (KMP)**: `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/` (domain, data, usecase)
-- **Android app**: `composeApp/src/androidMain/kotlin/org/deafsapps/mobile/storeit/`
+- **Common (KMP)**: `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/` (domain, data, usecase)
+- **Android app**: `composeApp/src/androidMain/kotlin/org/deafsapps/storeit/`
 - **Tests**: `composeApp/src/commonTest/kotlin/...`, `composeApp/src/androidUnitTest/...`
 - **CI**: `.github/workflows/`
 
@@ -35,12 +35,12 @@
 
 **Purpose**: Domain and data layer that ALL user stories depend on. No user story work until this phase is complete.
 
-- [ ] T004 [P] Create Rack, ShelfSlot, Item domain entities in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/domain/` per data-model.md (id, name, description, location, photoUri, etc.)
-- [ ] T005 [P] Define RackRepository and ItemRepository interfaces in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/domain/` per contracts/repository-interfaces.md (getAllRacks, getRackById, saveRack, deleteRack; getItemsBySlot, searchItems, saveItem, deleteItem; use Either or Result for success/failure)
-- [ ] T006 [P] Define domain error sealed type in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/domain/` for repository failures (e.g. ValidationError, NotFound)
-- [ ] T007 Implement in-memory RackRepository in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/data/` (implements RackRepository; unit tests in `composeApp/src/commonTest/kotlin/org/deafsapps/mobile/storeit/data/`)
-- [ ] T008 Implement in-memory ItemRepository (and slot/placement handling) in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/data/` (getItemsBySlot, searchItems by name/description; unit tests in `composeApp/src/commonTest/`)
-- [ ] T009 Add mock data provider (1–5 records: at least one rack and several items) in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/data/` or platform debug source set, toggled/preloaded for debug builds only (FR-011)
+- [X] T004 [P] Create Rack, ShelfSlot, Item domain entities in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/` per data-model.md (id, name, description, location, photoUri, etc.)
+- [ ] T005 [P] Define RackRepository and ItemRepository interfaces in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/` per contracts/repository-interfaces.md (getAllRacks, getRackById, saveRack, deleteRack; getItemsBySlot, searchItems, saveItem, deleteItem; use Either or Result for success/failure)
+- [ ] T006 [P] Define domain error sealed type in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/` for repository failures (e.g. ValidationError, NotFound)
+- [ ] T007 Implement in-memory RackRepository in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` (implements RackRepository; unit tests in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/data/`)
+- [ ] T008 Implement in-memory ItemRepository (and slot/placement handling) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` (getItemsBySlot, searchItems by name/description; unit tests in `composeApp/src/commonTest/`)
+- [ ] T009 Add mock data provider (1–5 records: at least one rack and several items) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` or platform debug source set, toggled/preloaded for debug builds only (FR-011)
 
 **Checkpoint**: Foundation ready — user story implementation can begin
 
@@ -52,9 +52,9 @@
 
 **Independent Test**: Create one rack with photo and name, see it in list, open it and see rack image with tappable regions.
 
-- [ ] T010 [P] [US1] Implement GetRacksUseCase and SaveRackUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/domain/usecase/` (depend on RackRepository; return Either/Flow as per AGENTS.md)
-- [ ] T011 [P] [US1] Unit tests for GetRacksUseCase and SaveRackUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/mobile/storeit/domain/usecase/`
-- [ ] T012 [US1] Add rack screen (Android): capture or pick photo, name, description, location in `composeApp/src/androidMain/kotlin/org/deafsapps/mobile/storeit/ui/rack/AddRackScreen.kt` (or equivalent); wire to SaveRackUseCase
+- [ ] T010 [P] [US1] Implement GetRacksUseCase and SaveRackUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/` (depend on RackRepository; return Either/Flow as per AGENTS.md)
+- [ ] T011 [P] [US1] Unit tests for GetRacksUseCase and SaveRackUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
+- [ ] T012 [US1] Add rack screen (Android): capture or pick photo, name, description, location in `composeApp/src/androidMain/kotlin/org/deafsapps/storeit/ui/rack/AddRackScreen.kt` (or equivalent); wire to SaveRackUseCase
 - [ ] T013 [US1] Rack list screen (Android): list all racks in `composeApp/.../ui/rack/RackListScreen.kt`; empty state when no racks; navigate to add rack and to rack detail
 - [ ] T014 [US1] Rack detail screen (Android): show rack image as tappable map in `composeApp/.../ui/rack/RackDetailScreen.kt`; tap = define/select slot (store position or slot id for later use in US2); support edit metadata and remove rack (FR-002)
 
@@ -68,8 +68,8 @@
 
 **Independent Test**: Select a rack, tap a slot, add item with photo and name; item appears in that slot. Or add item first then choose rack/slot; same outcome.
 
-- [ ] T015 [P] [US2] Implement AddItemUseCase and GetItemsBySlotUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/domain/usecase/` (depend on ItemRepository, RackRepository if needed)
-- [ ] T016 [P] [US2] Unit tests for AddItemUseCase and GetItemsBySlotUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/mobile/storeit/domain/usecase/`
+- [ ] T015 [P] [US2] Implement AddItemUseCase and GetItemsBySlotUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/` (depend on ItemRepository, RackRepository if needed)
+- [ ] T016 [P] [US2] Unit tests for AddItemUseCase and GetItemsBySlotUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
 - [ ] T017 [US2] Add item flow (Android): screen for photo (camera/gallery), name, description, quantity, owner, tags in `composeApp/.../ui/item/AddItemScreen.kt`; then select rack and tap slot to place (or reverse: select rack + slot first then add item); wire to AddItemUseCase (FR-004, FR-005)
 - [ ] T018 [US2] When user has no racks, guide to create one or disable add-item until at least one rack exists (edge case spec); handle empty slot as valid placement target in `composeApp/.../ui/`
 
@@ -83,8 +83,8 @@
 
 **Independent Test**: Open rack → tap slot with items → see list → tap item → view/edit. Use search box → get results → tap result → navigate to item.
 
-- [ ] T019 [P] [US3] Implement SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/domain/usecase/` (search by name and description; return items with rack/slot info per FR-008)
-- [ ] T020 [P] [US3] Unit tests for SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/mobile/storeit/domain/usecase/`
+- [ ] T019 [P] [US3] Implement SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/` (search by name and description; return items with rack/slot info per FR-008)
+- [ ] T020 [P] [US3] Unit tests for SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
 - [ ] T021 [US3] Slot items list (Android): from rack detail, tap slot → show list of items in that slot in `composeApp/.../ui/item/SlotItemsScreen.kt`; empty state and option to add item (FR-006)
 - [ ] T022 [US3] Item detail and edit (Android): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in `composeApp/.../ui/item/ItemDetailScreen.kt` (FR-007)
 - [ ] T023 [US3] Global search (Android): search box always available; search items by name and description; results show item and rack/slot; tap result navigates to item in `composeApp/.../ui/search/SearchScreen.kt` or equivalent (FR-008); no-results state (edge case)
@@ -97,8 +97,8 @@
 
 **Purpose**: Backend placeholder, documentation, and quality gates.
 
-- [ ] T024 [P] Introduce RemoteRackSource and RemoteItemSource interfaces (or equivalent) in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/data/` with no-op/stub implementations; document where Firebase will plug in (research.md, contracts/)
-- [ ] T025 [P] Add KDoc to public APIs (domain entities, repository interfaces, use cases) in `composeApp/src/commonMain/kotlin/org/deafsapps/mobile/storeit/`; update README and `specs/001-storage-rack-organiser/quickstart.md` with build/run/test instructions
+- [ ] T024 [P] Introduce RemoteRackSource and RemoteItemSource interfaces (or equivalent) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` with no-op/stub implementations; document where Firebase will plug in (research.md, contracts/)
+- [ ] T025 [P] Add KDoc to public APIs (domain entities, repository interfaces, use cases) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/`; update README and `specs/001-storage-rack-organiser/quickstart.md` with build/run/test instructions
 - [ ] T026 Run quickstart.md validation: build Android and composeApp tests, confirm mock data visible in debug build
 
 ---
