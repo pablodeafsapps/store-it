@@ -92,6 +92,7 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 3.1 Source Set Layout
 
+- In this project the KMP module is **`:composeApp`** (no separate `:shared` module; post-AGP 9.0 layout).
 - **commonMain**: Shared business logic, domain models, use cases, repository interfaces, and expect declarations.
 - **androidMain** / **iosMain**: Platform implementations (expect/actual), platform APIs, and DI wiring.
 - **commonTest**: Shared unit tests for common code; no platform APIs.

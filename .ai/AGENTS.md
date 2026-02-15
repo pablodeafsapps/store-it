@@ -13,14 +13,16 @@ The target audience is experienced Android engineers building or reviewing a KMP
 
 ## 1. High-Level System Shape
 
-- **Shared module (Multiplatform library)**:
-  - Contains **domain** and **data** layers, plus any **shared presentation** logic (e.g. shared ViewModels/state).
-  - Produces a **Kotlin/Android artifact** (AAR/JAR) and an **Apple framework** (XCFramework) for iOS.
-- **Android app module**:
-  - Pure Android/Jetpack code (Activities, Compose UI, platform services).
-  - Depends on the shared module.
-- **iOS app target**:
-  - Swift/SwiftUI code that consumes the shared framework.
+**Post-AGP 9.0 migration:** This project uses a **single KMP app module** (`:composeApp`). There is no separate `:shared` module. The `:composeApp` module contains:
+- **commonMain** (and commonTest): domain, data, shared presentation — shared across targets.
+- **androidMain**: Android app (Activities, Compose UI, platform services).
+- **iosMain** (if present): iOS-specific Kotlin; iOS UI is in the separate `iosApp` Swift/SwiftUI target.
+
+- **Compose app module** (`:composeApp`):
+  - **commonMain**: Domain and data layers, plus any shared presentation (e.g. ViewModels/state). Produces shared logic consumed by Android and (via framework) iOS.
+  - **androidMain**: Pure Android/Jetpack code (Activities, Compose UI, platform services).
+- **iOS app target** (`iosApp`):
+  - Swift/SwiftUI code that consumes the shared framework produced by `:composeApp`.
   - Treats shared code as a black-box library.
 
 **Dependency direction**:
@@ -31,9 +33,9 @@ No layer may depend on a more external layer; dependencies always point inward.
 
 ---
 
-## 2. Shared Module Structure (by the book)
+## 2. KMP Module Structure (composeApp)
 
-The shared module is a **multiplatform library** configured roughly as:
+The multiplatform module (`:composeApp`) is configured roughly as:
 
 - Targets:
   - `jvm("android")`
@@ -100,7 +102,7 @@ The shared module is a **multiplatform library** configured roughly as:
 
 These rules are enforced by:
 
-- Gradle module boundaries (e.g. `:domain`, `:data`, `:presentation`, `:shared`).
+- Gradle module and source-set boundaries (e.g. `:composeApp` with `commonMain`, `androidMain`, `iosMain`).
 - `sourceSets` dependency configuration (`dependsOn` relationships).
 
 ---
@@ -113,7 +115,7 @@ The following stack is designed to align with official KMP recommendations and c
 
 - **Kotlin**:
   - Latest stable language version supported by the Kotlin Multiplatform Gradle plugin.
-  - `kotlin("multiplatform")` plugin for shared module.
+  - `kotlin("multiplatform")` (with Compose Multiplatform) for the `:composeApp` module.
   - Gradle Kotlin DSL for build scripts.
 - **Coroutines & Flow**:
   - `kotlinx-coroutines-core` in `commonMain`.
@@ -195,7 +197,7 @@ Two common strategies:
 
 ### 5.2 Multiplatform Plugin Configuration
 
-- In the shared module:
+- In the `:composeApp` (KMP) module:
   - Configure `kotlin {}` with:
     - Targets: `androidTarget()`, `iosX64()`, `iosArm64()`, `iosSimulatorArm64()` (or `ios()` aggregate).
     - `sourceSets` relationships: `iosMain` depends on individual iOS targets when aggregated.
@@ -206,15 +208,15 @@ Two common strategies:
 
 ### 5.3 Android Module Configuration
 
-- Use **Android Gradle Plugin** with Kotlin, Compose, and modern compile/target SDK versions.
+- Use **Android Gradle Plugin** (AGP 9.x-compatible) with Kotlin, Compose, and modern compile/target SDK versions.
 - Configure:
   - `compileSdk`, `minSdk`, `targetSdk` according to product requirements.
   - Jetpack Compose compiler and BOM (if used).
-  - Dependency on the shared module’s Android artifact.
+  - The `:composeApp` module is the single KMP module (no separate shared library artifact).
 
 ### 5.4 iOS Integration
 
-- Configure the shared module to export an **XCFramework**:
+- Configure `:composeApp` to export an **XCFramework** (or equivalent) for iOS:
   - Framework name stable and semantic (e.g. `SharedCore`).
   - Exposed APIs stable and idiomatic from Swift.
 - Integrate via:

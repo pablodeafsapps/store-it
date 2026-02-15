@@ -24,10 +24,10 @@
 
 Open `iosApp/iosApp.xcodeproj` in Xcode and run the iOS app target, or use the run configuration from the IDE.
 
-### Shared module (tests)
+### Tests (composeApp; no separate :shared module)
 
 ```bash
-./gradlew :shared:testDebugUnitTest
+./gradlew :composeApp:testDebugUnitTest
 # Or all tests:
 ./gradlew test
 ```

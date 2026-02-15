@@ -2,6 +2,8 @@
 
 /speckit.implement
 
+**Structure:** Post-AGP 9.0 — all shared and Android code lives in `:composeApp` (no `:shared`). Use `composeApp/src/commonMain/`, `composeApp/src/androidMain/`, `composeApp/src/commonTest/` as per plan.md and tasks.md.
+
 Every time some work is carried out:
 
 - Build the project for both Android and iOS to check the application is still functional.
