@@ -12,4 +12,9 @@ sealed interface DomainError: Error {
         override val message: String = "Resource '$resource'${id?.let { " with id '$it'" } ?: ""} not found"
         override val cause: Throwable? = null
     }
+    
+    data class ValidationError(val field: String? = null, val reason: String) : DomainError {
+        override val message: String = field?.let { "Validation error for field '$it': $reason" } ?: "Validation error: $reason"
+        override val cause: Throwable? = null
+    }
 }
