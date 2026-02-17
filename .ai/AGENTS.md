@@ -131,6 +131,7 @@ The following stack is designed to align with official KMP recommendations and c
   - Use cases and repository interfaces return `Either<DomainError, T>` (or `Flow<Either<DomainError, T>>`) rather than throwing for expected failures.
   - Map infrastructure exceptions to domain errors at boundaries (e.g. `Either.catch { ... }.mapLeft { toDomainError(it) }`).
   - Presentation/UI layers `fold` or pattern-match on the result to derive UI state and user-facing messages.
+- **Building Result values**: Prefer the extension functions `value.ok()` and `error.err()` when constructing success/failure (e.g. `list.ok()`, `DomainError.NotFound(...).err()`) instead of `Result.ok(value)` / `Result.err(error)`.
 - **Swift alignment**: In iOS code, mirror the same semantics with Swift enums with associated values (e.g. `Result<Success, Failure>`) or a custom `Either`-like type so success/failure handling stays consistent across the stack.
 
 ### 4.3 Networking
@@ -267,6 +268,9 @@ This section describes how an engineer (or automation agent) should add or modif
 - **commonTest**:
   - Test use cases with fake repositories.
   - Test repositories with fake data sources (or in-memory implementations).
+  - **Suspend / coroutines**: Use `runTest { }` from `kotlinx-coroutines-test` (not `runBlocking`) for tests that call suspend functions. Add `kotlinx-coroutines-test` to `commonTest` dependencies; use `fun testName() = runTest { ... }`.
+  - **Test naming**: Follow GIVEN–WHEN–THEN with **GIVEN**, **WHEN**, **THEN** in caps in the test name (e.g. `` `GIVEN empty repository WHEN getAllRacks THEN returns empty list`() ``).
+  - **Test body structure**: Structure each test in three sections (setup → action → assertions) separated by **blank lines only**; do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup (e.g. “empty repository” or “any state”), leave a single blank line after the test opening, then the WHEN and THEN blocks.
 - **Android/iOS tests**:
   - Verify integration with platform-specific services, navigation, and lifecycle.
 
@@ -298,6 +302,11 @@ This section describes how an engineer (or automation agent) should add or modif
 
 - Keep secrets out of commonMain; use platform-specific secure storage via `expect`/`actual` or injected services.
 - Treat any serialization/persistence boundary as untrusted input; validate accordingly.
+
+### 7.4 Encapsulation & implementation style
+
+- **Visibility**: Prefer `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Use `internal` on both `expect` and `actual` when the API is only used inside the module.
+- **Expression-bodied functions**: Prefer single-expression function bodies using `= expression` (no `return` keyword) when the logic fits clearly in one expression; use `when`/`if` expressions where appropriate to keep functions as expressions.
 
 ---
 

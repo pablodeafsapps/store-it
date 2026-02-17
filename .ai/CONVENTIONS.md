@@ -32,6 +32,7 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 ### 1.4 Idioms
 
 - Prefer `val` over `var`; use `var` only when state must change.
+- **Prefer expression-bodied functions**: Use `= expression` instead of `{ return expression }` when the body is a single expression (single- or multi-line). Avoid the `return` keyword where an expression form is clear: e.g. `fun get(id: String) = repo.findById(id)` or `fun delete(id: String) = when { id.isBlank() -> error.err(); else -> unit.ok() }`.
 - Use expression-bodied members when they fit on one line: `fun id(): String = uuid`.
 - Prefer `when` over long `if`/`else`; make it exhaustive for sealed types.
 - Use scope functions by intent: `apply` (configuring), `also` (side effects), `let` (null-safe transform), `run` (object-scoped block), `with` (non-extension).
@@ -97,19 +98,24 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 - **androidMain** / **iosMain**: Platform implementations (expect/actual), platform APIs, and DI wiring.
 - **commonTest**: Shared unit tests for common code; no platform APIs.
 
-### 3.2 Expect / Actual
+### 3.2 Visibility & encapsulation
 
-- **Expect** in `commonMain`: public API only; minimal surface (what the platform must provide).
+- **Prefer `internal` by default**: Use `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Do not add `internal` to members inside an interface (e.g. sealed subclasses); the containing type’s visibility applies.
+- **Expect/actual**: Use `internal` on both `expect` and `actual` when the API is only used inside the module; use public only for types that other modules or the framework must see.
+
+### 3.3 Expect / Actual
+
+- **Expect** in `commonMain`: minimal surface (what the platform must provide); prefer `internal` when not part of the public API.
 - **Actual** in platform source sets: one implementation per target; avoid branching inside actuals when possible.
 - Name expect/actual consistently: `expect class Platform()`, `expect fun currentTimeMillis(): Long`.
 - Prefer expect/actual for a small set of primitives (clock, UUID, crypto, logging, analytics); keep heavy or frequently changing APIs behind interfaces in common code and inject platform implementations.
 
-### 3.3 Naming Across Platforms
+### 3.4 Naming Across Platforms
 
 - Use the same logical names for shared concepts: e.g. `User`, `AuthToken`, `Result` so that Kotlin and Swift (or KMP-generated headers) align.
 - Repository and use case names should be identical in shared and platform code to avoid cognitive mismatch.
 
-### 3.4 Shared Models
+### 3.5 Shared Models
 
 - Keep shared models in commonMain: data classes or interfaces used in use cases and repositories.
 - Prefer immutable data: `data class` in Kotlin; in Swift, structs with `let` properties.
@@ -200,6 +206,7 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 ### 6.5 Result / Either
 
 - Use a sealed hierarchy for operations that can fail: e.g. `sealed interface Result<out T> { data class Ok<T>(val value: T) : Result<T>; data class Error(val cause: Throwable) : Result<Nothing> }`, or a type like `Either<L, R>`.
+- **Building Result values**: Prefer the extension functions `value.ok()` and `error.err()` when constructing success/failure (e.g. `list.ok()`, `DomainError.NotFound(...).err()`) instead of `Result.ok(value)` / `Result.err(error)`.
 - Prefer returning `Result<T>` or `Flow<Result<T>>` from use cases rather than throwing in the business layer; let the UI layer handle error presentation.
 
 ---
@@ -209,7 +216,9 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 ### 7.1 Unit Tests
 
 - Test use cases with fake or mock repositories (interfaces); test repository implementations with fake data sources.
-- Naming: `methodUnderTest_scenario_expectedOutcome` or `shouldDoSomethingWhenCondition`.
+- **Naming**: Use **GIVEN–WHEN–THEN** with the words **GIVEN**, **WHEN**, and **THEN** in caps in the test name (e.g. `` `GIVEN saved rack WHEN getRackById with existing id THEN returns rack`() ``). Alternative patterns: `methodUnderTest_scenario_expectedOutcome` or `shouldDoSomethingWhenCondition` only when GIVEN–WHEN–THEN does not fit.
+- **Test body structure**: Organise each test into three sections (setup → action → assertions) separated by **blank lines only**. Do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup section, leave a single blank line after the test opening, then the action and assertion blocks.
+- **Coroutines / suspend**: For tests that call suspend functions, use `runTest { }` from `kotlinx-coroutines-test` (e.g. `fun testName() = runTest { ... }`). Do not use `runBlocking` in tests. Add `kotlinx-coroutines-test` to the test source set dependencies.
 - One logical behaviour per test; avoid testing implementation details (e.g. exact call count unless contract requires it).
 
 ### 7.2 Fakes vs Mocks
