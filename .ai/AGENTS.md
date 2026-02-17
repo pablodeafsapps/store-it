@@ -246,6 +246,26 @@ This section describes how an engineer (or automation agent) should add or modif
 - Implement repository interfaces in Data layer:
   - Introduce or extend remote/local data sources.
   - Map DTO ↔ domain entities via dedicated mappers.
+- **Thread-safety for in-memory repositories**:
+  - All in-memory repository implementations (e.g. `InMemoryRackRepository`, `InMemoryItemRepository`) must protect shared mutable state (e.g. `MutableMap`, `MutableList`) from concurrent access.
+  - Use `Mutex` from `kotlinx.coroutines.sync` to synchronize access to shared collections.
+  - Wrap all read and write operations (including `clear()` methods) with `mutex.withLock { }` to prevent race conditions.
+  - Example pattern:
+    ```kotlin
+    internal class InMemoryRepository {
+        private val items = mutableMapOf<String, Item>()
+        private val mutex = Mutex()
+        
+        override suspend fun getItem(id: String) = mutex.withLock {
+            items[id]?.ok() ?: DomainError.NotFound(...).err()
+        }
+        
+        override suspend fun saveItem(item: Item) = mutex.withLock {
+            items[item.id] = item
+            item.ok()
+        }
+    }
+    ```
 - If platform-specific services are required:
   - Add `expect` declarations in `commonMain`.
   - Implement `actual` counterparts in `androidMain` and `iosMain`.
@@ -307,6 +327,14 @@ This section describes how an engineer (or automation agent) should add or modif
 
 - **Visibility**: Prefer `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Use `internal` on both `expect` and `actual` when the API is only used inside the module.
 - **Expression-bodied functions**: Prefer single-expression function bodies using `= expression` (no `return` keyword) when the logic fits clearly in one expression; use `when`/`if` expressions where appropriate to keep functions as expressions.
+
+### 7.5 Concurrency & Thread Safety
+
+- **Repository thread-safety**: All repository implementations that maintain mutable in-memory state (e.g. `MutableMap`, `MutableList`) must be thread-safe to prevent race conditions when accessed concurrently by multiple coroutines or threads.
+- **Synchronization mechanism**: Use `Mutex` from `kotlinx.coroutines.sync` for coroutine-based synchronization. Wrap all operations that access or modify shared mutable state with `mutex.withLock { }`.
+- **Scope of protection**: Protect both read and write operations. Even read-only operations must be synchronized if they access mutable collections that can be modified concurrently.
+- **Helper methods**: Methods like `clear()` that modify shared state must also be `suspend` functions and protected by the mutex.
+- **Pattern**: Each repository instance should have its own `Mutex` instance protecting its internal state. Do not share mutexes across different repository instances.
 
 ---
 

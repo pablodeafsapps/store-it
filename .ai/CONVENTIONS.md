@@ -53,6 +53,15 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 - Expose cold flows from data layers; collect in the presentation layer.
 - Use `SupervisorJob` in scopes where one child failure should not cancel siblings.
 - Prefer `stateIn`/`shareIn` with appropriate `SharingStarted` (e.g. `WhileSubscribed(5000)`) for shared flows in ViewModels.
+- **Thread-safety**: When implementing repositories or data sources with mutable in-memory state (e.g. `MutableMap`, `MutableList`), use `Mutex` from `kotlinx.coroutines.sync` to synchronize access. Wrap all operations (reads and writes) with `mutex.withLock { }` to prevent race conditions. Example:
+  ```kotlin
+  private val items = mutableMapOf<String, Item>()
+  private val mutex = Mutex()
+  
+  override suspend fun getItem(id: String) = mutex.withLock {
+      items[id]?.ok() ?: DomainError.NotFound(...).err()
+  }
+  ```
 
 ---
 
@@ -187,6 +196,7 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 - One repository per aggregate or entity root. Exposes domain types; hides data source details (remote, cache, DB).
 - Methods: `getById`, `getStream`, `save`, `delete` (or equivalent). Return `Flow`/streams for reactive consumption; suspend for one-shot.
 - Implementation coordinates one or more data sources and applies caching/strategy internally.
+- **Thread-safety**: In-memory repository implementations must protect shared mutable state from concurrent access using `Mutex`. All read and write operations accessing mutable collections must be wrapped with `mutex.withLock { }`. Helper methods like `clear()` must also be `suspend` and protected by the mutex.
 
 ### 6.2 Use Case (Interactor)
 
