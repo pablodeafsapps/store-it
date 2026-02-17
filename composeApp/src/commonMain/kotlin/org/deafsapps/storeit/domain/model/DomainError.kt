@@ -14,7 +14,8 @@ internal sealed interface DomainError : Error {
     }
     
     data class ValidationError(val field: String? = null, val reason: String) : DomainError {
-        override val message: String = field?.let { "Validation error for field '$it': $reason" } ?: "Validation error: $reason"
+        override val message: String =
+            field?.let { "Validation error for field '$it': $reason" } ?: "Validation error: $reason"
         override val cause: Throwable? = null
     }
 }

@@ -3,7 +3,7 @@ package org.deafsapps.storeit.base
 /**
  * A right-biased disjoint union for success (Ok) and failure (Err).
  */
-internal sealed interface Result<out E, out A> {
+sealed interface Result<out E, out A> {
     val isOk: Boolean get() = this is Ok
     val isErr: Boolean get() = this is Err
 
@@ -42,30 +42,30 @@ internal sealed interface Result<out E, out A> {
     }
 }
 
-internal data class Ok<out A>(val value: A) : Result<Nothing, A>
+data class Ok<out A>(val value: A) : Result<Nothing, A>
 
-internal data class Err<out E>(val error: E) : Result<E, Nothing>
+data class Err<out E>(val error: E) : Result<E, Nothing>
 
-internal fun <E, V> Result<E, V>.getOrNull(): V? = (this as? Ok<V>)?.value
+fun <E, V> Result<E, V>.getOrNull(): V? = (this as? Ok<V>)?.value
 
-internal fun <E, V> Result<E, V>.leftOrNull(): E? = (this as? Err<E>)?.error
+fun <E, V> Result<E, V>.leftOrNull(): E? = (this as? Err<E>)?.error
 
-internal fun <E, V> Result<E, V>.getOrDefault(default: V): V = getOrNull() ?: default
+fun <E, V> Result<E, V>.getOrDefault(default: V): V = getOrNull() ?: default
 
-internal inline fun <E, V, B> Result<E, V>.map(f: (V) -> B): Result<E, B> =
+inline fun <E, V, B> Result<E, V>.map(f: (V) -> B): Result<E, B> =
     (this as? Ok)?.run { Ok(value = f(value)) } ?: this as Err
 
-internal inline fun <E, V, EE> Result<E, V>.mapLeft(f: (E) -> EE): Result<EE, V> =
+inline fun <E, V, EE> Result<E, V>.mapLeft(f: (E) -> EE): Result<EE, V> =
     (this as? Err)?.run { Err(error = f(error)) } ?: this as Ok
 
-internal inline fun <E, V, B> Result<E, V>.flatMap(f: (V) -> Result<E, B>): Result<E, B> =
+inline fun <E, V, B> Result<E, V>.flatMap(f: (V) -> Result<E, B>): Result<E, B> =
     if (this is Ok) {
         f(value)
     } else {
         this as Err
     }
 
-internal inline fun <E, V, EE> Result<E, V>.flatFailure(
+inline fun <E, V, EE> Result<E, V>.flatFailure(
     onFailure: (value: E) -> Result<EE, Nothing>
 ): Result<EE, V> = if (this is Err) {
     onFailure(error)
@@ -73,7 +73,7 @@ internal inline fun <E, V, EE> Result<E, V>.flatFailure(
     this as Ok
 }
 
-internal inline fun <E, V, R> Result<E, V>.fold(
+inline fun <E, V, R> Result<E, V>.fold(
     ifErr: (E) -> R,
     ifOk: (V) -> R
 ): R = when (val err = failureOrNull()) {
@@ -81,32 +81,32 @@ internal inline fun <E, V, R> Result<E, V>.fold(
     else -> ifErr(err)
 }
 
-internal inline infix fun <E, V> Result<E, V>.onOk(action: (V) -> Unit): Result<E, V> =
+inline infix fun <E, V> Result<E, V>.onOk(action: (V) -> Unit): Result<E, V> =
     also { if (this is Ok) action(value) }
 
-internal inline infix fun <E, V> Result<E, V>.onErr(action: (E) -> Unit): Result<E, V> =
+inline infix fun <E, V> Result<E, V>.onErr(action: (E) -> Unit): Result<E, V> =
     also { if (this is Err) action(error) }
 
-internal inline fun <E, V, EE : V> Result<E, V>.getOrElse(onFailure: (err: Err<E>) -> EE): V =
+inline fun <E, V, EE : V> Result<E, V>.getOrElse(onFailure: (err: Err<E>) -> EE): V =
     (this as? Ok)?.value ?: onFailure(this as Err)
 
-internal inline fun <E, V> Result<E, V>.getOrThrow(mapLeftToThrowable: (E) -> Throwable): V =
+inline fun <E, V> Result<E, V>.getOrThrow(mapLeftToThrowable: (E) -> Throwable): V =
     (this as? Ok)?.value ?: throw mapLeftToThrowable((this as Err).error)
 
-internal fun <E, V> Result<E, V>.failureOrNull(): E? = (this as? Err<E>)?.error
+fun <E, V> Result<E, V>.failureOrNull(): E? = (this as? Err<E>)?.error
 
-internal fun <E, V> Result<E, V>.swap(): Result<V, E> = when (this) {
+fun <E, V> Result<E, V>.swap(): Result<V, E> = when (this) {
     is Ok -> Err(error = value)
     is Err -> Ok(value = error)
 }
 
 
 // Syntax helpers
-internal fun <V> V.ok(): Result<Nothing, V> = Ok(value = this)
+fun <V> V.ok(): Result<Nothing, V> = Ok(value = this)
 
-internal fun <E> E.err(): Result<E, Nothing> = Err(error = this)
+fun <E> E.err(): Result<E, Nothing> = Err(error = this)
 
-internal fun <E, V> Result<E, V>.and(vararg others: Result<E, V>): Result<E, V> =
+fun <E, V> Result<E, V>.and(vararg others: Result<E, V>): Result<E, V> =
     if (this is Ok && others.toList().all { o -> o is Ok }) {
         this
     } else {

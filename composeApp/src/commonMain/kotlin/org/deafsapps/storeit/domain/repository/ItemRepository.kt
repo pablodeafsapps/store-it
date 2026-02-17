@@ -4,7 +4,7 @@ import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
 
-interface ItemRepository {
+ internal interface ItemRepository {
     suspend fun getItemsByRack(rackId: String): Result<DomainError, List<Item>>
     suspend fun getItemsBySlot(rackId: String, slotId: String): Result<DomainError, List<Item>>
     suspend fun getItemById(id: String): Result<DomainError, Item>
