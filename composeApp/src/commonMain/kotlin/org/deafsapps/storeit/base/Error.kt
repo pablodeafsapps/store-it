@@ -6,7 +6,7 @@ package org.deafsapps.storeit.base
  * Implement this interface to create specific error types that can be used
  * throughout the system, providing a common abstraction for error handling.
  */
-interface Error {
+internal interface Error {
     val message: String
     val cause: Throwable?
 }
