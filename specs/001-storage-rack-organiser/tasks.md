@@ -40,7 +40,7 @@
 - [X] T006 [P] Define domain error sealed type in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/` for repository failures (e.g. ValidationError, NotFound)
 - [X] T007 Implement in-memory RackRepository in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` (implements RackRepository; unit tests in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/data/`)
 - [X] T008 Implement in-memory ItemRepository (and slot/placement handling) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` (getItemsBySlot, searchItems by name/description; unit tests in `composeApp/src/commonTest/`)
-- [ ] T009 Add mock data provider (1–5 records: at least one rack and several items) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` or platform debug source set, toggled/preloaded for debug builds only (FR-011)
+- [X] T009 Add mock data provider (1–5 records: at least one rack and several items) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` or platform debug source set, toggled/preloaded for debug builds only (FR-011)
 
 **Checkpoint**: Foundation ready — user story implementation can begin
 
