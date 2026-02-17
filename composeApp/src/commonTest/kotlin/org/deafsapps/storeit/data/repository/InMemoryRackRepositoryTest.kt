@@ -3,6 +3,8 @@ package org.deafsapps.storeit.data.repository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
@@ -159,5 +161,130 @@ class InMemoryRackRepositoryTest {
         assertTrue(result.isOk)
         val racks: List<Rack> = result.getOrNull() ?: emptyList()
         assertEquals(0, racks.size)
+    }
+
+    @Test
+    fun `GIVEN empty repository WHEN concurrent saves THEN all racks are saved correctly`() = runTest {
+        val racks = (1..100).map { i ->
+            Rack(id = "rack$i", name = "Rack $i")
+        }
+
+        racks.map { rack ->
+            async { repository.saveRack(rack) }
+        }.awaitAll()
+
+        val result = repository.getAllRacks()
+        assertTrue(result.isOk)
+        val savedRacks: List<Rack> = result.getOrNull() ?: emptyList()
+        assertEquals(100, savedRacks.size)
+        val savedIds = savedRacks.map { it.id }.toSet()
+        val expectedIds = racks.map { it.id }.toSet()
+        assertEquals(expectedIds, savedIds)
+    }
+
+    @Test
+    fun `GIVEN saved racks WHEN concurrent reads THEN all reads succeed without race conditions`() = runTest {
+        val racks = (1..50).map { i ->
+            Rack(id = "rack$i", name = "Rack $i")
+        }
+        racks.forEach { repository.saveRack(it) }
+
+        val readResults = (1..50).map { i ->
+            async { repository.getRackById("rack$i") }
+        }.awaitAll()
+
+        assertEquals(50, readResults.size)
+        readResults.forEach { result ->
+            assertTrue(result.isOk)
+            assertTrue(result.getOrNull() != null)
+        }
+    }
+
+    @Test
+    fun `GIVEN saved racks WHEN concurrent writes and reads THEN operations complete without race conditions`() =
+        runTest {
+            val initialRacks = (1..20).map { i ->
+                Rack(id = "rack$i", name = "Rack $i")
+            }
+            initialRacks.forEach { repository.saveRack(it) }
+
+            val writeJobs = (21..40).map { i ->
+                async {
+                    repository.saveRack(Rack(id = "rack$i", name = "Rack $i"))
+                }
+            }
+            val readJobs = (1..20).map { i ->
+                async { repository.getRackById("rack$i") }
+            }
+
+            writeJobs.awaitAll()
+            val readResults = readJobs.awaitAll()
+
+            assertEquals(20, readResults.size)
+            readResults.forEach { result ->
+                assertTrue(result.isOk)
+            }
+            val allRacksResult = repository.getAllRacks()
+            assertTrue(allRacksResult.isOk)
+            val allRacks: List<Rack> = allRacksResult.getOrNull() ?: emptyList()
+            assertEquals(40, allRacks.size)
+        }
+
+    @Test
+    fun `GIVEN saved racks WHEN concurrent deletes THEN racks are deleted correctly`() = runTest {
+        val racks = (1..50).map { i ->
+            Rack(id = "rack$i", name = "Rack $i")
+        }
+        racks.forEach { repository.saveRack(it) }
+
+        val deleteJobs = (1..50).map { i ->
+            async { repository.deleteRack("rack$i") }
+        }.awaitAll()
+
+        assertEquals(50, deleteJobs.size)
+        deleteJobs.forEach { result ->
+            assertTrue(result.isOk)
+        }
+        val result = repository.getAllRacks()
+        assertTrue(result.isOk)
+        val remainingRacks: List<Rack> = result.getOrNull() ?: emptyList()
+        assertEquals(0, remainingRacks.size)
+    }
+
+    @Test
+    fun `GIVEN saved racks WHEN concurrent mixed operations THEN no race conditions occur`() = runTest {
+        val initialRacks = (1..30).map { i ->
+            Rack(id = "rack$i", name = "Rack $i")
+        }
+        initialRacks.forEach { repository.saveRack(it) }
+
+        val saveJobs = (31..50).map { i ->
+            async {
+                repository.saveRack(Rack(id = "rack$i", name = "Rack $i"))
+            }
+        }
+        val readJobs = (1..30).map { i ->
+            async { repository.getRackById("rack$i") }
+        }
+        val deleteJobs = (1..10).map { i ->
+            async { repository.deleteRack("rack$i") }
+        }
+        val getAllJobs = (1..5).map {
+            async { repository.getAllRacks() }
+        }
+
+        saveJobs.awaitAll()
+        readJobs.awaitAll()
+        deleteJobs.awaitAll()
+        getAllJobs.awaitAll()
+
+        val result = repository.getAllRacks()
+        assertTrue(result.isOk)
+        val allRacks: List<Rack> = result.getOrNull() ?: emptyList()
+        assertEquals(40, allRacks.size)
+        (1..10).forEach { i ->
+            val getResult = repository.getRackById("rack$i")
+            assertTrue(getResult.isErr)
+        }
     }
 }
