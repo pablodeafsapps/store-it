@@ -8,7 +8,7 @@ sealed interface Result<out E, out A> {
     val isErr: Boolean get() = this is Err
 
     companion object {
-        fun <A> ok(value: A): Result<Nothing, A> = Ok(value)
+        fun <A> ok(value: A): Result<Nothing, A> = Ok(value = value)
 
         fun <E> err(error: E): Result<E, Nothing> = Err(error = error)
 

@@ -81,8 +81,8 @@ internal object MockDataDto {
         rackRepository: RackRepository,
         itemRepository: ItemRepository,
     ) {
-        rackRepository.saveRack(getSampleRack())
-        getSampleItems().forEach { itemRepository.saveItem(it) }
+        rackRepository.saveRack(rack = getSampleRack())
+        getSampleItems().forEach { item -> itemRepository.saveItem(item = item) }
     }
 
     fun preloadMockDataAsync(
@@ -90,6 +90,6 @@ internal object MockDataDto {
         rackRepository: RackRepository,
         itemRepository: ItemRepository,
     ) {
-        scope.launch { preloadMockData(rackRepository, itemRepository) }
+        scope.launch { preloadMockData(rackRepository = rackRepository, itemRepository = itemRepository) }
     }
 }

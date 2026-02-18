@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.data.repository
 
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -12,16 +13,21 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
 
 class InMemoryItemRepositoryTest {
-    private val repository = InMemoryItemRepository()
+    private lateinit var sut: InMemoryItemRepository
+
+    @BeforeTest
+    fun setUp() {
+        sut = InMemoryItemRepository()
+    }
 
     @Test
     fun `GIVEN empty repository WHEN getItemsByRack THEN returns empty list`() = runTest {
 
-        val result = repository.getItemsByRack("rack1")
+        val result = sut.getItemsByRack(rackId = "rack1")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(0, items.size)
+        assertEquals(expected = 0, actual = items.size)
     }
 
     @Test
@@ -29,29 +35,29 @@ class InMemoryItemRepositoryTest {
         val item1 = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Item 1")
         val item2 = Item(id = "2", rackId = "rack1", slotId = "slot2", name = "Item 2")
         val item3 = Item(id = "3", rackId = "rack2", slotId = "slot1", name = "Item 3")
-        repository.saveItem(item1)
-        repository.saveItem(item2)
-        repository.saveItem(item3)
+        sut.saveItem(item =item1)
+        sut.saveItem(item =item2)
+        sut.saveItem(item =item3)
 
-        val result = repository.getItemsByRack("rack1")
+        val result = sut.getItemsByRack(rackId = "rack1")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(2, items.size)
-        assertTrue(items.contains(item1))
-        assertTrue(items.contains(item2))
-        assertTrue(!items.contains(item3))
+        assertEquals(expected = 2, actual = items.size)
+        assertTrue(actual = items.contains(item1))
+        assertTrue(actual = items.contains(item2))
+        assertTrue(actual = !items.contains(item3))
     }
 
     @Test
     fun `GIVEN any state WHEN getItemsByRack with blank rackId THEN returns ValidationError`() = runTest {
 
-        val result = repository.getItemsByRack("")
+        val result = sut.getItemsByRack(rackId = "")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("rackId", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "rackId", actual = error.field)
     }
 
     @Test
@@ -59,85 +65,85 @@ class InMemoryItemRepositoryTest {
         val item1 = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Item 1")
         val item2 = Item(id = "2", rackId = "rack1", slotId = "slot1", name = "Item 2")
         val item3 = Item(id = "3", rackId = "rack1", slotId = "slot2", name = "Item 3")
-        repository.saveItem(item1)
-        repository.saveItem(item2)
-        repository.saveItem(item3)
+        sut.saveItem(item =item1)
+        sut.saveItem(item =item2)
+        sut.saveItem(item =item3)
 
-        val result = repository.getItemsBySlot("rack1", "slot1")
+        val result = sut.getItemsBySlot(rackId = "rack1", slotId = "slot1")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(2, items.size)
-        assertTrue(items.contains(item1))
-        assertTrue(items.contains(item2))
-        assertTrue(!items.contains(item3))
+        assertEquals(expected = 2, actual = items.size)
+        assertTrue(actual = items.contains(item1))
+        assertTrue(actual = items.contains(item2))
+        assertTrue(actual = !items.contains(item3))
     }
 
     @Test
     fun `GIVEN empty repository WHEN getItemsBySlot THEN returns empty list`() = runTest {
 
-        val result = repository.getItemsBySlot("rack1", "slot1")
+        val result = sut.getItemsBySlot(rackId = "rack1", slotId = "slot1")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(0, items.size)
+        assertEquals(expected = 0, actual = items.size)
     }
 
     @Test
     fun `GIVEN any state WHEN getItemsBySlot with blank rackId THEN returns ValidationError`() = runTest {
 
-        val result = repository.getItemsBySlot("", "slot1")
+        val result = sut.getItemsBySlot(rackId = "", slotId = "slot1")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("rackId", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "rackId", actual = error.field)
     }
 
     @Test
     fun `GIVEN any state WHEN getItemsBySlot with blank slotId THEN returns ValidationError`() = runTest {
 
-        val result = repository.getItemsBySlot("rack1", "")
+        val result = sut.getItemsBySlot(rackId = "rack1", slotId = "")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("slotId", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "slotId", actual = error.field)
     }
 
     @Test
     fun `GIVEN saved item WHEN getItemById with existing id THEN returns item`() = runTest {
         val item = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Test Item")
-        repository.saveItem(item)
+        sut.saveItem(item =item)
 
-        val result = repository.getItemById("1")
+        val result = sut.getItemById(id = "1")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val retrievedItem = result.getOrNull()
-        assertEquals(item, retrievedItem)
+        assertEquals(expected = item, actual = retrievedItem)
     }
 
     @Test
     fun `GIVEN empty repository WHEN getItemById with unknown id THEN returns NotFound`() = runTest {
 
-        val result = repository.getItemById("nonexistent")
+        val result = sut.getItemById(id = "nonexistent")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.NotFound)
-        assertEquals("Item", error.resource)
-        assertEquals("nonexistent", error.id)
+        assertTrue(actual = error is DomainError.NotFound)
+        assertEquals(expected = "Item", actual = error.resource)
+        assertEquals(expected = "nonexistent", actual = error.id)
     }
 
     @Test
     fun `GIVEN any state WHEN getItemById with blank id THEN returns ValidationError`() = runTest {
 
-        val result = repository.getItemById("")
+        val result = sut.getItemById(id = "")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("id", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "id", actual = error.field)
     }
 
     @Test
@@ -145,175 +151,175 @@ class InMemoryItemRepositoryTest {
         val item1 = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Hammer")
         val item2 = Item(id = "2", rackId = "rack1", slotId = "slot2", name = "Screwdriver")
         val item3 = Item(id = "3", rackId = "rack2", slotId = "slot1", name = "Hammer Set")
-        repository.saveItem(item1)
-        repository.saveItem(item2)
-        repository.saveItem(item3)
+        sut.saveItem(item =item1)
+        sut.saveItem(item =item2)
+        sut.saveItem(item =item3)
 
-        val result = repository.searchItems("hammer")
+        val result = sut.searchItems(query = "hammer")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(2, items.size)
-        assertTrue(items.contains(item1))
-        assertTrue(items.contains(item3))
-        assertTrue(!items.contains(item2))
+        assertEquals(expected = 2, actual = items.size)
+        assertTrue(actual = items.contains(item1))
+        assertTrue(actual = items.contains(item3))
+        assertTrue(actual = !items.contains(item2))
     }
 
     @Test
     fun `GIVEN items with descriptions WHEN searchItems by description THEN returns matching items`() = runTest {
         val item1 = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Tool", description = "Heavy duty")
         val item2 = Item(id = "2", rackId = "rack1", slotId = "slot2", name = "Tool", description = "Lightweight")
-        repository.saveItem(item1)
-        repository.saveItem(item2)
+        sut.saveItem(item =item1)
+        sut.saveItem(item =item2)
 
-        val result = repository.searchItems("heavy")
+        val result = sut.searchItems(query = "heavy")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(1, items.size)
-        assertTrue(items.contains(item1))
-        assertTrue(!items.contains(item2))
+        assertEquals(expected = 1, actual = items.size)
+        assertTrue(actual = items.contains(item1))
+        assertTrue(actual = !items.contains(item2))
     }
 
     @Test
     fun `GIVEN items WHEN searchItems matches both name and description THEN returns all matching items`() = runTest {
         val item1 = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Tool", description = "Heavy duty")
         val item2 = Item(id = "2", rackId = "rack1", slotId = "slot2", name = "Heavy Box", description = "Storage")
-        repository.saveItem(item1)
-        repository.saveItem(item2)
+        sut.saveItem(item =item1)
+        sut.saveItem(item =item2)
 
-        val result = repository.searchItems("heavy")
+        val result = sut.searchItems(query = "heavy")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(2, items.size)
-        assertTrue(items.contains(item1))
-        assertTrue(items.contains(item2))
+        assertEquals(expected = 2, actual = items.size)
+        assertTrue(actual = items.contains(item1))
+        assertTrue(actual = items.contains(item2))
     }
 
     @Test
     fun `GIVEN any state WHEN searchItems with blank query THEN returns empty list`() = runTest {
 
-        val result = repository.searchItems("")
+        val result = sut.searchItems(query = "")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(0, items.size)
+        assertEquals(expected = 0, actual = items.size)
     }
 
     @Test
     fun `GIVEN empty repository WHEN saveItem with valid item THEN creates and returns item`() = runTest {
         val item = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "New Item", description = "Description")
 
-        val result = repository.saveItem(item)
+        val result = sut.saveItem(item =item)
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val savedItem = result.getOrNull()
-        assertEquals(item.id, savedItem?.id)
-        assertEquals(item.name, savedItem?.name)
-        assertEquals(item.description, savedItem?.description)
-        assertEquals(item.rackId, savedItem?.rackId)
-        assertEquals(item.slotId, savedItem?.slotId)
+        assertEquals(expected = item.id, actual = savedItem?.id)
+        assertEquals(expected = item.name, actual = savedItem?.name)
+        assertEquals(expected = item.description, actual = savedItem?.description)
+        assertEquals(expected = item.rackId, actual = savedItem?.rackId)
+        assertEquals(expected = item.slotId, actual = savedItem?.slotId)
     }
 
     @Test
     fun `GIVEN existing item WHEN saveItem with same id THEN updates and returns item`() = runTest {
         val item = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Original Name")
-        repository.saveItem(item)
+        sut.saveItem(item =item)
         val updatedItem = item.copy(name = "Updated Name", description = "New Description")
 
-        val result = repository.saveItem(updatedItem)
+        val result = sut.saveItem(item =updatedItem)
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val savedItem = result.getOrNull()
-        assertEquals("Updated Name", savedItem?.name)
-        assertEquals("New Description", savedItem?.description)
-        assertTrue(savedItem?.updatedAt != null)
+        assertEquals(expected = "Updated Name", actual = savedItem?.name)
+        assertEquals(expected = "New Description", actual = savedItem?.description)
+        assertTrue(actual = savedItem?.updatedAt != null)
     }
 
     @Test
     fun `GIVEN any state WHEN saveItem with blank id THEN returns ValidationError`() = runTest {
         val item = Item(id = "", rackId = "rack1", slotId = "slot1", name = "Invalid Item")
 
-        val result = repository.saveItem(item)
+        val result = sut.saveItem(item =item)
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("id", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "id", actual = error.field)
     }
 
     @Test
     fun `GIVEN any state WHEN saveItem with blank rackId THEN returns ValidationError`() = runTest {
         val item = Item(id = "1", rackId = "", slotId = "slot1", name = "Invalid Item")
 
-        val result = repository.saveItem(item)
+        val result = sut.saveItem(item =item)
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("rackId", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "rackId", actual = error.field)
     }
 
     @Test
     fun `GIVEN any state WHEN saveItem with blank slotId THEN returns ValidationError`() = runTest {
         val item = Item(id = "1", rackId = "rack1", slotId = "", name = "Invalid Item")
 
-        val result = repository.saveItem(item)
+        val result = sut.saveItem(item =item)
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("slotId", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "slotId", actual = error.field)
     }
 
     @Test
     fun `GIVEN saved item WHEN deleteItem with existing id THEN removes item`() = runTest {
         val item = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "To Delete")
-        repository.saveItem(item)
+        sut.saveItem(item =item)
 
-        val deleteResult = repository.deleteItem("1")
+        val deleteResult = sut.deleteItem(id = "1")
 
-        assertTrue(deleteResult.isOk)
-        val getResult = repository.getItemById("1")
-        assertTrue(getResult.isErr)
+        assertTrue(actual = deleteResult.isOk)
+        val getResult = sut.getItemById(id = "1")
+        assertTrue(actual = getResult.isErr)
         val error = getResult.failureOrNull()
-        assertTrue(error is DomainError.NotFound)
+        assertTrue(actual = error is DomainError.NotFound)
     }
 
     @Test
     fun `GIVEN empty repository WHEN deleteItem with unknown id THEN returns NotFound`() = runTest {
 
-        val result = repository.deleteItem("nonexistent")
+        val result = sut.deleteItem(id = "nonexistent")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.NotFound)
-        assertEquals("Item", error.resource)
+        assertTrue(actual = error is DomainError.NotFound)
+        assertEquals(expected = "Item", actual = error.resource)
     }
 
     @Test
     fun `GIVEN any state WHEN deleteItem with blank id THEN returns ValidationError`() = runTest {
 
-        val result = repository.deleteItem("")
+        val result = sut.deleteItem(id = "")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("id", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "id", actual = error.field)
     }
 
     @Test
     fun `GIVEN multiple saved items WHEN clear THEN getAllRacks returns empty list`() = runTest {
-        repository.saveItem(Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Item 1"))
-        repository.saveItem(Item(id = "2", rackId = "rack1", slotId = "slot2", name = "Item 2"))
+        sut.saveItem(item =Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Item 1"))
+        sut.saveItem(item =Item(id = "2", rackId = "rack1", slotId = "slot2", name = "Item 2"))
 
-        repository.clear()
-        val result = repository.getItemsByRack("rack1")
+        sut.clear()
+        val result = sut.getItemsByRack(rackId = "rack1")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(0, items.size)
+        assertEquals(expected = 0, actual = items.size)
     }
 
     @Test
@@ -323,16 +329,16 @@ class InMemoryItemRepositoryTest {
         }
 
         items.map { item ->
-            async { repository.saveItem(item) }
+            async { sut.saveItem(item =item) }
         }.awaitAll()
 
-        val result = repository.getItemsByRack("rack1")
-        assertTrue(result.isOk)
+        val result = sut.getItemsByRack(rackId = "rack1")
+        assertTrue(actual = result.isOk)
         val savedItems: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(100, savedItems.size)
+        assertEquals(expected = 100, actual = savedItems.size)
         val savedIds = savedItems.map { it.id }.toSet()
         val expectedIds = items.map { it.id }.toSet()
-        assertEquals(expectedIds, savedIds)
+        assertEquals(expected = expectedIds, actual = savedIds)
     }
 
     @Test
@@ -340,16 +346,16 @@ class InMemoryItemRepositoryTest {
         val items = (1..50).map { i ->
             Item(id = "item$i", rackId = "rack1", slotId = "slot1", name = "Item $i")
         }
-        items.forEach { repository.saveItem(it) }
+        items.forEach { sut.saveItem(item =it) }
 
         val readResults = (1..50).map { i ->
-            async { repository.getItemById("item$i") }
+            async { sut.getItemById(id = "item$i") }
         }.awaitAll()
 
-        assertEquals(50, readResults.size)
+        assertEquals(expected = 50, actual = readResults.size)
         readResults.forEach { result ->
-            assertTrue(result.isOk)
-            assertTrue(result.getOrNull() != null)
+            assertTrue(actual = result.isOk)
+            assertTrue(actual = result.getOrNull() != null)
         }
     }
 
@@ -359,11 +365,11 @@ class InMemoryItemRepositoryTest {
             val initialItems = (1..20).map { i ->
                 Item(id = "item$i", rackId = "rack1", slotId = "slot1", name = "Item $i")
             }
-            initialItems.forEach { repository.saveItem(it) }
+            initialItems.forEach { sut.saveItem(item =it) }
 
             val writeJobs = (21..40).map { i ->
                 async {
-                    repository.saveItem(
+                    sut.saveItem(item =
                         Item(
                             id = "item$i",
                             rackId = "rack1",
@@ -374,20 +380,20 @@ class InMemoryItemRepositoryTest {
                 }
             }
             val readJobs = (1..20).map { i ->
-                async { repository.getItemById("item$i") }
+                async { sut.getItemById(id = "item$i") }
             }
 
             writeJobs.awaitAll()
             val readResults = readJobs.awaitAll()
 
-            assertEquals(20, readResults.size)
+            assertEquals(expected = 20, actual = readResults.size)
             readResults.forEach { result ->
-                assertTrue(result.isOk)
+                assertTrue(actual = result.isOk)
             }
-            val allItemsResult = repository.getItemsByRack("rack1")
-            assertTrue(allItemsResult.isOk)
+            val allItemsResult = sut.getItemsByRack(rackId = "rack1")
+            assertTrue(actual = allItemsResult.isOk)
             val allItems: List<Item> = allItemsResult.getOrNull() ?: emptyList()
-            assertEquals(40, allItems.size)
+            assertEquals(expected = 40, actual = allItems.size)
         }
 
     @Test
@@ -395,20 +401,20 @@ class InMemoryItemRepositoryTest {
         val items = (1..50).map { i ->
             Item(id = "item$i", rackId = "rack1", slotId = "slot1", name = "Item $i")
         }
-        items.forEach { repository.saveItem(it) }
+        items.forEach { sut.saveItem(item =it) }
 
         val deleteJobs = (1..50).map { i ->
-            async { repository.deleteItem("item$i") }
+            async { sut.deleteItem(id = "item$i") }
         }.awaitAll()
 
-        assertEquals(50, deleteJobs.size)
+        assertEquals(expected = 50, actual = deleteJobs.size)
         deleteJobs.forEach { result ->
-            assertTrue(result.isOk)
+            assertTrue(actual = result.isOk)
         }
-        val result = repository.getItemsByRack("rack1")
-        assertTrue(result.isOk)
+        val result = sut.getItemsByRack(rackId = "rack1")
+        assertTrue(actual = result.isOk)
         val remainingItems: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(0, remainingItems.size)
+        assertEquals(expected = 0, actual = remainingItems.size)
     }
 
     @Test
@@ -416,21 +422,21 @@ class InMemoryItemRepositoryTest {
         val initialItems = (1..30).map { i ->
             Item(id = "item$i", rackId = "rack1", slotId = "slot1", name = "Item $i")
         }
-        initialItems.forEach { repository.saveItem(it) }
+        initialItems.forEach { sut.saveItem(item =it) }
 
         val saveJobs = (31..50).map { i ->
             async {
-                repository.saveItem(Item(id = "item$i", rackId = "rack1", slotId = "slot1", name = "Item $i"))
+                sut.saveItem(item =Item(id = "item$i", rackId = "rack1", slotId = "slot1", name = "Item $i"))
             }
         }
         val readJobs = (1..30).map { i ->
-            async { repository.getItemById("item$i") }
+            async { sut.getItemById(id = "item$i") }
         }
         val deleteJobs = (1..10).map { i ->
-            async { repository.deleteItem("item$i") }
+            async { sut.deleteItem(id = "item$i") }
         }
         val searchJobs = (1..5).map {
-            async { repository.searchItems("Item") }
+            async { sut.searchItems(query = "Item") }
         }
 
         saveJobs.awaitAll()
@@ -438,13 +444,13 @@ class InMemoryItemRepositoryTest {
         deleteJobs.awaitAll()
         searchJobs.awaitAll()
 
-        val result = repository.getItemsByRack("rack1")
-        assertTrue(result.isOk)
+        val result = sut.getItemsByRack(rackId = "rack1")
+        assertTrue(actual = result.isOk)
         val allItems: List<Item> = result.getOrNull() ?: emptyList()
-        assertEquals(40, allItems.size)
+        assertEquals(expected = 40, actual = allItems.size)
         (1..10).forEach { i ->
-            val getResult = repository.getItemById("item$i")
-            assertTrue(getResult.isErr)
+            val getResult = sut.getItemById(id = "item$i")
+            assertTrue(actual = getResult.isErr)
         }
     }
 }

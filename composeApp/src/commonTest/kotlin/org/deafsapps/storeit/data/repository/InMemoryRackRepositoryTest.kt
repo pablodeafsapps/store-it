@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.data.repository
 
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -12,155 +13,162 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 
 class InMemoryRackRepositoryTest {
-    private val repository = InMemoryRackRepository()
+    private lateinit var sut: InMemoryRackRepository
+
+    @BeforeTest
+    fun setUp() {
+        sut = InMemoryRackRepository()
+    }
 
     @Test
     fun `GIVEN empty repository WHEN getAllRacks THEN returns empty list`() = runTest {
 
-        val result = repository.getAllRacks()
+        val result = sut.getAllRacks()
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val racks: List<Rack> = result.getOrNull() ?: emptyList()
-        assertEquals(0, racks.size)
+        assertEquals(expected = 0, actual = racks.size)
     }
 
     @Test
     fun `GIVEN two saved racks WHEN getAllRacks THEN returns both`() = runTest {
         val rack1 = Rack(id = "1", name = "Rack 1")
         val rack2 = Rack(id = "2", name = "Rack 2")
-        repository.saveRack(rack1)
-        repository.saveRack(rack2)
+        sut.saveRack(rack = rack1)
+        sut.saveRack(rack = rack2)
 
-        val result = repository.getAllRacks()
+        val result = sut.getAllRacks()
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val racks: List<Rack> = result.getOrNull() ?: emptyList()
-        assertEquals(2, racks.size)
-        assertTrue(racks.containsAll(listOf(rack1, rack2)))
+        assertEquals(expected = 2, actual = racks.size)
+        assertTrue(actual = racks.containsAll(listOf(rack1, rack2)))
     }
 
     @Test
     fun `GIVEN saved rack WHEN getRackById with existing id THEN returns rack`() = runTest {
         val rack = Rack(id = "1", name = "Test Rack")
-        repository.saveRack(rack)
+        val saveResult = sut.saveRack(rack = rack)
+        assertTrue(actual = saveResult.isOk)
+        val savedRack = saveResult.getOrNull()!!
 
-        val result = repository.getRackById("1")
+        val result = sut.getRackById(id = "1")
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val retrievedRack = result.getOrNull()
-        assertEquals(rack, retrievedRack)
+        assertEquals(expected = savedRack, actual = retrievedRack)
     }
 
     @Test
     fun `GIVEN empty repository WHEN getRackById with unknown id THEN returns NotFound`() = runTest {
 
-        val result = repository.getRackById("nonexistent")
+        val result = sut.getRackById(id = "nonexistent")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.NotFound)
-        assertEquals("Rack", error.resource)
-        assertEquals("nonexistent", error.id)
+        assertTrue(actual = error is DomainError.NotFound)
+        assertEquals(expected = "Rack", actual = error.resource)
+        assertEquals(expected = "nonexistent", actual = error.id)
     }
 
     @Test
     fun `GIVEN any state WHEN getRackById with blank id THEN returns ValidationError`() = runTest {
 
-        val result = repository.getRackById("")
+        val result = sut.getRackById(id = "")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("id", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "id", actual = error.field)
     }
 
     @Test
     fun `GIVEN empty repository WHEN saveRack with valid rack THEN creates and returns rack`() = runTest {
         val rack = Rack(id = "1", name = "New Rack", description = "Description")
 
-        val result = repository.saveRack(rack)
+        val result = sut.saveRack(rack = rack)
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val savedRack = result.getOrNull()
-        assertEquals(rack.id, savedRack?.id)
-        assertEquals(rack.name, savedRack?.name)
-        assertEquals(rack.description, savedRack?.description)
+        assertEquals(expected = rack.id, actual = savedRack?.id)
+        assertEquals(expected = rack.name, actual = savedRack?.name)
+        assertEquals(expected = rack.description, actual = savedRack?.description)
     }
 
     @Test
     fun `GIVEN existing rack WHEN saveRack with same id THEN updates and returns rack`() = runTest {
         val rack = Rack(id = "1", name = "Original Name")
-        repository.saveRack(rack)
+        sut.saveRack(rack = rack)
         val updatedRack = rack.copy(name = "Updated Name", description = "New Description")
 
-        val result = repository.saveRack(updatedRack)
+        val result = sut.saveRack(rack =updatedRack)
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val savedRack = result.getOrNull()
-        assertEquals("Updated Name", savedRack?.name)
-        assertEquals("New Description", savedRack?.description)
-        assertTrue(savedRack?.updatedAt != null)
+        assertEquals(expected = "Updated Name", actual = savedRack?.name)
+        assertEquals(expected = "New Description", actual = savedRack?.description)
+        assertTrue(actual = savedRack?.updatedAt != null)
     }
 
     @Test
     fun `GIVEN any state WHEN saveRack with blank id THEN returns ValidationError`() = runTest {
         val rack = Rack(id = "", name = "Invalid Rack")
 
-        val result = repository.saveRack(rack)
+        val result = sut.saveRack(rack = rack)
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("id", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "id", actual = error.field)
     }
 
     @Test
     fun `GIVEN saved rack WHEN deleteRack with existing id THEN removes rack`() = runTest {
         val rack = Rack(id = "1", name = "To Delete")
-        repository.saveRack(rack)
+        sut.saveRack(rack = rack)
 
-        val deleteResult = repository.deleteRack("1")
+        val deleteResult = sut.deleteRack(id = "1")
 
-        assertTrue(deleteResult.isOk)
-        val getResult = repository.getRackById("1")
-        assertTrue(getResult.isErr)
+        assertTrue(actual = deleteResult.isOk)
+        val getResult = sut.getRackById(id = "1")
+        assertTrue(actual = getResult.isErr)
         val error = getResult.failureOrNull()
-        assertTrue(error is DomainError.NotFound)
+        assertTrue(actual = error is DomainError.NotFound)
     }
 
     @Test
     fun `GIVEN empty repository WHEN deleteRack with unknown id THEN returns NotFound`() = runTest {
 
-        val result = repository.deleteRack("nonexistent")
+        val result = sut.deleteRack(id = "nonexistent")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.NotFound)
-        assertEquals("Rack", error.resource)
+        assertTrue(actual = error is DomainError.NotFound)
+        assertEquals(expected = "Rack", actual = error.resource)
     }
 
     @Test
     fun `GIVEN any state WHEN deleteRack with blank id THEN returns ValidationError`() = runTest {
 
-        val result = repository.deleteRack("")
+        val result = sut.deleteRack(id = "")
 
-        assertTrue(result.isErr)
+        assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("id", error.field)
+        assertTrue(actual = error is DomainError.ValidationError)
+        assertEquals(expected = "id", actual = error.field)
     }
 
     @Test
     fun `GIVEN two saved racks WHEN clear THEN getAllRacks returns empty list`() = runTest {
-        repository.saveRack(Rack(id = "1", name = "Rack 1"))
-        repository.saveRack(Rack(id = "2", name = "Rack 2"))
+        sut.saveRack(rack =Rack(id = "1", name = "Rack 1"))
+        sut.saveRack(rack =Rack(id = "2", name = "Rack 2"))
 
-        repository.clear()
-        val result = repository.getAllRacks()
+        sut.clear()
+        val result = sut.getAllRacks()
 
-        assertTrue(result.isOk)
+        assertTrue(actual = result.isOk)
         val racks: List<Rack> = result.getOrNull() ?: emptyList()
-        assertEquals(0, racks.size)
+        assertEquals(expected = 0, actual = racks.size)
     }
 
     @Test
@@ -170,16 +178,16 @@ class InMemoryRackRepositoryTest {
         }
 
         racks.map { rack ->
-            async { repository.saveRack(rack) }
+            async { sut.saveRack(rack = rack) }
         }.awaitAll()
 
-        val result = repository.getAllRacks()
-        assertTrue(result.isOk)
+        val result = sut.getAllRacks()
+        assertTrue(actual = result.isOk)
         val savedRacks: List<Rack> = result.getOrNull() ?: emptyList()
-        assertEquals(100, savedRacks.size)
+        assertEquals(expected = 100, actual = savedRacks.size)
         val savedIds = savedRacks.map { it.id }.toSet()
         val expectedIds = racks.map { it.id }.toSet()
-        assertEquals(expectedIds, savedIds)
+        assertEquals(expected = expectedIds, actual = savedIds)
     }
 
     @Test
@@ -187,16 +195,16 @@ class InMemoryRackRepositoryTest {
         val racks = (1..50).map { i ->
             Rack(id = "rack$i", name = "Rack $i")
         }
-        racks.forEach { repository.saveRack(it) }
+        racks.forEach { sut.saveRack(rack =it) }
 
         val readResults = (1..50).map { i ->
-            async { repository.getRackById("rack$i") }
+            async { sut.getRackById(id = "rack$i") }
         }.awaitAll()
 
-        assertEquals(50, readResults.size)
+        assertEquals(expected = 50, actual = readResults.size)
         readResults.forEach { result ->
-            assertTrue(result.isOk)
-            assertTrue(result.getOrNull() != null)
+            assertTrue(actual = result.isOk)
+            assertTrue(actual = result.getOrNull() != null)
         }
     }
 
@@ -206,28 +214,28 @@ class InMemoryRackRepositoryTest {
             val initialRacks = (1..20).map { i ->
                 Rack(id = "rack$i", name = "Rack $i")
             }
-            initialRacks.forEach { repository.saveRack(it) }
+            initialRacks.forEach { sut.saveRack(rack =it) }
 
             val writeJobs = (21..40).map { i ->
                 async {
-                    repository.saveRack(Rack(id = "rack$i", name = "Rack $i"))
+                    sut.saveRack(rack =Rack(id = "rack$i", name = "Rack $i"))
                 }
             }
             val readJobs = (1..20).map { i ->
-                async { repository.getRackById("rack$i") }
+                async { sut.getRackById(id = "rack$i") }
             }
 
             writeJobs.awaitAll()
             val readResults = readJobs.awaitAll()
 
-            assertEquals(20, readResults.size)
+            assertEquals(expected = 20, actual = readResults.size)
             readResults.forEach { result ->
-                assertTrue(result.isOk)
+                assertTrue(actual = result.isOk)
             }
-            val allRacksResult = repository.getAllRacks()
-            assertTrue(allRacksResult.isOk)
+            val allRacksResult = sut.getAllRacks()
+            assertTrue(actual = allRacksResult.isOk)
             val allRacks: List<Rack> = allRacksResult.getOrNull() ?: emptyList()
-            assertEquals(40, allRacks.size)
+            assertEquals(expected = 40, actual = allRacks.size)
         }
 
     @Test
@@ -235,20 +243,20 @@ class InMemoryRackRepositoryTest {
         val racks = (1..50).map { i ->
             Rack(id = "rack$i", name = "Rack $i")
         }
-        racks.forEach { repository.saveRack(it) }
+        racks.forEach { sut.saveRack(rack =it) }
 
         val deleteJobs = (1..50).map { i ->
-            async { repository.deleteRack("rack$i") }
+            async { sut.deleteRack(id = "rack$i") }
         }.awaitAll()
 
-        assertEquals(50, deleteJobs.size)
+        assertEquals(expected = 50, actual = deleteJobs.size)
         deleteJobs.forEach { result ->
-            assertTrue(result.isOk)
+            assertTrue(actual = result.isOk)
         }
-        val result = repository.getAllRacks()
-        assertTrue(result.isOk)
+        val result = sut.getAllRacks()
+        assertTrue(actual = result.isOk)
         val remainingRacks: List<Rack> = result.getOrNull() ?: emptyList()
-        assertEquals(0, remainingRacks.size)
+        assertEquals(expected = 0, actual = remainingRacks.size)
     }
 
     @Test
@@ -256,21 +264,21 @@ class InMemoryRackRepositoryTest {
         val initialRacks = (1..30).map { i ->
             Rack(id = "rack$i", name = "Rack $i")
         }
-        initialRacks.forEach { repository.saveRack(it) }
+        initialRacks.forEach { sut.saveRack(rack =it) }
 
         val saveJobs = (31..50).map { i ->
             async {
-                repository.saveRack(Rack(id = "rack$i", name = "Rack $i"))
+                sut.saveRack(rack =Rack(id = "rack$i", name = "Rack $i"))
             }
         }
         val readJobs = (1..30).map { i ->
-            async { repository.getRackById("rack$i") }
+            async { sut.getRackById(id = "rack$i") }
         }
         val deleteJobs = (1..10).map { i ->
-            async { repository.deleteRack("rack$i") }
+            async { sut.deleteRack(id = "rack$i") }
         }
         val getAllJobs = (1..5).map {
-            async { repository.getAllRacks() }
+            async { sut.getAllRacks() }
         }
 
         saveJobs.awaitAll()
@@ -278,13 +286,13 @@ class InMemoryRackRepositoryTest {
         deleteJobs.awaitAll()
         getAllJobs.awaitAll()
 
-        val result = repository.getAllRacks()
-        assertTrue(result.isOk)
+        val result = sut.getAllRacks()
+        assertTrue(actual = result.isOk)
         val allRacks: List<Rack> = result.getOrNull() ?: emptyList()
-        assertEquals(40, allRacks.size)
+        assertEquals(expected = 40, actual = allRacks.size)
         (1..10).forEach { i ->
-            val getResult = repository.getRackById("rack$i")
-            assertTrue(getResult.isErr)
+            val getResult = sut.getRackById(id = "rack$i")
+            assertTrue(actual = getResult.isErr)
         }
     }
 }
