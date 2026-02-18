@@ -283,11 +283,18 @@ This section describes how an engineer (or automation agent) should add or modif
   - Bind SwiftUI views to shared ViewModels or Swift wrappers.
   - Use `async/await`, Combine, or other mechanisms to observe KMP state consistently.
 
-### 6.4 Testing
+### 6.4 Code style
+
+- **Named parameters**: Use named parameters at all call sites (functions and constructors), e.g. `paramName = value`, so that call sites stay readable and refactor-safe.
+
+### 6.5 Testing
 
 - **commonTest**:
   - Test use cases with fake repositories.
   - Test repositories with fake data sources (or in-memory implementations).
+  - **Subject under test (SUT)**: Hold the class or entity under test in a variable named **`sut`**. Use `sut` for all calls to the tested type in the test body.
+  - **Initialisation**: Initialise the SUT and dependencies in a **`setUp()`** function annotated with **`@BeforeTest`**, using **`lateinit var`** so each test gets a fresh instance. Do not assign the SUT at class level.
+  - **Dependencies: use fakes**: Do not instantiate real implementations (e.g. `InMemoryRackRepository`) when the test has a dependency. Use a **fake** that implements the interface (e.g. `FakeRackRepository` in `commonTest/.../fake/`). Name the dependency clearly (e.g. `fakeRackRepository` of type `RackRepository` or `FakeRackRepository`). In `setUp()` create the fake and assign it; in the test, set the fake’s return values (e.g. `fakeRackRepository.getAllRacksResult = listOf(...).ok()`) so the test can assess the SUT’s behaviour.
   - **Suspend / coroutines**: Use `runTest { }` from `kotlinx-coroutines-test` (not `runBlocking`) for tests that call suspend functions. Add `kotlinx-coroutines-test` to `commonTest` dependencies; use `fun testName() = runTest { ... }`.
   - **Test naming**: Follow GIVEN–WHEN–THEN with **GIVEN**, **WHEN**, **THEN** in caps in the test name (e.g. `` `GIVEN empty repository WHEN getAllRacks THEN returns empty list`() ``).
   - **Test body structure**: Structure each test in three sections (setup → action → assertions) separated by **blank lines only**; do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup (e.g. “empty repository” or “any state”), leave a single blank line after the test opening, then the WHEN and THEN blocks.

@@ -31,6 +31,7 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 
 ### 1.4 Idioms
 
+- **Use named parameters** at all call sites: when calling functions or constructors, use the form `paramName = value` (e.g. `Rack(id = "1", name = "Rack 1")`, `sut.saveRack(rack = rack)`, `assertEquals(expected = 0, actual = list.size)`). This improves readability and makes refactors safer.
 - Prefer `val` over `var`; use `var` only when state must change.
 - **Prefer expression-bodied functions**: Use `= expression` instead of `{ return expression }` when the body is a single expression (single- or multi-line). Avoid the `return` keyword where an expression form is clear: e.g. `fun get(id: String) = repo.findById(id)` or `fun delete(id: String) = when { id.isBlank() -> error.err(); else -> unit.ok() }`.
 - Use expression-bodied members when they fit on one line: `fun id(): String = uuid`.
@@ -226,16 +227,24 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 ### 7.1 Unit Tests
 
 - Test use cases with fake or mock repositories (interfaces); test repository implementations with fake data sources.
+- **Subject under test (SUT)**: The class or entity under test must be held in a variable named **`sut`**. All references to the tested type in the test body use `sut` (e.g. `sut(Unit)`, `sut.saveRack(...)`).
+- **Initialisation**: Initialise the SUT and its dependencies in a **`setUp`** function annotated with **`@BeforeTest`**, using **`lateinit var`** for the SUT and any shared dependencies so each test starts from a fresh setup. Do not assign the SUT or dependencies at class level; assign them in `setUp()`.
 - **Naming**: Use **GIVEN–WHEN–THEN** with the words **GIVEN**, **WHEN**, and **THEN** in caps in the test name (e.g. `` `GIVEN saved rack WHEN getRackById with existing id THEN returns rack`() ``). Alternative patterns: `methodUnderTest_scenario_expectedOutcome` or `shouldDoSomethingWhenCondition` only when GIVEN–WHEN–THEN does not fit.
 - **Test body structure**: Organise each test into three sections (setup → action → assertions) separated by **blank lines only**. Do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup section, leave a single blank line after the test opening, then the action and assertion blocks.
 - **Coroutines / suspend**: For tests that call suspend functions, use `runTest { }` from `kotlinx-coroutines-test` (e.g. `fun testName() = runTest { ... }`). Do not use `runBlocking` in tests. Add `kotlinx-coroutines-test` to the test source set dependencies.
 - One logical behaviour per test; avoid testing implementation details (e.g. exact call count unless contract requires it).
 
-### 7.2 Fakes vs Mocks
+### 7.2 Dependencies: use fakes, not real implementations
 
-- Prefer fakes (in-memory or stub implementations) for speed and stability; use mocks when you need to assert interactions (e.g. “save was called once”).
+- **Do not instantiate real dependencies** in unit tests (e.g. do not use `InMemoryRackRepository()` when testing a use case that depends on `RackRepository`). Use a **fake** that implements the same interface.
+- **Name fakes clearly**: e.g. `fakeRackRepository` of type `RackRepository` (or the concrete fake type, e.g. `FakeRackRepository`, if you need to configure it). Initialise the fake in `setUp()` and assign **return values** (or state) on the fake so the test can assess the SUT behaviour. For example, set `fakeRackRepository.getAllRacksResult = listOf(rack1, rack2).ok()` before invoking the use case to verify it returns that list.
+- Fakes live in the test source set (e.g. `commonTest/.../fake/`) and implement the production interface with configurable results or simple in-memory behaviour.
 
-### 7.3 Shared Tests
+### 7.3 Fakes vs Mocks
+
+- Prefer fakes (in-memory or stub implementations with configurable return values) for speed and stability; use mocks when you need to assert interactions (e.g. “save was called once”).
+
+### 7.5 Shared Tests
 
 - commonTest: run use case and repository interface tests with shared fakes; no Android/iOS APIs.
 - Platform tests: ViewModel, UI, or platform-specific code in androidTest/iosTest or equivalent.
