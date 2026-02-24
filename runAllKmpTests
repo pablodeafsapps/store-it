@@ -1,0 +1,1 @@
+./gradlew clean detekt :androidApp:assembleDebug :composeApp:linkDebugFrameworkIosSimulatorArm64 --no-daemon
