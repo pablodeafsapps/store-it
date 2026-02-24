@@ -6,7 +6,9 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.repository.RackRepository
 
-internal class SaveRackUseCase(
+typealias SaveRackUseCaseType = UseCase<Rack, Result<DomainError, Rack>>
+
+class SaveRackUseCase(
     private val rackRepository: RackRepository,
 ) : UseCase<Rack, Result<DomainError, Rack>> {
     override suspend fun invoke(input: Rack): Result<DomainError, Rack> = rackRepository.saveRack(input)

@@ -7,6 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import org.deafsapps.storeit.App
+import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
+import org.deafsapps.storeit.data.repository.InMemoryRackRepository
+import org.deafsapps.storeit.domain.usecase.SaveRackUseCase
+import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,7 +18,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            App()
+            AddRackScreen(
+                onNavigateBack = {},
+                viewModel = AddRackViewModel(
+                    saveRackUseCase = SaveRackUseCase(rackRepository = InMemoryRackRepository()),
+                ),
+            )
         }
     }
 }

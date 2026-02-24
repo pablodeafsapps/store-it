@@ -9,7 +9,7 @@ import kotlin.time.Clock
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-internal class InMemoryRackRepository : RackRepository {
+class InMemoryRackRepository : RackRepository {
     private val racks = mutableMapOf<String, Rack>()
     private val mutex = Mutex()
 

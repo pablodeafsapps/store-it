@@ -2,7 +2,7 @@ package org.deafsapps.storeit.domain.model
 
 import kotlin.time.Clock
 
-internal data class Rack(
+data class Rack(
     val id: String,
     val name: String,
     val description: String = "",

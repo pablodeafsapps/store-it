@@ -33,6 +33,8 @@ dependencies {
     implementation(projects.composeApp)
 
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.material3)
+    implementation(libs.coil.compose)
     debugImplementation(libs.compose.uiTooling)
 
     testImplementation(libs.junit)

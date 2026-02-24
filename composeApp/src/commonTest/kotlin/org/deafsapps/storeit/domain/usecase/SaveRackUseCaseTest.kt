@@ -14,8 +14,8 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.fake.FakeRackRepository
 
 class SaveRackUseCaseTest {
-    private lateinit var fakeRackRepository: FakeRackRepository
     private lateinit var sut: SaveRackUseCase
+    private lateinit var fakeRackRepository: FakeRackRepository
 
     @BeforeTest
     fun setUp() {
