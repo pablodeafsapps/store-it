@@ -31,6 +31,7 @@ android {
 
 dependencies {
     implementation(projects.composeApp)
+    implementation(libs.koin.androidx.compose)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material3)

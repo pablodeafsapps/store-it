@@ -34,30 +34,37 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackUiEvent
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
-import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AddRackScreen(
     onNavigateBack: () -> Unit,
-    viewModel: AddRackViewModel = remember { AddRackViewModelFactory.createViewModel() },
+    viewModel: AddRackViewModel,
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val uiEvent by viewModel.uiEvent.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiEvent) {
-        when (uiEvent) {
-            is AddRackUiEvent.NavigateBack -> {
-                onNavigateBack()
-                viewModel.clearEvent()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(Unit) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.uiEvent.collect { uiEvent ->
+                when (uiEvent) {
+                    is AddRackUiEvent.NavigateBack -> {
+                        onNavigateBack()
+                    }
+                    is AddRackUiEvent.ShowError -> {
+                    }
+                    null -> {
+                        println("UI event not recognised!")
+                    }
+                }
             }
-            is AddRackUiEvent.ShowError -> {
-                viewModel.clearEvent()
-            }
-            null -> {}
         }
     }
 
