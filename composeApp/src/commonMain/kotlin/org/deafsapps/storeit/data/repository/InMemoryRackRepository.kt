@@ -5,11 +5,13 @@ import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.repository.RackRepository
+import org.koin.core.annotation.Single
 import kotlin.time.Clock
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class InMemoryRackRepository : RackRepository {
+@Single(binds = [RackRepository::class])
+internal class InMemoryRackRepository : RackRepository {
     private val racks = mutableMapOf<String, Rack>()
     private val mutex = Mutex()
 

@@ -1,16 +1,22 @@
 package org.deafsapps.storeit.presentation.rack.viewmodel
 
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
-import org.deafsapps.storeit.domain.usecase.SaveRackUseCase
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
 import org.deafsapps.storeit.presentation.createViewModelScope
+import org.koin.android.annotation.KoinViewModel
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -25,49 +31,48 @@ data class AddRackUiState(
 )
 
 sealed interface AddRackUiEvent {
-    data object NavigateBack : AddRackUiEvent
+    data object NavigateBack: AddRackUiEvent
     data class ShowError(val message: String) : AddRackUiEvent
 }
 
-class AddRackViewModel(
-    saveRackUseCase: SaveRackUseCaseType,
-    coroutineScope: CoroutineScope = createViewModelScope(),
-) {
-    private val saveRackUseCase: SaveRackUseCase = saveRackUseCase
-    private val coroutineScope: CoroutineScope = coroutineScope
+@KoinViewModel
+class AddRackViewModel : ViewModel(), KoinComponent {
+
+    private val saveRackUseCase: SaveRackUseCaseType by inject()
+    private val coroutineScope = createViewModelScope()
 
     private val _uiState = MutableStateFlow(AddRackUiState())
     val uiState: StateFlow<AddRackUiState> = _uiState.asStateFlow()
 
-    private val _uiEvent = MutableStateFlow<AddRackUiEvent?>(null)
-    val uiEvent: StateFlow<AddRackUiEvent?> = _uiEvent.asStateFlow()
+    private val _uiEvent = MutableSharedFlow<AddRackUiEvent?>()
+    val uiEvent: SharedFlow<AddRackUiEvent?> = _uiEvent.asSharedFlow()
 
     fun updateName(name: String) {
-        _uiState.value = _uiState.value.copy(name = name, error = null)
+        _uiState.update { _uiState.value.copy(name = name, error = null) }
     }
 
     fun updateDescription(description: String) {
-        _uiState.value = _uiState.value.copy(description = description, error = null)
+        _uiState.update { _uiState.value.copy(description = description, error = null) }
     }
 
     fun updateLocation(location: String) {
-        _uiState.value = _uiState.value.copy(location = location, error = null)
+        _uiState.update { _uiState.value.copy(location = location, error = null) }
     }
 
     fun updatePhotoUri(uri: String?) {
-        _uiState.value = _uiState.value.copy(photoUri = uri, error = null)
+        _uiState.update { _uiState.value.copy(photoUri = uri, error = null) }
     }
 
     @OptIn(ExperimentalUuidApi::class)
     fun saveRack() {
         val currentState = _uiState.value
         if (currentState.name.isBlank()) {
-            _uiState.value = currentState.copy(error = "Name is required")
+            _uiState.update { currentState.copy(error = "Name is required") }
             return
         }
 
         coroutineScope.launch {
-            _uiState.value = currentState.copy(isLoading = true, error = null)
+            _uiState.update { currentState.copy(isLoading = true, error = null) }
 
             val rack = Rack(
                 id = Uuid.random().toString(),
@@ -85,23 +90,17 @@ class AddRackViewModel(
                         is DomainError.NotFound -> "Rack not found"
                         is DomainError.Unknown -> "An unknown error occurred"
                     }
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        error = errorMessage,
-                    )
+                    _uiState.update {
+                        currentState.copy(isLoading = false, error = errorMessage)
+                    }
                 },
-                ifOk = { savedRack: Rack ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        isSuccess = true,
-                    )
-                    _uiEvent.value = AddRackUiEvent.NavigateBack
+                ifOk = { savedRack ->
+                    _uiState.update {
+                        currentState.copy(isLoading = false, isSuccess = true)
+                    }
+                    _uiEvent.emit(AddRackUiEvent.NavigateBack)
                 },
             )
         }
-    }
-
-    fun clearEvent() {
-        _uiEvent.value = null
     }
 }
