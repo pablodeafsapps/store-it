@@ -15,6 +15,7 @@
 
 - **Common (KMP)**: `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/` (domain, data, usecase)
 - **Android app**: `composeApp/src/androidMain/kotlin/org/deafsapps/storeit/`
+- **iOS app**: `iosApp/` (SwiftUI; consumes shared logic via KMP framework)
 - **Tests**: `composeApp/src/commonTest/kotlin/...`, `composeApp/src/androidUnitTest/...`
 - **CI**: `.github/workflows/`
 
@@ -55,8 +56,11 @@
 - [X] T010 [P] [US1] Implement GetRacksUseCase and SaveRackUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/` (depend on RackRepository; return Either/Flow as per AGENTS.md)
 - [X] T011 [P] [US1] Unit tests for GetRacksUseCase and SaveRackUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
 - [X] T012 [US1] Add rack screen (Android): capture or pick photo, name, description, location in `composeApp/src/androidMain/kotlin/org/deafsapps/storeit/ui/rack/AddRackScreen.kt` (or equivalent); wire to SaveRackUseCase
+- [ ] T027 [US1] Add rack screen (iOS): capture or pick photo, name, description, location in iosApp (SwiftUI); wire to SaveRackUseCase
 - [ ] T013 [US1] Rack list screen (Android): list all racks in `composeApp/.../ui/rack/RackListScreen.kt`; empty state when no racks; navigate to add rack and to rack detail
+- [ ] T028 [US1] Rack list screen (iOS): list all racks in iosApp; empty state; navigate to add rack and to rack detail
 - [ ] T014 [US1] Rack detail screen (Android): show rack image as tappable map in `composeApp/.../ui/rack/RackDetailScreen.kt`; tap = define/select slot (store position or slot id for later use in US2); support edit metadata and remove rack (FR-002)
+- [ ] T029 [US1] Rack detail screen (iOS): show rack image as tappable map in iosApp; tap = define/select slot; support edit metadata and remove rack (FR-002)
 
 **Checkpoint**: User Story 1 is fully functional and testable independently
 
@@ -71,7 +75,9 @@
 - [ ] T015 [P] [US2] Implement AddItemUseCase and GetItemsBySlotUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/` (depend on ItemRepository, RackRepository if needed)
 - [ ] T016 [P] [US2] Unit tests for AddItemUseCase and GetItemsBySlotUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
 - [ ] T017 [US2] Add item flow (Android): screen for photo (camera/gallery), name, description, quantity, owner, tags in `composeApp/.../ui/item/AddItemScreen.kt`; then select rack and tap slot to place (or reverse: select rack + slot first then add item); wire to AddItemUseCase (FR-004, FR-005)
-- [ ] T018 [US2] When user has no racks, guide to create one or disable add-item until at least one rack exists (edge case spec); handle empty slot as valid placement target in `composeApp/.../ui/`
+- [ ] T030 [US2] Add item flow (iOS): screen for photo, name, description, quantity, owner, tags in iosApp; select rack and tap slot to place; wire to AddItemUseCase (FR-004, FR-005)
+- [ ] T018 [US2] When user has no racks, guide to create one or disable add-item until at least one rack exists (edge case spec); handle empty slot as valid placement target in `composeApp/.../ui/` (Android)
+- [ ] T031 [US2] No racks / empty slot (iOS): when user has no racks, guide to create one or disable add-item; handle empty slot as valid placement target in iosApp
 
 **Checkpoint**: User Stories 1 and 2 both work independently
 
@@ -86,8 +92,11 @@
 - [ ] T019 [P] [US3] Implement SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/` (search by name and description; return items with rack/slot info per FR-008)
 - [ ] T020 [P] [US3] Unit tests for SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
 - [ ] T021 [US3] Slot items list (Android): from rack detail, tap slot → show list of items in that slot in `composeApp/.../ui/item/SlotItemsScreen.kt`; empty state and option to add item (FR-006)
+- [ ] T032 [US3] Slot items list (iOS): from rack detail tap slot → show list of items in that slot in iosApp; empty state and option to add item (FR-006)
 - [ ] T022 [US3] Item detail and edit (Android): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in `composeApp/.../ui/item/ItemDetailScreen.kt` (FR-007)
+- [ ] T033 [US3] Item detail and edit (iOS): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in iosApp (FR-007)
 - [ ] T023 [US3] Global search (Android): search box always available; search items by name and description; results show item and rack/slot; tap result navigates to item in `composeApp/.../ui/search/SearchScreen.kt` or equivalent (FR-008); no-results state (edge case)
+- [ ] T034 [US3] Global search (iOS): search box always available; search items by name and description; results show item and rack/slot; tap result navigates to item in iosApp; no-results state (FR-008)
 
 **Checkpoint**: All user stories are independently functional
 
@@ -124,6 +133,7 @@
 
 - Use cases and tests (T010–T011, T015–T016, T019–T020) can be implemented in parallel where marked [P]
 - UI tasks (T012–T014, T017–T018, T021–T023) depend on use cases being available
+- iOS UI tasks (T027–T029, T030–T031, T032–T034) are counterparts of the Android UI tasks above and depend on the same use cases; do each iOS task right after its Android pair (e.g. T027 after T012)
 
 ### Parallel Opportunities
 
