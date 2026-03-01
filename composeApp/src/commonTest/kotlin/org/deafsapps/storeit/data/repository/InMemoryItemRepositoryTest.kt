@@ -310,7 +310,7 @@ class InMemoryItemRepositoryTest {
     }
 
     @Test
-    fun `GIVEN multiple saved items WHEN clear THEN getAllRacks returns empty list`() = runTest {
+    fun `GIVEN multiple saved items WHEN clear THEN getItemsByRack returns empty list`() = runTest {
         sut.saveItem(item =Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Item 1"))
         sut.saveItem(item =Item(id = "2", rackId = "rack1", slotId = "slot2", name = "Item 2"))
 

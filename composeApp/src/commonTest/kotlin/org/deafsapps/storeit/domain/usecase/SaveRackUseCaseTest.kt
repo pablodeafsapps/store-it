@@ -64,4 +64,17 @@ class SaveRackUseCaseTest {
         assertTrue(actual = error is DomainError.ValidationError)
         assertEquals(expected = "id", actual = error.field)
     }
+
+    @Test
+    fun `GIVEN fake returns NotFound WHEN invoke THEN returns NotFound`() = runTest {
+        val rack = Rack(id = "1", name = "Rack")
+        fakeRackRepository.saveRackResult = DomainError.NotFound(resource = "Rack", id = "1").err()
+
+        val result = sut(input = rack)
+
+        assertTrue(actual = result.isErr)
+        val error = result.failureOrNull()
+        assertTrue(actual = error is DomainError.NotFound)
+        assertEquals(expected = "Rack", actual = error.resource)
+    }
 }

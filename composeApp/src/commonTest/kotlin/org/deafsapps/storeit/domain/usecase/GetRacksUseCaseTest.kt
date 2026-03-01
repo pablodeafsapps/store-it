@@ -5,8 +5,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
+import org.deafsapps.storeit.base.err
+import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.ok
+import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.fake.FakeRackRepository
 
@@ -43,5 +46,16 @@ class GetRacksUseCaseTest {
         val racks = result.getOrNull() ?: emptyList()
         assertEquals(expected = 2, actual = racks.size)
         assertTrue(actual = racks.containsAll(listOf(rack1, rack2)))
+    }
+
+    @Test
+    fun `GIVEN fake returns error WHEN invoke THEN returns same error`() = runTest {
+        fakeRackRepository.getAllRacksResult = DomainError.Unknown.err()
+
+        val result = sut(input = Unit)
+
+        assertTrue(actual = result.isErr)
+        val error = result.failureOrNull()
+        assertTrue(actual = error is DomainError.Unknown)
     }
 }
