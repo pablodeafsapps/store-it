@@ -4,7 +4,32 @@ import ComposeApp
 import PhotosUI
 
 struct AddRackView: View {
-    @StateObject private var viewModel = AddRackViewModelProvider.shared.createViewModel()
+    private let uiState: AddRackUiState
+    private let uiEvent: Optional<AddRackUiEvent>
+    private let onUpdateName: (String) -> Void
+    private let onUpdateDescription: (String) -> Void
+    private let onUpdateLocation: (String) -> Void
+    private let onUpdatePhotoUri: (String) -> Void
+    private let onSaveRack: () -> Void
+
+    init(
+        uiState: AddRackUiState,
+        uiEvent: Optional<AddRackUiEvent>,
+        onUpdateName: @escaping (String) -> Void,
+        onUpdateDescription: @escaping (String) -> Void,
+        onUpdateLocation: @escaping (String) -> Void,
+        onUpdatePhotoUri: @escaping (String) -> Void,
+        onSaveRack: @escaping () -> Void,
+    ) {
+        self.uiState = uiState
+        self.uiEvent = uiEvent
+        self.onUpdateName = onUpdateName
+        self.onUpdateDescription = onUpdateDescription
+        self.onUpdateLocation = onUpdateLocation
+        self.onUpdatePhotoUri = onUpdatePhotoUri
+        self.onSaveRack = onSaveRack
+    }
+
     @Environment(\.dismiss) private var dismiss
     @State private var showImagePicker = false
     @State private var selectedPhoto: PhotosPickerItem? = nil
@@ -19,23 +44,23 @@ struct AddRackView: View {
                 
                 Section {
                     TextField("Name *", text: Binding(
-                        get: { viewModel.uiState.name },
-                        set: { viewModel.updateName(name: $0) }
+                        get: { uiState.name },
+                        set: { onUpdateName($0) }
                     ))
                     
                     TextField("Description", text: Binding(
-                        get: { viewModel.uiState.description },
-                        set: { viewModel.updateDescription(description: $0) }
+                        get: { uiState.description_},
+                        set: { onUpdateDescription($0) }
                     ), axis: .vertical)
                     .lineLimit(3...6)
                     
                     TextField("Location", text: Binding(
-                        get: { viewModel.uiState.location },
-                        set: { viewModel.updateLocation(location: $0) }
+                        get: { uiState.location },
+                        set: { onUpdateLocation($0) }
                     ))
                 }
                 
-                if let error = viewModel.uiState.error {
+                if let error = uiState.error {
                     Section {
                         Text(error)
                             .foregroundColor(.red)
@@ -44,10 +69,10 @@ struct AddRackView: View {
                 
                 Section {
                     Button(action: {
-                        viewModel.saveRack()
+                        onSaveRack()
                     }) {
                         HStack {
-                            if viewModel.uiState.isLoading {
+                            if uiState.isLoading {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle())
                             }
@@ -55,7 +80,7 @@ struct AddRackView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .disabled(viewModel.uiState.isLoading)
+                    .disabled(uiState.isLoading)
                 }
             }
             .navigationTitle("Add Rack")
@@ -72,28 +97,25 @@ struct AddRackView: View {
                 selection: $selectedPhoto,
                 matching: .images
             )
-            // .onChange(of: selectedPhoto) { newItem in
-            //     Task {
-            //         if let data = try? await newItem?.loadTransferable(type: Data.self) {
-            //             selectedImageData = data
-            //             if let data = data,
-            //                let image = UIImage(data: data),
-            //                let imageData = image.jpegData(compressionQuality: 0.8) {
-            //                 let tempURL = FileManager.default.temporaryDirectory
-            //                     .appendingPathComponent(UUID().uuidString)
-            //                     .appendingPathExtension("jpg")
-            //                 try? imageData.write(to: tempURL)
-            //                 viewModel.updatePhotoUri(uri: tempURL.path)
-            //             }
-            //         }
-            //     }
-            // }
-            // .onChange(of: viewModel.uiEvent) { event in
-            //     if event != nil {
-            //         dismiss()
-            //         viewModel.clearEvent()
-            //     }
-            // }
+            .onChange(of: selectedPhoto) { oldItem, newItem in
+                Task {
+                    guard let data = try? await newItem?.loadTransferable(type: Data.self),
+                          let image = UIImage(data: data),
+                          let imageData = image.jpegData(compressionQuality: 0.8) else { return }
+                    selectedImageData = data
+                    let tempURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent(UUID().uuidString)
+                        .appendingPathExtension("jpg")
+                    try? imageData.write(to: tempURL)
+                    onUpdatePhotoUri(tempURL.path)
+                    
+                }
+            }
+            .onChange(of: onEnum(of: uiEvent)) { _, _ in
+                if uiEvent != nil {
+                    dismiss()
+                }
+            }
         }
     }
     
@@ -121,7 +143,7 @@ struct AddRackView: View {
             Button(action: {
                 showImagePicker = true
             }) {
-                Text(viewModel.uiState.photoUri != nil ? "Change Photo" : "Select Photo")
+                Text(uiState.photoUri != nil ? "Change Photo" : "Select Photo")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -129,8 +151,30 @@ struct AddRackView: View {
     }
 }
 
-struct AddRackView_Previews: PreviewProvider {
+private struct AddRackView_Previews: PreviewProvider {
     static var previews: some View {
-        AddRackView()
+        AddRackView(
+            uiState: AddRackUiState.getDefault,
+            uiEvent: nil,
+            onUpdateName: { _ in },
+            onUpdateDescription: {_ in },
+            onUpdateLocation: {_ in },
+            onUpdatePhotoUri: {_ in },
+            onSaveRack: {},
+        )
     }
+}
+
+
+private extension AddRackUiState {
+    static let getDefault: AddRackUiState =
+        AddRackUiState(
+            name: "",
+            description: "",
+            location: "",
+            photoUri: nil,
+            isLoading: false,
+            error: nil,
+            isSuccess: true,
+        )
 }

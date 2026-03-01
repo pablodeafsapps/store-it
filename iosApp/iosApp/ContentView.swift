@@ -2,29 +2,23 @@ import SwiftUI
 import ComposeApp
 
 struct ContentView: View {
-    @StateObject private var viewModel = AddRackViewModelProvider.shared.createViewModel()
+    
+    private let viewModel: AddRackViewModel = AddRackViewModel()
+    
     @State private var showContent = false
-    var body: some View {
-        // VStack {
-        //     Button("Click me!") {
-        //         withAnimation {
-        //             showContent = !showContent
-        //         }
-        //     }
 
-        //     if showContent {
-        //         VStack(spacing: 16) {
-        //             Image(systemName: "swift")
-        //                 .font(.system(size: 200))
-        //                 .foregroundColor(.accentColor)
-        //             Text("SwiftUI: \(Greeting().greet())")
-        //         }
-        //         .transition(.move(edge: .top).combined(with: .opacity))
-        //     }
-        // }
-        // .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        // .padding()
-        AddRackView()
+    var body: some View {
+        Observing(viewModel.uiState, viewModel.uiEvent.withInitialValue(nil)) { state, event in
+            AddRackView(
+                uiState: state,
+                uiEvent: event,
+                onUpdateName: viewModel.updateName,
+                onUpdateDescription: viewModel.updateDescription,
+                onUpdateLocation: viewModel.updateLocation,
+                onUpdatePhotoUri: viewModel.updatePhotoUri,
+                onSaveRack: viewModel.saveRack,
+            )
+        }
     }
 }
 
