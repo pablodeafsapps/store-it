@@ -89,6 +89,7 @@ The multiplatform module (`:composeApp`) is configured roughly as:
     - Shared ViewModels / state holders in `commonMain`:
       - Expose **immutable state** and **events** via `StateFlow`, `SharedFlow`, or MVI-style reducers.
       - No direct reference to Android or iOS view types.
+      - **Automatic data loading**: Prefer deriving state from a cold flow collected with `stateIn` (e.g. `flow { … }.stateIn(scope, SharingStarted.WhileSubscribed(…), initialValue)`) so data loads when the flow is collected. Do not require an explicit “load” call from the UI; the initial value can represent loading (e.g. `UiState.getDefault()` with `isLoading = true`). For testability, ViewModels accept use cases via constructor and an optional `CoroutineScope?` so tests can inject a test scope.
     - Thin UI layers in Android/iOS render state and forward user actions.
   - Option B (platform-first UI):
     - Presentation layer lives in platform modules only; shared module stops at Domain/Data.
@@ -160,18 +161,17 @@ Choose a KMP-capable persistence solution (SQLDelight, Realm, or similar). The r
 - **kotlinx-datetime** in `commonMain` for time/date handling.
 - Platform-specific utilities (e.g. logging, locale) behind `expect`/`actual` pairs or injected interfaces.
 
-### 4.7 Dependency Injection
+### 4.7 Dependency Injection (Koin for KMP)
 
-Two common strategies:
+This project uses **Koin** with **Koin Annotations** (KSP) for dependency injection:
 
-- **KMP-aware DI framework** (e.g. Koin for KMP, or another multiplatform DI library):
-  - DI module definitions in `commonMain`.
-  - Platform-specific wiring (e.g. Android context, iOS entry point) in platform source sets.
-- **Manual DI**:
-  - Simple factories and composition roots in platform modules.
-  - Shared module exposes constructors and factory functions; platform code passes platform dependencies.
-
-**Rule**: Business logic (Domain/UseCases) must not depend on a specific DI framework API.
+- **Module**: A single `@Module` with `@ComponentScan("org.deafsapps.storeit")` in `commonMain` discovers and registers all annotated types. The generated module is loaded via `AppModule().module` in `initKoin()`.
+- **Registration**: Use cases and repositories are registered with `@Factory(binds = [UseCaseType::class])` or `@Single(binds = [Repository::class])`; use a typealias for the use case interface so the implementation binds to it (e.g. `GetRacksUseCaseType`, `SaveRackUseCaseType`).
+- **ViewModels**: Shared ViewModels are annotated with `@KoinViewModel`; they receive use cases (and optionally an optional `CoroutineScope` for tests) via constructor injection. Koin generates the factory; no `KoinComponent`/`inject()` in the ViewModel when using constructor injection.
+- **Initialisation**:
+  - **Android**: Call `initKoin { androidLogger(); androidContext(this@Application) }` in `Application.onCreate()`. The app is annotated with `@KoinApplication(modules = [AppModule::class])`.
+  - **iOS**: Call `KoinInitKt.doInitKoinIos()` from the Swift app’s `init()` (e.g. in `@main struct iOSApp: App`). This starts Koin without platform-specific options.
+- **Rule**: Domain/use case types remain framework-agnostic; only the composition root and ViewModel layer use Koin APIs.
 
 ### 4.8 UI Technologies
 
@@ -180,10 +180,9 @@ Two common strategies:
   - AndroidX libraries for lifecycle, navigation, etc.
   - Optional: preferably Koin for DI at the app level; wrap them so shared code remains unaware.
 - **iOS**:
-  - SwiftUI as the primary UI framework.
-  - Integration with shared KMP ViewModels via:
-    - Observed mapped state (`StateObject`, `ObservedObject`).
-    - Bridging Flows / coroutines to `async/await`, Combine, or callback-based APIs.
+  - SwiftUI as the primary UI framework; all iOS UI lives in the **`iosApp`** target (Swift), not in the KMP module. The shared framework produced by `:composeApp` is consumed as a dependency (`ComposeApp`).
+  - Integration with shared KMP ViewModels: instantiate ViewModels in Swift (e.g. `AddRackViewModel()`) and observe state/events via the Skie or KMP runtime bridge, e.g. `Observing(viewModel.uiState, viewModel.uiEvent.withInitialValue(nil)) { state, event in … }` so the SwiftUI view receives state and event callbacks.
+  - Koin is initialised from the iOS app entry point with `KoinInitKt.doInitKoinIos()` so shared dependencies are available.
 
 ---
 
@@ -192,8 +191,9 @@ Two common strategies:
 ### 5.1 Version Catalog & Build Logic
 
 - Use a **version catalog** (`libs.versions.toml`) to centralize:
-  - Library versions (Kotlin, Coroutines, Ktor, serialization, etc.).
-  - Plugin versions (Kotlin Multiplatform, Android Gradle Plugin, etc.).
+  - Library versions (Kotlin, Coroutines, Ktor, serialization, Koin, etc.).
+  - Plugin versions (Kotlin Multiplatform, Android Gradle Plugin, KSP, etc.).
+- Keep Kotlin, KSP, Koin, and Koin Annotations versions aligned when upgrading (e.g. Kotlin 2.3.x, KSP 2.3.x, Koin 4.x, koin-annotations 2.3.x).
 - Encapsulate shared build logic in convention plugins or shared Gradle scripts where appropriate.
 
 ### 5.2 Multiplatform Plugin Configuration
@@ -298,7 +298,9 @@ This section describes how an engineer (or automation agent) should add or modif
   - **Suspend / coroutines**: Use `runTest { }` from `kotlinx-coroutines-test` (not `runBlocking`) for tests that call suspend functions. Add `kotlinx-coroutines-test` to `commonTest` dependencies; use `fun testName() = runTest { ... }`.
   - **Test naming**: Follow GIVEN–WHEN–THEN with **GIVEN**, **WHEN**, **THEN** in caps in the test name (e.g. `` `GIVEN empty repository WHEN getAllRacks THEN returns empty list`() ``).
   - **Test body structure**: Structure each test in three sections (setup → action → assertions) separated by **blank lines only**; do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup (e.g. “empty repository” or “any state”), leave a single blank line after the test opening, then the WHEN and THEN blocks.
-- **Android/iOS tests**:
+- **Android ViewModel tests** (when the ViewModel lives in `commonMain` but extends AndroidX `ViewModel`):
+  - Place unit tests in **`androidApp/src/test`** so AndroidX and JUnit are available. Use **fakes** for use cases (e.g. `FakeGetRacksUseCase`) and inject an optional **`CoroutineScope`** (e.g. the `TestScope` from `runTest`) into the ViewModel constructor so execution is deterministic. Use `runTest` and `advanceUntilIdle()` from `kotlinx-coroutines-test`; add `kotlinx-coroutines-test` to the Android module’s `testImplementation` dependencies.
+- **Android/iOS integration tests**:
   - Verify integration with platform-specific services, navigation, and lifecycle.
 
 ---

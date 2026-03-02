@@ -147,9 +147,11 @@ Dependency rule: inner layers do not know outer layers. Dependencies point inwar
 
 - **domain**: entities, use case interfaces, repository interfaces (optional: use case implementations here).
 - **data**: data sources, repository implementations, DTOs, mappers.
-- **ui / presentation**: ViewModels, UI state, screens (platform-specific or Compose Multiplatform).
+- **ui / presentation**: ViewModels, UI state, screens (platform-specific: Android Compose in `androidApp`, iOS SwiftUI in `iosApp`).
 
 Use cases sit in domain and orchestrate repository interfaces; they return domain types or simple sealed results (Success / Error).
+
+**ViewModels**: Prefer **automatic data loading**: derive UI state from a cold flow with `stateIn` (and `SharingStarted.WhileSubscribed`) so data loads when the flow is collected; avoid explicit “load” methods. Use an initial state (e.g. `UiState.getDefault()` with `isLoading = true`) for the loading phase. For testability, inject use cases and an optional `CoroutineScope?` in the constructor.
 
 ### 4.3 Dependency Direction
 
@@ -209,10 +211,11 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 - Dedicated types or extension functions for DTO → Entity and Entity → UI model. Keep mapping in one place; avoid anemic entities that are “just DTOs” in domain.
 
-### 6.4 Dependency Injection
+### 6.4 Dependency Injection (Koin)
 
-- Prefer constructor injection; avoid service locators in business logic.
-- In KMP: shared `expect` for “obtain use case / repository” if needed, or inject in platform main; keep DI configuration in platform source sets when using platform-specific DI (Hilt, Koin, Swift DI).
+- This project uses **Koin** with **Koin Annotations** (KSP): one `@Module` with `@ComponentScan` in `commonMain`; use cases/repositories with `@Factory(binds = [Type::class])` or `@Single(binds = [Type::class])`; ViewModels with `@KoinViewModel` and constructor injection. Prefer constructor injection; avoid `KoinComponent`/`inject()` in ViewModels when using `@KoinViewModel`.
+- Initialise Koin once per platform: in Android `Application.onCreate()` with `initKoin { androidLogger(); androidContext(...) }`; in iOS call `KoinInitKt.doInitKoinIos()` from the app entry point.
+- Use case interfaces: expose a typealias (e.g. `GetRacksUseCaseType`) and bind the implementation to it so ViewModels depend on the interface.
 
 ### 6.5 Result / Either
 
@@ -244,10 +247,11 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 - Prefer fakes (in-memory or stub implementations with configurable return values) for speed and stability; use mocks when you need to assert interactions (e.g. “save was called once”).
 
-### 7.5 Shared Tests
+### 7.5 Shared vs Platform Tests
 
-- commonTest: run use case and repository interface tests with shared fakes; no Android/iOS APIs.
-- Platform tests: ViewModel, UI, or platform-specific code in androidTest/iosTest or equivalent.
+- **commonTest**: Use case and repository tests with shared fakes; no Android/iOS APIs. No AndroidX types (e.g. no `ViewModel` tests here if they extend AndroidX `ViewModel`).
+- **androidApp/src/test**: ViewModel unit tests when the ViewModel is in `commonMain` but extends AndroidX `ViewModel`. Use fakes for use cases, inject an optional `CoroutineScope` (e.g. from `runTest`) into the ViewModel for deterministic tests; use `runTest` and `advanceUntilIdle()` from `kotlinx-coroutines-test`.
+- **androidTest / iOS**: Integration or UI tests as needed.
 
 ---
 
@@ -257,14 +261,17 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 - Resources: `snake_case`: `ic_user_avatar`, `string_app_name`. IDs: `camelCase` in code; `snake_case` in XML when consistent with resources.
 - Keep string and dimension resources in appropriate `values` files; use qualifiers for locales and configurations.
+- **Compose dimensions**: Avoid magic numbers for spacing, padding, and sizes. Use a single **`Dimens`** object (e.g. in `androidApp/.../design/Dimens.kt`) with named properties (e.g. `screenPadding`, `spacingMedium`, `cardCornerRadiusSmall`) and reference them from all Compose screens and components.
 
 ### 8.2 iOS
 
+- All iOS UI lives in the **`iosApp`** Swift target; the shared framework (`ComposeApp`) is consumed as a dependency. Use SwiftUI views that take ViewModel state and event callbacks (e.g. `Observing(viewModel.uiState, viewModel.uiEvent.withInitialValue(nil)) { state, event in … }`).
 - Asset and storyboard names: PascalCase or kebab-case per team choice; be consistent. Swift code references by symbol name.
 
 ### 8.3 Shared Configuration
 
 - For KMP, prefer a single place (e.g. build-time or expect/actual) for environment or feature flags so both platforms stay in sync.
+- **Library versions**: Centralise all library and plugin versions in `gradle/libs.versions.toml`. When upgrading, keep Kotlin, KSP, and Koin/koin-annotations aligned (e.g. Kotlin 2.3.x with KSP 2.3.x; Koin 4.x with koin-annotations 2.3.x).
 
 ---
 
