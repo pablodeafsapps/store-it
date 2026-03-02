@@ -7,10 +7,10 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.koin.core.annotation.Factory
 
-typealias GetRacksUseCaseType = UseCase<Unit, Result<DomainError, List<Rack>>>
+interface GetRacksUseCaseType : UseCase<Unit, Result<DomainError, List<Rack>>>
 
 @Factory(binds = [GetRacksUseCaseType::class])
-internal class GetRacksUseCase internal constructor(
+internal class GetRacksUseCase(
     private val rackRepository: RackRepository,
 ) : GetRacksUseCaseType {
     override suspend fun invoke(input: Unit): Result<DomainError, List<Rack>> = rackRepository.getAllRacks()

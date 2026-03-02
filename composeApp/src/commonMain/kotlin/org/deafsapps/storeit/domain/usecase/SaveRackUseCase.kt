@@ -7,10 +7,10 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.koin.core.annotation.Factory
 
-typealias SaveRackUseCaseType = UseCase<Rack, Result<DomainError, Rack>>
+interface SaveRackUseCaseType : UseCase<Rack, Result<DomainError, Rack>>
 
 @Factory(binds = [SaveRackUseCaseType::class])
-internal class SaveRackUseCase internal constructor(
+internal class SaveRackUseCase(
     private val rackRepository: RackRepository,
 ) : SaveRackUseCaseType {
     override suspend fun invoke(input: Rack): Result<DomainError, Rack> = rackRepository.saveRack(input)
