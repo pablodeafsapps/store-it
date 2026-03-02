@@ -96,7 +96,7 @@ internal fun RackListScreen(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(Dimens.screenPaddingLarge),
-                        onAddRackSelect = { viewModel.onAddRackSelect() },
+//                        onAddRackSelect = { viewModel.onAddRackSelect() },
                     )
                 }
                 else -> {
@@ -129,7 +129,7 @@ internal fun RackListScreen(
 @Composable
 private fun EmptyState(
     modifier: Modifier = Modifier,
-    onAddRackSelect: () -> Unit,
+//    onAddRackSelect: () -> Unit,
 ) {
     Column(
         modifier = modifier,
