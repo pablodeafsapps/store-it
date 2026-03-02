@@ -23,7 +23,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,8 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.compose.material3.ExperimentalMaterial3Api
+import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -84,9 +83,9 @@ internal fun AddRackScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(Dimens.screenPadding)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(Dimens.spacingDefault),
         ) {
             PhotoPickerSection(
                 photoUri = uiState.photoUri,
@@ -121,7 +120,7 @@ internal fun AddRackScreen(
                 Text(
                     text = error,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = Dimens.screenPadding),
                 )
             }
 
@@ -132,7 +131,7 @@ internal fun AddRackScreen(
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(Dimens.progressIndicatorSizeSmall),
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
@@ -157,8 +156,8 @@ private fun PhotoPickerSection(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(8.dp)),
+                .height(Dimens.photoPickerCardHeight)
+                .clip(RoundedCornerShape(Dimens.cardCornerRadiusSmall)),
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -177,7 +176,7 @@ private fun PhotoPickerSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Dimens.photoPickerSectionSpacing))
 
         Button(
             onClick = { showImagePicker = true },

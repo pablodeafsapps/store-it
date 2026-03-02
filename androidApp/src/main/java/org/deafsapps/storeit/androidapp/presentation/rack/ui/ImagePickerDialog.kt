@@ -17,7 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.core.content.FileProvider
 import java.io.File
 import java.util.UUID
@@ -47,7 +47,6 @@ internal fun ImagePickerDialog(
             onImageSelected(it.toString())
         }
     }
-    
     val pickMediaRequest = remember {
         PickVisualMediaRequest.Builder()
             .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -75,7 +74,7 @@ internal fun ImagePickerDialog(
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(Dimens.dialogContentSpacing),
             ) {
                 Button(
                     onClick = {
