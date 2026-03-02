@@ -57,7 +57,7 @@
 - [X] T011 [P] [US1] Unit tests for GetRacksUseCase and SaveRackUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
 - [X] T012 [US1] Add rack screen (Android): capture or pick photo, name, description, location in `composeApp/src/androidMain/kotlin/org/deafsapps/storeit/ui/rack/AddRackScreen.kt` (or equivalent); wire to SaveRackUseCase
 - [ ] T027 [US1] Add rack screen (iOS): capture or pick photo, name, description, location in iosApp (SwiftUI); wire to SaveRackUseCase
-- [ ] T013 [US1] Rack list screen (Android): list all racks in `composeApp/.../ui/rack/RackListScreen.kt`; empty state when no racks; navigate to add rack and to rack detail
+- [X] T013 [US1] Rack list screen (Android): list all racks in `composeApp/.../ui/rack/RackListScreen.kt`; empty state when no racks; navigate to add rack and to rack detail
 - [ ] T028 [US1] Rack list screen (iOS): list all racks in iosApp; empty state; navigate to add rack and to rack detail
 - [ ] T014 [US1] Rack detail screen (Android): show rack image as tappable map in `composeApp/.../ui/rack/RackDetailScreen.kt`; tap = define/select slot (store position or slot id for later use in US2); support edit metadata and remove rack (FR-002)
 - [ ] T029 [US1] Rack detail screen (iOS): show rack image as tappable map in iosApp; tap = define/select slot; support edit metadata and remove rack (FR-002)
