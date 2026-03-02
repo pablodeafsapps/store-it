@@ -3,7 +3,8 @@ package org.deafsapps.storeit.androidapp.design
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-object Dimens {
+@Suppress("MagicNumber")
+data object Dimens {
 
     val screenPadding: Dp = 16.dp
     val screenPaddingLarge: Dp = 32.dp
