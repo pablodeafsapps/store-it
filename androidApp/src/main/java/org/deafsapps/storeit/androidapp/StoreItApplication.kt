@@ -3,7 +3,6 @@ package org.deafsapps.storeit.androidapp
 import android.app.Application
 import org.deafsapps.storeit.di.AppModule
 import org.deafsapps.storeit.di.initKoin
-import org.deafsapps.storeit.di.rackDetailModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.annotation.KoinApplication
@@ -16,7 +15,6 @@ class StoreItApplication : Application() {
         initKoin {
             androidLogger()
             androidContext(this@StoreItApplication)
-            modules(rackDetailModule)
         }
     }
 }
