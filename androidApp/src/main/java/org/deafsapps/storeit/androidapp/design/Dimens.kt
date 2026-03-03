@@ -34,4 +34,9 @@ data object Dimens {
     val emptyStateVerticalSpacing: Dp = 16.dp
 
     val dialogContentSpacing: Dp = 8.dp
+
+    val rackDetailImageVerticalPadding: Dp = 8.dp
+    val rackDetailPlaceholderHeight: Dp = 200.dp
+    val rackDetailSlotMarkerSize: Dp = 24.dp
+    val rackDetailSlotMarkerHalfSize: Dp = 12.dp
 }

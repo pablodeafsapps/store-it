@@ -36,7 +36,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -224,7 +223,7 @@ private fun RackImageWithSlots(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
+                .padding(vertical = Dimens.rackDetailImageVerticalPadding),
         ) {
             if (photoUri != null) {
                 AsyncImage(
@@ -238,7 +237,7 @@ private fun RackImageWithSlots(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .size(200.dp)
+                        .size(Dimens.rackDetailPlaceholderHeight)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -258,13 +257,14 @@ private fun RackImageWithSlots(
             )
             slots.forEach { slot ->
                 with(density) {
-                    val xPx = (slot.xRel * imageSize.width - 12.dp.toPx()).toInt()
-                    val yPx = (slot.yRel * imageSize.height - 12.dp.toPx()).toInt()
+                    val halfPx = Dimens.rackDetailSlotMarkerHalfSize.toPx()
+                    val xPx = (slot.xRel * imageSize.width - halfPx).toInt()
+                    val yPx = (slot.yRel * imageSize.height - halfPx).toInt()
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .offset { IntOffset(xPx, yPx) }
-                            .size(24.dp)
+                            .size(Dimens.rackDetailSlotMarkerSize)
                             .background(
                                 color = if (slot.id == selectedSlotId)
                                     MaterialTheme.colorScheme.primary
