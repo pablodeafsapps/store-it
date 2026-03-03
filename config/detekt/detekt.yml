@@ -31,6 +31,7 @@ complexity:
     threshold: 15
     ignoreSingleWhenExpression: false
     ignoreSimpleWhenEntries: false
+    ignoreAnnotated: ['Composable']
   LongMethod:
     active: true
     threshold: 60
@@ -40,6 +41,7 @@ complexity:
     functionThreshold: 6
     constructorThreshold: 6
     ignoreDefaultParameters: true
+    ignoreAnnotated: ['Composable', 'KoinViewModel']
   LargeClass:
     active: true
     threshold: 600
