@@ -5,10 +5,12 @@ import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.repository.ItemRepository
+import org.koin.core.annotation.Single
 import kotlin.time.Clock
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+@Single(binds = [ItemRepository::class])
 internal class InMemoryItemRepository : ItemRepository {
     private val items = mutableMapOf<String, Item>()
     private val mutex = Mutex()
@@ -76,6 +78,17 @@ internal class InMemoryItemRepository : ItemRepository {
             id.isBlank() -> DomainError.ValidationError(field = "id", reason = "ID cannot be blank").err()
             items.remove(id) != null -> Unit.ok()
             else -> DomainError.NotFound(resource = "Item", id = id).err()
+        }
+    }
+
+    override suspend fun deleteItemsByRack(rackId: String) = mutex.withLock {
+        when {
+            rackId.isBlank() -> DomainError.ValidationError(field = "rackId", reason = "Rack ID cannot be blank").err()
+            else -> {
+                Unit.ok().also {
+                    items.keys.toList().filter { items[it]?.rackId == rackId }.forEach { items.remove(it) }
+                }
+            }
         }
     }
 

@@ -8,8 +8,10 @@ import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.deafsapps.storeit.domain.repository.RackRepository
+import org.deafsapps.storeit.domain.repository.SlotRepository
 import org.deafsapps.storeit.fake.FakeItemRepository
 import org.deafsapps.storeit.fake.FakeRackRepository
+import org.deafsapps.storeit.fake.FakeSlotRepository
 
 class MockDataDtoTest {
     private lateinit var sut: MockDataDto
@@ -47,14 +49,22 @@ class MockDataDtoTest {
     }
 
     @Test
-    fun `preloadMockData populates rack and item repositories`() = runTest {
+    fun `preloadMockData populates rack slot and item repositories`() = runTest {
         val fakeRackRepository: RackRepository = FakeRackRepository()
+        val fakeSlotRepository: SlotRepository = FakeSlotRepository()
         val fakeItemRepository: ItemRepository = FakeItemRepository()
-        sut.preloadMockData(rackRepository = fakeRackRepository, itemRepository = fakeItemRepository)
+        sut.preloadMockData(
+            rackRepository = fakeRackRepository,
+            slotRepository = fakeSlotRepository,
+            itemRepository = fakeItemRepository,
+        )
 
         val racks = fakeRackRepository.getAllRacks().getOrNull() ?: emptyList()
         assertEquals(expected = 1, actual = racks.size)
         assertEquals(expected = sut.MOCK_RACK_ID, actual = racks[0].id)
+
+        val slotList = fakeSlotRepository.getSlotsByRack(sut.MOCK_RACK_ID).getOrNull() ?: emptyList()
+        assertEquals(expected = 2, actual = slotList.size)
 
         val items = fakeItemRepository.getItemsByRack(rackId = sut.MOCK_RACK_ID).getOrNull() ?: emptyList()
         assertEquals(expected = 3, actual = items.size)

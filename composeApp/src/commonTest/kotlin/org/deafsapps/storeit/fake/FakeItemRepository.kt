@@ -48,4 +48,9 @@ internal class FakeItemRepository : ItemRepository {
             items.remove(id)
             Unit.ok()
         }
+
+    override suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Unit> = run {
+        items.keys.toList().filter { items[it]?.rackId == rackId }.forEach { items.remove(it) }
+        Unit.ok()
+    }
 }

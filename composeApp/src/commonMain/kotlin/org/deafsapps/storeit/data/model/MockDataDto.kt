@@ -6,6 +6,7 @@ import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.deafsapps.storeit.domain.repository.RackRepository
+import org.deafsapps.storeit.domain.repository.SlotRepository
 import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -79,17 +80,26 @@ internal object MockDataDto {
 
     suspend fun preloadMockData(
         rackRepository: RackRepository,
+        slotRepository: SlotRepository,
         itemRepository: ItemRepository,
     ) {
         rackRepository.saveRack(rack = getSampleRack())
+        getSampleSlots().forEach { slot -> slotRepository.saveSlot(slot = slot) }
         getSampleItems().forEach { item -> itemRepository.saveItem(item = item) }
     }
 
     fun preloadMockDataAsync(
         scope: CoroutineScope,
         rackRepository: RackRepository,
+        slotRepository: SlotRepository,
         itemRepository: ItemRepository,
     ) {
-        scope.launch { preloadMockData(rackRepository = rackRepository, itemRepository = itemRepository) }
+        scope.launch {
+            preloadMockData(
+                rackRepository = rackRepository,
+                slotRepository = slotRepository,
+                itemRepository = itemRepository,
+            )
+        }
     }
 }
