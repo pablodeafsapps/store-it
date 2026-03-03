@@ -1,4 +1,4 @@
-package org.deafsapps.storeit.presentation.rack.viewmodel
+package org.deafsapps.storeit.presentation.rack.model
 
 import org.deafsapps.storeit.domain.model.Rack
 

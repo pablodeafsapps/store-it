@@ -12,8 +12,8 @@ import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackListUiEvent
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackListUiState
+import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
+import org.deafsapps.storeit.presentation.rack.model.RackListUiState
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

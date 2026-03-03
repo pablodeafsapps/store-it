@@ -14,26 +14,13 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
 import org.deafsapps.storeit.presentation.createViewModelScope
+import org.deafsapps.storeit.presentation.rack.model.AddRackUiEvent
+import org.deafsapps.storeit.presentation.rack.model.AddRackUiState
 import org.koin.android.annotation.KoinViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-
-data class AddRackUiState(
-    val name: String = "",
-    val description: String = "",
-    val location: String = "",
-    val photoUri: String? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val isSuccess: Boolean = false,
-)
-
-sealed interface AddRackUiEvent {
-    data object NavigateBack: AddRackUiEvent
-    data class ShowError(val message: String) : AddRackUiEvent
-}
 
 @KoinViewModel
 class AddRackViewModel : ViewModel(), KoinComponent {
@@ -94,7 +81,7 @@ class AddRackViewModel : ViewModel(), KoinComponent {
                         currentState.copy(isLoading = false, error = errorMessage)
                     }
                 },
-                ifOk = { savedRack ->
+                ifOk = { _ ->
                     _uiState.update {
                         currentState.copy(isLoading = false, isSuccess = true)
                     }

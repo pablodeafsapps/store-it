@@ -37,7 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import org.deafsapps.storeit.domain.model.Rack
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackListUiEvent
+import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

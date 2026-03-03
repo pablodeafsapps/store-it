@@ -16,6 +16,8 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.usecase.GetRacksUseCaseType
 import org.deafsapps.storeit.presentation.createViewModelScope
+import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
+import org.deafsapps.storeit.presentation.rack.model.RackListUiState
 import org.koin.android.annotation.KoinViewModel
 
 private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
