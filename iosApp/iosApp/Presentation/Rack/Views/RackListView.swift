@@ -2,22 +2,10 @@ import SwiftUI
 import ComposeApp
 
 struct RackListView: View {
-    private let uiState: RackListUiState
-    private let uiEvent: RackListUiEvent?
-    private let onAddRackSelect: () -> Void
-    private let onRackSelect: (Rack) -> Void
-
-    init(
-        uiState: RackListUiState,
-        uiEvent: RackListUiEvent?,
-        onAddRackSelect: @escaping () -> Void,
-        onRackSelect: @escaping (Rack) -> Void
-    ) {
-        self.uiState = uiState
-        self.uiEvent = uiEvent
-        self.onAddRackSelect = onAddRackSelect
-        self.onRackSelect = onRackSelect
-    }
+    let uiState: RackListUiState
+    let uiEvent: RackListUiEvent?
+    let onAddRackSelect: () -> Void
+    let onRackSelect: (Rack) -> Void
 
     var body: some View {
         NavigationView {

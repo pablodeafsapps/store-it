@@ -8,35 +8,35 @@ private enum NavScreen {
 }
 
 struct ContentView: View {
-    private let rackListViewModel: RackListViewModel = IosKoinHelper().getRackListViewModel()
-    private let addRackViewModel: AddRackViewModel = IosKoinHelper().getAddRackViewModel()
+    @StateObject private var rackListViewModel = ObservableRackListViewModel()
+    @StateObject private var addRackViewModel = ObservableAddRackViewModel()
 
     @State private var currentScreen: NavScreen = .rackList
 
     var body: some View {
         switch currentScreen {
         case .rackList:
-                Observing(rackListViewModel.uiState, rackListViewModel.uiEvent.withInitialValue(nil)) { state, event in
+            Observing(rackListViewModel.sharedVm.uiState, rackListViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
                 RackListView(
                     uiState: state,
                     uiEvent: event,
-                    onAddRackSelect: { rackListViewModel.onAddRackSelect() },
-                    onRackSelect: { rack in rackListViewModel.onRackSelect(rack: rack) }
+                    onAddRackSelect: { rackListViewModel.sharedVm.onAddRackSelect() },
+                    onRackSelect: { rack in rackListViewModel.sharedVm.onRackSelect(rack: rack) }
                 )
                 .onChange(of: onEnum(of: event)) { _, _ in
                     handleRackListEvent(event)
                 }
             }
         case .addRack:
-            Observing(addRackViewModel.uiState, addRackViewModel.uiEvent.withInitialValue(nil)) { state, event in
+            Observing(addRackViewModel.sharedVm.uiState, addRackViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
                 AddRackView(
                     uiState: state,
                     uiEvent: event,
-                    onUpdateName: addRackViewModel.updateName,
-                    onUpdateDescription: addRackViewModel.updateDescription,
-                    onUpdateLocation: addRackViewModel.updateLocation,
-                    onUpdatePhotoUri: addRackViewModel.updatePhotoUri,
-                    onSaveRack: addRackViewModel.saveRack,
+                    onUpdateName: addRackViewModel.sharedVm.updateName,
+                    onUpdateDescription: addRackViewModel.sharedVm.updateDescription,
+                    onUpdateLocation: addRackViewModel.sharedVm.updateLocation,
+                    onUpdatePhotoUri: addRackViewModel.sharedVm.updatePhotoUri,
+                    onSaveRack: addRackViewModel.sharedVm.saveRack,
                 )
                 .onChange(of: onEnum(of: event)) { _, _ in
                     if event != nil {

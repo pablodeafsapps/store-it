@@ -4,31 +4,13 @@ import ComposeApp
 import PhotosUI
 
 struct AddRackView: View {
-    private let uiState: AddRackUiState
-    private let uiEvent: Optional<AddRackUiEvent>
-    private let onUpdateName: (String) -> Void
-    private let onUpdateDescription: (String) -> Void
-    private let onUpdateLocation: (String) -> Void
-    private let onUpdatePhotoUri: (String) -> Void
-    private let onSaveRack: () -> Void
-
-    init(
-        uiState: AddRackUiState,
-        uiEvent: Optional<AddRackUiEvent>,
-        onUpdateName: @escaping (String) -> Void,
-        onUpdateDescription: @escaping (String) -> Void,
-        onUpdateLocation: @escaping (String) -> Void,
-        onUpdatePhotoUri: @escaping (String) -> Void,
-        onSaveRack: @escaping () -> Void,
-    ) {
-        self.uiState = uiState
-        self.uiEvent = uiEvent
-        self.onUpdateName = onUpdateName
-        self.onUpdateDescription = onUpdateDescription
-        self.onUpdateLocation = onUpdateLocation
-        self.onUpdatePhotoUri = onUpdatePhotoUri
-        self.onSaveRack = onSaveRack
-    }
+    let uiState: AddRackUiState
+    let uiEvent: Optional<AddRackUiEvent>
+    let onUpdateName: (String) -> Void
+    let onUpdateDescription: (String) -> Void
+    let onUpdateLocation: (String) -> Void
+    let onUpdatePhotoUri: (String) -> Void
+    let onSaveRack: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var showImagePicker = false
