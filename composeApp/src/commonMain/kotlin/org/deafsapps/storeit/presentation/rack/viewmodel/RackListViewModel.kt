@@ -1,7 +1,7 @@
 package org.deafsapps.storeit.presentation.rack.viewmodel
 
-import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,34 +15,32 @@ import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.usecase.GetRacksUseCaseType
-import org.deafsapps.storeit.presentation.createViewModelScope
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
-import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.Provided
 
 private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
 private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 
-@KoinViewModel
+@Factory
 class RackListViewModel(
+    @Provided private val coroutineScope: CoroutineScope,
     private val getRacksUseCase: GetRacksUseCaseType,
-    private val scope: CoroutineScope? = null
-) : ViewModel() {
-
-    private val coroutineScope = scope ?: createViewModelScope()
+) {
 
     val uiState: StateFlow<RackListUiState> =
         flow {
             getRacksUseCase(input = Unit)
                 .fold(ifErr = { error ->
-                    emit(RackListUiState(error = error.toErrorCause()))
+                    emit(RackListUiState.getDefault().copy(error = error.toErrorCause()))
                 }, ifOk = { racks ->
-                    emit(RackListUiState(racks = racks))
+                    emit(RackListUiState.getDefault().copy(racks = racks))
                 })
         }.stateIn(
             scope = coroutineScope,
             started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
-            initialValue = RackListUiState.getDefault(),
+            initialValue = RackListUiState.getDefault().copy(isLoading = true),
         )
 
     private val _uiEvent = MutableSharedFlow<RackListUiEvent?>()
@@ -64,6 +62,10 @@ class RackListViewModel(
             _uiEvent.emit(RackListUiEvent.NavigateToRackDetail(rackId = rack.id))
         }
     }
+
+    fun clear() {
+        coroutineScope.cancel()
+    }
 }
 
 private fun DomainError.toErrorCause(): String = when (this) {
@@ -71,4 +73,3 @@ private fun DomainError.toErrorCause(): String = when (this) {
     is DomainError.NotFound -> "Racks not found"
     is DomainError.Unknown -> "An unknown error occurred"
 }
-

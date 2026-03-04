@@ -1,13 +1,18 @@
 package org.deafsapps.storeit.presentation.rack.viewmodel
 
-import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.deafsapps.storeit.base.fold
@@ -19,83 +24,83 @@ import org.deafsapps.storeit.domain.usecase.GetRackByIdUseCaseType
 import org.deafsapps.storeit.domain.usecase.GetSlotsByRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
-import org.deafsapps.storeit.presentation.createViewModelScope
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotView
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
-import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.Provided
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@KoinViewModel
+private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
+private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
+
+@Factory
 class RackDetailViewModel(
+    @Provided private val coroutineScope: CoroutineScope,
     @InjectedParam private val rackId: String,
     private val getRackByIdUseCase: GetRackByIdUseCaseType,
     private val getSlotsByRackUseCase: GetSlotsByRackUseCaseType,
     private val saveSlotUseCase: SaveSlotUseCaseType,
     private val saveRackUseCase: SaveRackUseCaseType,
     private val deleteRackUseCase: DeleteRackUseCaseType,
-    scope: CoroutineScope? = null,
-) : ViewModel() {
+) {
 
-    private val coroutineScope = scope ?: createViewModelScope()
-
-    private val _uiState = MutableStateFlow(RackDetailUiState())
-    val uiState: StateFlow<RackDetailUiState> = _uiState.asStateFlow()
-
-    private val _uiEvent = MutableSharedFlow<RackDetailUiEvent?>()
-    val uiEvent: SharedFlow<RackDetailUiEvent?> = _uiEvent.asSharedFlow()
-
-    init {
-        loadRackAndSlots()
-    }
-
-    fun loadRackAndSlots() {
-        coroutineScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+    private val _uiState = MutableStateFlow(RackDetailUiState.getDefault())
+    val uiState: StateFlow<RackDetailUiState> =
+        flow {
             getRackByIdUseCase(input = rackId).fold(
                 ifErr = { error ->
-                    _uiState.update {
-                        it.copy(
+                    emit(
+                        _uiState.value.copy(
                             isLoading = false,
                             error = error.toErrorCause(),
                         )
-                    }
-                },
-                ifOk = { rack ->
-                    getSlotsByRackUseCase(input = rackId).fold(
-                        ifErr = { err ->
-                            _uiState.update {
-                                it.copy(
-                                    rack = rack,
-                                    slots = emptyList(),
-                                    isLoading = false,
-                                    error = err.toErrorCause(),
-                                )
-                            }
-                        },
-                        ifOk = { slotList ->
-                            _uiState.update {
-                                it.copy(
-                                    rack = rack,
-                                    slots = slotList.map { s ->
-                                        RackDetailSlotView(
-                                            id = s.id,
-                                            xRel = s.position.xRel,
-                                            yRel = s.position.yRel,
-                                        )
-                                    },
-                                    isLoading = false,
-                                    error = null,
-                                )
-                            }
-                        },
                     )
-                },
-            )
-        }
-    }
+                        }, ifOk = { rack ->
+                            getSlotsByRackUseCase(input = rackId).fold(
+                                ifErr = { err ->
+                                    emit(
+                                        _uiState.value.copy(
+                                            rack = rack,
+                                            slots = emptyList(),
+                                            isLoading = false,
+                                            error = err.toErrorCause(),
+                                        )
+                                    )
+                                        }, ifOk = { slotList ->
+                                            emit(
+                                                _uiState.value.copy(
+                                                    rack = rack,
+                                                    slots = slotList.map { s ->
+                                                        RackDetailSlotView(
+                                                            id = s.id,
+                                                            xRel = s.position.xRel,
+                                                            yRel = s.position.yRel,
+                                                        )
+                                                    },
+                                                    isLoading = false,
+                                                    error = null,
+                                                )
+                                            )
+                                                  },
+                                )
+                                  },
+                )
+        }.stateIn(
+            scope = coroutineScope,
+            started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
+            initialValue = RackDetailUiState.getDefault().copy(isLoading = true),
+        )
+
+    private val _uiEvent = MutableSharedFlow<RackDetailUiEvent?>()
+    val uiEvent: SharedFlow<RackDetailUiEvent?> = _uiEvent.asSharedFlow()
+        .shareIn(
+            scope = coroutineScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
+            replay = 1,
+        )
 
     @OptIn(ExperimentalUuidApi::class)
     fun onImageTap(xRel: Float, yRel: Float) {
@@ -189,6 +194,10 @@ class RackDetailViewModel(
                 },
             )
         }
+    }
+
+    fun clear() {
+        coroutineScope.cancel()
     }
 }
 

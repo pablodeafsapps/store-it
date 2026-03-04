@@ -3,12 +3,16 @@ package org.deafsapps.storeit.presentation.rack.model
 import org.deafsapps.storeit.domain.model.Rack
 
 data class RackListUiState(
-    val racks: List<Rack> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
+    val racks: List<Rack>,
+    val isLoading: Boolean,
+    val error: String?,
 ) {
     companion object {
-        fun getDefault() = RackListUiState(isLoading = true)
+        fun getDefault(): RackListUiState = RackListUiState(
+            racks = emptyList(),
+            isLoading = false,
+            error = null,
+        )
     }
 }
 

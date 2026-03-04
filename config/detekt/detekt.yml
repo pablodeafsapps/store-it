@@ -42,6 +42,7 @@ complexity:
     constructorThreshold: 6
     ignoreDefaultParameters: true
     ignoreAnnotated: ['Composable', 'KoinViewModel']
+    ignoreAnnotatedParameter: ['Provided', 'InjectedParam']
   LargeClass:
     active: true
     threshold: 600
