@@ -15,9 +15,9 @@ import androidx.compose.ui.Modifier
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
-import org.deafsapps.storeit.presentation.rack.viewmodel.AndroidAddRackViewModel
-import org.deafsapps.storeit.presentation.rack.viewmodel.AndroidRackDetailViewModel
-import org.deafsapps.storeit.presentation.rack.viewmodel.AndroidRackListViewModel
+import org.deafsapps.storeit.androidapp.presentation.rack.viewmodel.AndroidAddRackViewModel
+import org.deafsapps.storeit.androidapp.presentation.rack.viewmodel.AndroidRackDetailViewModel
+import org.deafsapps.storeit.androidapp.presentation.rack.viewmodel.AndroidRackListViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 
