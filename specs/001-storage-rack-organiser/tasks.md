@@ -60,7 +60,7 @@
 - [X] T013 [US1] Rack list screen (Android): list all racks in `composeApp/.../ui/rack/RackListScreen.kt`; empty state when no racks; navigate to add rack and to rack detail
 - [X] T028 [US1] Rack list screen (iOS): list all racks in iosApp; empty state; navigate to add rack and to rack detail
 - [X] T014 [US1] Rack detail screen (Android): show rack image as tappable map in `composeApp/.../ui/rack/RackDetailScreen.kt`; tap = define/select slot (store position or slot id for later use in US2); support edit metadata and remove rack (FR-002)
-- [ ] T029 [US1] Rack detail screen (iOS): show rack image as tappable map in iosApp; tap = define/select slot; support edit metadata and remove rack (FR-002)
+- [X] T029 [US1] Rack detail screen (iOS): show rack image as tappable map in iosApp; tap = define/select slot; support edit metadata and remove rack (FR-002)
 
 **Checkpoint**: User Story 1 is fully functional and testable independently
 

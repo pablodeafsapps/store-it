@@ -45,7 +45,7 @@ struct ContentView: View {
                 }
             }
         case .rackDetail(let rackId):
-            RackDetailPlaceholderView(
+            RackDetailView(
                 rackId: rackId,
                 onNavigateBack: { currentScreen = .rackList }
             )
