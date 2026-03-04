@@ -15,9 +15,9 @@ import androidx.compose.ui.Modifier
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
-import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
+import org.deafsapps.storeit.presentation.rack.viewmodel.AndroidAddRackViewModel
+import org.deafsapps.storeit.presentation.rack.viewmodel.AndroidRackDetailViewModel
+import org.deafsapps.storeit.presentation.rack.viewmodel.AndroidRackListViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 
@@ -29,8 +29,8 @@ sealed interface NavScreen {
 
 class MainActivity : ComponentActivity() {
 
-    private val rackListViewModel: RackListViewModel by viewModel()
-    private val addRackViewModel: AddRackViewModel by viewModel()
+    private val androidRackListViewModel: AndroidRackListViewModel by viewModel()
+    private val androidAddRackViewModel: AndroidAddRackViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -41,20 +41,20 @@ class MainActivity : ComponentActivity() {
                     var currentScreen by remember { mutableStateOf<NavScreen>(NavScreen.RackList) }
                     when (val screen = currentScreen) {
                         is NavScreen.RackList -> RackListScreen(
-                            viewModel = rackListViewModel,
+                            viewModel = androidRackListViewModel.rackListViewModel,
                             onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
                             onNavigateToRackDetail = { id -> currentScreen = NavScreen.RackDetail(id) },
                         )
                         is NavScreen.AddRack -> AddRackScreen(
-                            viewModel = addRackViewModel,
+                            viewModel = androidAddRackViewModel.addRackViewModel,
                             onNavigateBack = { currentScreen = NavScreen.RackList },
                         )
                         is NavScreen.RackDetail -> {
-                            val rackDetailViewModel: RackDetailViewModel by viewModel(
+                            val androidRackDetailViewModel: AndroidRackDetailViewModel by viewModel(
                                 parameters = { parametersOf(screen.rackId) },
                             )
                             RackDetailScreen(
-                                viewModel = rackDetailViewModel,
+                                viewModel = androidRackDetailViewModel.rackDetailViewModel,
                                 onNavigateBack = { currentScreen = NavScreen.RackList },
                             )
                         }
