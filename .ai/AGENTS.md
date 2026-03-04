@@ -13,17 +13,18 @@ The target audience is experienced Android engineers building or reviewing a KMP
 
 ## 1. High-Level System Shape
 
-**Post-AGP 9.0 migration:** This project uses a **single KMP app module** (`:composeApp`). There is no separate `:shared` module. The `:composeApp` module contains:
-- **commonMain** (and commonTest): domain, data, shared presentation — shared across targets.
-- **androidMain**: Android app (Activities, Compose UI, platform services).
-- **iosMain** (if present): iOS-specific Kotlin; iOS UI is in the separate `iosApp` Swift/SwiftUI target.
+**Post-AGP 9.0 migration:** This project uses a **single KMP app module** (`:composeApp`) and a separate **Android app module** (`:androidApp`). There is no separate `:shared` module.
+
+**Principle:** Maximise code in **commonMain** (`:composeApp`); keep **androidMain**, **iosMain**, and app modules as thin as possible (only what cannot live in commonMain).
 
 - **Compose app module** (`:composeApp`):
-  - **commonMain**: Domain and data layers, plus any shared presentation (e.g. ViewModels/state). Produces shared logic consumed by Android and (via framework) iOS.
-  - **androidMain**: Pure Android/Jetpack code (Activities, Compose UI, platform services).
+  - **commonMain** (and commonTest): Domain, data, and shared presentation (pure Kotlin ViewModels, UI state). Shared across targets; no platform types.
+  - **androidMain**: Only `actual` implementations for platform services and Android-specific integrations (HTTP engine, logging, etc.). No Activities, Compose UI, or ViewModel wrappers here.
+  - **iosMain** (if present): Only `actual` implementations for platform services; iOS UI lives in `iosApp` (Swift/SwiftUI).
+- **Android app module** (`:androidApp`):
+  - Activities, Compose UI screens, and **AndroidX ViewModel wrappers** that hold the pure ViewModel from commonMain. Depends on `:composeApp`.
 - **iOS app target** (`iosApp`):
-  - Swift/SwiftUI code that consumes the shared framework produced by `:composeApp`.
-  - Treats shared code as a black-box library.
+  - Swift/SwiftUI code that consumes the shared framework produced by `:composeApp`; Swift `ObservableObject` wrappers for ViewModels live here.
 
 **Dependency direction**:
 
@@ -54,10 +55,9 @@ The multiplatform module (`:composeApp`) is configured roughly as:
     - **Data layer contracts**: repository interfaces, common DTOs, mapping logic (when platform-agnostic), simple cache abstractions.
     - **Shared presentation** (optional): shared state holders (e.g. `StateFlow`-based ViewModels) used by both platforms.
     - `expect` declarations for minimal platform services (time, UUID, logging, secure storage, etc.).
-- **androidMain**:
-  - `actual` implementations for platform services.
-  - Android-specific integrations: HTTP client engines, persistence engines, logging, analytics bindings, DI wiring when shared.
-  - Android-specific utility code that must not leak into commonMain.
+- **androidMain** (minimal; no UI or ViewModel wrappers):
+  - `actual` implementations for platform services only.
+  - Android-specific integrations: HTTP client engines, persistence engines, logging, analytics bindings. No Activities, Compose UI, or AndroidX ViewModel classes—those live in `:androidApp`.
 - **iosMain**:
   - `actual` implementations for platform services.
   - iOS-specific integrations: HTTP engines, persistence engines, logging, analytics, DI wiring for the Apple framework.
@@ -87,7 +87,7 @@ The multiplatform module (`:composeApp`) is configured roughly as:
 - **Presentation**:
   - Option A (recommended for heavy sharing):
     - **Pure Kotlin ViewModels in `commonMain`**: Shared state holders are plain Kotlin classes (no AndroidX `ViewModel` or iOS types). Annotate with `@Factory`; inject a `CoroutineScope` via `@Provided` and use cases via constructor (scope is owned by the platform). Expose state and events via `StateFlow`/`SharedFlow`. Implement `clear()` that calls `coroutineScope.cancel()` so the platform wrapper can cancel when the screen is disposed.
-    - **Platform wrappers**: **Android** (`composeApp/androidMain`): AndroidX `ViewModel` (`@KoinViewModel`) that holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. **iOS**: Swift `ObservableObject` that gets the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
+    - **Platform wrappers**: **Android** (`:androidApp`): AndroidX `ViewModel` (`@KoinViewModel`) in the Android app module holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. **iOS**: Swift `ObservableObject` in `iosApp` gets the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
     - **Data loading**: Use `stateIn` or an `init { coroutineScope.launch { ... } }` block; initial value can have `isLoading = true`. For testability inject a `CoroutineScope` (e.g. `TestScope` from `runTest`).
     - Thin UI layers bind to the pure ViewModel (Android) or Swift wrapper (iOS) and forward user actions.
   - Option B (platform-first UI):
@@ -166,7 +166,7 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 
 - **Module**: A single `@Module` with `@ComponentScan("org.deafsapps.storeit")` in `commonMain` discovers and registers all annotated types. The generated module is loaded via `AppModule().module` in `initKoin()`.
 - **Registration**: Use cases and repositories are registered with `@Factory(binds = [UseCaseType::class])` or `@Single(binds = [Repository::class])`; use a typealias for the use case interface so the implementation binds to it (e.g. `GetRacksUseCaseType`, `SaveRackUseCaseType`).
-- **ViewModels**: Shared presentation uses **pure Kotlin ViewModels** in `commonMain` (see §3.1): annotated with `@Factory`, they receive a `CoroutineScope` via `@Provided` and use cases via constructor. Resolution with a scope is done via `parametersOf(scope)` at the call site (e.g. Android wrappers pass `viewModelScope`; iOS uses `IosKoinHelper.getXxxViewModel()` with `parametersOf(createViewModelScope())`). Platform wrappers (AndroidX `ViewModel` in `androidMain`, Swift `ObservableObject` in `iosApp`) are the ones annotated with `@KoinViewModel` on Android and use the Koin helper on iOS; they own the scope and call `clear()` on the pure ViewModel when the screen is disposed.
+- **ViewModels**: Shared presentation uses **pure Kotlin ViewModels** in `commonMain` (see §3.1): annotated with `@Factory`, they receive a `CoroutineScope` via `@Provided` and use cases via constructor. Resolution with a scope is done via `parametersOf(scope)` at the call site (e.g. Android wrappers in `:androidApp` pass `viewModelScope`; iOS uses `IosKoinHelper.getXxxViewModel()` with `parametersOf(createViewModelScope())`). Platform wrappers live in the **app** modules: AndroidX `ViewModel` in **`:androidApp`** (not in composeApp/androidMain), Swift `ObservableObject` in **`iosApp`**; they own the scope and call `clear()` on the pure ViewModel when the screen is disposed.
 - **Initialisation**:
   - **Android**: Call `initKoin { androidLogger(); androidContext(this@Application) }` in `Application.onCreate()`. The app is annotated with `@KoinApplication(modules = [AppModule::class])`.
   - **iOS**: Call `KoinInitKt.doInitKoinIos()` from the Swift app’s `init()` (e.g. in `@main struct iOSApp: App`). This starts Koin without platform-specific options.
@@ -174,10 +174,9 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 
 ### 4.8 UI Technologies
 
-- **Android**:
-  - Jetpack Compose for UI.
-  - AndroidX libraries for lifecycle, navigation, etc.
-  - Optional: preferably Koin for DI at the app level; wrap them so shared code remains unaware.
+- **Android** (`:androidApp`):
+  - Jetpack Compose for UI, Activities, and AndroidX ViewModel wrappers. All Android UI and ViewModel wrappers live in `:androidApp`; `composeApp/androidMain` does not contain them.
+  - AndroidX libraries for lifecycle, navigation, etc. Koin for DI at the app level; shared code remains in `:composeApp`.
 - **iOS**:
   - SwiftUI as the primary UI framework; all iOS UI lives in the **`iosApp`** target (Swift), not in the KMP module. The shared framework produced by `:composeApp` is consumed as a dependency (`ComposeApp`).
   - Integration with shared KMP ViewModels: use **Swift `ObservableObject` wrappers** that obtain the pure Kotlin ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, expose its `uiState` and `uiEvent` to SwiftUI (e.g. via Skie or `Observing`), and call the ViewModel’s `clear()` in `deinit` so the coroutine scope is cancelled when the view is dismissed.
@@ -274,7 +273,7 @@ This section describes how an engineer (or automation agent) should add or modif
 - If using shared presentation:
   - Create or extend **pure Kotlin ViewModels** in `commonMain`: plain classes with `@Factory`, `@Provided CoroutineScope`, use cases, `StateFlow`/`SharedFlow`, and `clear()` that cancels the scope.
   - Expose state as immutable streams (e.g. `StateFlow<UiState>`); route events through explicit functions.
-  - On Android: add an **AndroidX ViewModel wrapper** in `composeApp/androidMain` (`@KoinViewModel`) that constructs the pure ViewModel with `viewModelScope` and use cases, exposes it to the Activity/Compose screen, and calls `pureViewModel.clear()` in `onCleared()`.
+  - On Android: add an **AndroidX ViewModel wrapper** in **`:androidApp`** (`@KoinViewModel`) that constructs the pure ViewModel with `viewModelScope` and use cases, exposes it to the Activity/Compose screen, and calls `pureViewModel.clear()` in `onCleared()`. Do not put ViewModel wrappers in `composeApp/androidMain`.
   - On iOS: add a **Swift `ObservableObject` wrapper** that gets the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `clear()` in `deinit`.
 - On Android:
   - Bind Compose UI to the **pure ViewModel** held by the wrapper (e.g. `androidRackListViewModel.rackListViewModel`).

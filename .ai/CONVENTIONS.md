@@ -103,9 +103,11 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 3.1 Source Set Layout
 
-- In this project the KMP module is **`:composeApp`** (no separate `:shared` module; post-AGP 9.0 layout).
-- **commonMain**: Shared business logic, domain models, use cases, repository interfaces, and expect declarations.
-- **androidMain** / **iosMain**: Platform implementations (expect/actual), platform APIs, and DI wiring.
+- In this project the KMP module is **`:composeApp`** (no separate `:shared` module; post-AGP 9.0 layout). **Principle:** Maximise code in **commonMain**; keep androidMain, iosMain, and app modules as thin as possible.
+- **commonMain**: Shared business logic, domain models, use cases, repository interfaces, shared presentation (pure Kotlin ViewModels, UI state), and expect declarations. No platform types.
+- **androidMain** / **iosMain**: Only **actual** implementations for platform services and minimal platform integrations (HTTP engine, logging, etc.). No UI, no ViewModel wrappers—those live in the app modules.
+- **androidApp** (separate module): Activities, Compose UI, and **AndroidX ViewModel wrappers** that hold the pure ViewModel from commonMain.
+- **iosApp** (Swift): SwiftUI UI and Swift `ObservableObject` ViewModel wrappers.
 - **commonTest**: Shared unit tests for common code; no platform APIs.
 
 ### 3.2 Visibility & encapsulation
@@ -153,7 +155,7 @@ Use cases sit in domain and orchestrate repository interfaces; they return domai
 
 **Pure Kotlin ViewModels (shared)**: State holders in `composeApp/commonMain` are plain Kotlin classes (no AndroidX `ViewModel` or iOS types). Annotate with `@Factory`; inject a `CoroutineScope` via `@Provided` and use cases via constructor (scope owned by the platform). Expose state via `StateFlow`, events via `SharedFlow`. Implement `clear()` that calls `coroutineScope.cancel()`. Prefer automatic data loading: use `stateIn` or `init { coroutineScope.launch { … } }`; for testability inject a `CoroutineScope` (e.g. `TestScope` from `runTest`).
 
-**Platform wrappers**: **Android** (`composeApp/androidMain`): AndroidX `ViewModel` with `@KoinViewModel` holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. **iOS**: Swift `ObservableObject` obtains the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
+**Platform wrappers**: **Android** (`:androidApp`): AndroidX `ViewModel` with `@KoinViewModel` in the Android app module holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. Do not put ViewModel wrappers in `composeApp/androidMain`. **iOS**: Swift `ObservableObject` in `iosApp` obtains the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
 
 ### 4.3 Dependency Direction
 
@@ -215,7 +217,7 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 ### 6.4 Dependency Injection (Koin)
 
-- This project uses **Koin** with **Koin Annotations** (KSP): one `@Module` with `@ComponentScan` in `commonMain`; use cases/repositories with `@Factory(binds = [Type::class])` or `@Single(binds = [Type::class])`. **Shared ViewModels** are plain Kotlin classes with `@Factory` and `@Provided CoroutineScope`; they are resolved with `parametersOf(scope)` at the call site (Android wrappers pass `viewModelScope`; iOS uses `IosKoinHelper.getXxxViewModel()` with `parametersOf(createViewModelScope())`). **Android wrappers** are AndroidX `ViewModel` classes with `@KoinViewModel`; they construct the pure ViewModel internally and call `clear()` in `onCleared()`. Prefer constructor injection; avoid `KoinComponent`/`inject()` in the pure ViewModels.
+- This project uses **Koin** with **Koin Annotations** (KSP): one `@Module` with `@ComponentScan` in `commonMain`; use cases/repositories with `@Factory(binds = [Type::class])` or `@Single(binds = [Type::class])`. **Shared ViewModels** are plain Kotlin classes in `commonMain` with `@Factory` and `@Provided CoroutineScope`; they are resolved with `parametersOf(scope)` at the call site (Android wrappers in `:androidApp` pass `viewModelScope`; iOS uses `IosKoinHelper.getXxxViewModel()` with `parametersOf(createViewModelScope())`). **Android wrappers** live in **`:androidApp`** (not in composeApp/androidMain): AndroidX `ViewModel` classes with `@KoinViewModel` construct the pure ViewModel internally and call `clear()` in `onCleared()`. Prefer constructor injection; avoid `KoinComponent`/`inject()` in the pure ViewModels.
 - Initialise Koin once per platform: in Android `Application.onCreate()` with `initKoin { androidLogger(); androidContext(...) }`; in iOS call `KoinInitKt.doInitKoinIos()` from the app entry point.
 - Use case interfaces: expose a typealias (e.g. `GetRacksUseCaseType`) and bind the implementation to it so ViewModels depend on the interface.
 
