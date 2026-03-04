@@ -8,9 +8,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -112,7 +110,7 @@ class RackDetailViewModel(
                 position = SlotPosition(x = 0f, y = 0f, xRel = xRel, yRel = yRel),
             )
             saveSlotUseCase(input = slot).fold(
-                ifErr = { _uiEvent.emit(RackDetailUiEvent.ShowError(it.toErrorCause())) },
+                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
                 ifOk = { saved ->
                     _uiState.update { state ->
                         state.copy(
@@ -132,8 +130,8 @@ class RackDetailViewModel(
 
     fun onEditClick() {
         val rack = _uiState.value.rack ?: return
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            state.copy(
                 showEditDialog = true,
                 editName = rack.name,
                 editDescription = rack.description,
@@ -143,19 +141,19 @@ class RackDetailViewModel(
     }
 
     fun updateEditName(name: String) {
-        _uiState.update { it.copy(editName = name) }
+        _uiState.update { state -> state.copy(editName = name) }
     }
 
     fun updateEditDescription(description: String) {
-        _uiState.update { it.copy(editDescription = description) }
+        _uiState.update { state -> state.copy(editDescription = description) }
     }
 
     fun updateEditLocation(location: String) {
-        _uiState.update { it.copy(editLocation = location) }
+        _uiState.update { state -> state.copy(editLocation = location) }
     }
 
     fun dismissEditDialog() {
-        _uiState.update { it.copy(showEditDialog = false) }
+        _uiState.update { state -> state.copy(showEditDialog = false) }
     }
 
     fun saveRackEdits() {
@@ -168,28 +166,28 @@ class RackDetailViewModel(
                 location = state.editLocation.trim(),
             )
             saveRackUseCase(input = updated).fold(
-                ifErr = { _uiEvent.emit(RackDetailUiEvent.ShowError(it.toErrorCause())) },
+                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
                 ifOk = {
-                    _uiState.update { it.copy(rack = updated, showEditDialog = false) }
+                    _uiState.update { state -> state.copy(rack = updated, showEditDialog = false) }
                 },
             )
         }
     }
 
     fun onRemoveRackClick() {
-        _uiState.update { it.copy(showDeleteConfirm = true) }
+        _uiState.update { state -> state.copy(showDeleteConfirm = true) }
     }
 
     fun dismissDeleteConfirm() {
-        _uiState.update { it.copy(showDeleteConfirm = false) }
+        _uiState.update { state -> state.copy(showDeleteConfirm = false) }
     }
 
     fun confirmDeleteRack() {
         coroutineScope.launch {
             deleteRackUseCase(input = rackId).fold(
-                ifErr = { _uiEvent.emit(RackDetailUiEvent.ShowError(it.toErrorCause())) },
+                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
                 ifOk = {
-                    _uiState.update { it.copy(showDeleteConfirm = false) }
+                    _uiState.update { state -> state.copy(showDeleteConfirm = false) }
                     _uiEvent.emit(RackDetailUiEvent.NavigateBack)
                 },
             )

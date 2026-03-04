@@ -105,6 +105,22 @@ class RackListViewModelTest {
       }
 
   @Test
+  fun `GIVEN fake returns Unknown WHEN ViewModel is created THEN uiState has unknown error message`() =
+      runTest(testDispatcher) {
+          fakeGetRacksUseCase.invokeResult = DomainError.Unknown.err()
+          sut = RackListViewModel(coroutineScope = testScope, getRacksUseCase = fakeGetRacksUseCase)
+          val states = mutableListOf<RackListUiState>()
+          val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
+
+          advanceUntilIdle()
+
+          val state = states.firstOrNull { !it.isLoading } ?: states.last()
+          assertEquals("An unknown error occurred", state.error)
+          collectJob.cancel()
+          advanceUntilIdle()
+      }
+
+  @Test
   fun `GIVEN any state WHEN onAddRackSelect THEN uiEvent emits NavigateToAddRack`() =
       runTest(testDispatcher) {
           fakeGetRacksUseCase.invokeResult = emptyList<Rack>().ok()
