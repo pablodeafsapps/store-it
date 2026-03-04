@@ -151,7 +151,9 @@ Dependency rule: inner layers do not know outer layers. Dependencies point inwar
 
 Use cases sit in domain and orchestrate repository interfaces; they return domain types or simple sealed results (Success / Error).
 
-**ViewModels**: Prefer **automatic data loading**: derive UI state from a cold flow with `stateIn` (and `SharingStarted.WhileSubscribed`) so data loads when the flow is collected; avoid explicit “load” methods. Use an initial state (e.g. `UiState.getDefault()` with `isLoading = true`) for the loading phase. For testability, inject use cases and an optional `CoroutineScope?` in the constructor.
+**Pure Kotlin ViewModels (shared)**: State holders in `composeApp/commonMain` are plain Kotlin classes (no AndroidX `ViewModel` or iOS types). Annotate with `@Factory`; inject a `CoroutineScope` via `@Provided` and use cases via constructor (scope owned by the platform). Expose state via `StateFlow`, events via `SharedFlow`. Implement `clear()` that calls `coroutineScope.cancel()`. Prefer automatic data loading: use `stateIn` or `init { coroutineScope.launch { … } }`; for testability inject a `CoroutineScope` (e.g. `TestScope` from `runTest`).
+
+**Platform wrappers**: **Android** (`composeApp/androidMain`): AndroidX `ViewModel` with `@KoinViewModel` holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. **iOS**: Swift `ObservableObject` obtains the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
 
 ### 4.3 Dependency Direction
 
@@ -213,7 +215,7 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 ### 6.4 Dependency Injection (Koin)
 
-- This project uses **Koin** with **Koin Annotations** (KSP): one `@Module` with `@ComponentScan` in `commonMain`; use cases/repositories with `@Factory(binds = [Type::class])` or `@Single(binds = [Type::class])`; ViewModels with `@KoinViewModel` and constructor injection. Prefer constructor injection; avoid `KoinComponent`/`inject()` in ViewModels when using `@KoinViewModel`.
+- This project uses **Koin** with **Koin Annotations** (KSP): one `@Module` with `@ComponentScan` in `commonMain`; use cases/repositories with `@Factory(binds = [Type::class])` or `@Single(binds = [Type::class])`. **Shared ViewModels** are plain Kotlin classes with `@Factory` and `@Provided CoroutineScope`; they are resolved with `parametersOf(scope)` at the call site (Android wrappers pass `viewModelScope`; iOS uses `IosKoinHelper.getXxxViewModel()` with `parametersOf(createViewModelScope())`). **Android wrappers** are AndroidX `ViewModel` classes with `@KoinViewModel`; they construct the pure ViewModel internally and call `clear()` in `onCleared()`. Prefer constructor injection; avoid `KoinComponent`/`inject()` in the pure ViewModels.
 - Initialise Koin once per platform: in Android `Application.onCreate()` with `initKoin { androidLogger(); androidContext(...) }`; in iOS call `KoinInitKt.doInitKoinIos()` from the app entry point.
 - Use case interfaces: expose a typealias (e.g. `GetRacksUseCaseType`) and bind the implementation to it so ViewModels depend on the interface.
 
@@ -249,8 +251,8 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 ### 7.5 Shared vs Platform Tests
 
-- **commonTest**: Use case and repository tests with shared fakes; no Android/iOS APIs. No AndroidX types (e.g. no `ViewModel` tests here if they extend AndroidX `ViewModel`).
-- **androidApp/src/test**: ViewModel unit tests when the ViewModel is in `commonMain` but extends AndroidX `ViewModel`. Use fakes for use cases, inject an optional `CoroutineScope` (e.g. from `runTest`) into the ViewModel for deterministic tests; use `runTest` and `advanceUntilIdle()` from `kotlinx-coroutines-test`.
+- **commonTest**: Use case and repository tests with shared fakes; no Android/iOS APIs. No AndroidX types.
+- **androidApp/src/test**: Unit tests for **pure Kotlin ViewModels** in `commonMain`. Test the pure ViewModel directly: use fakes for use cases and inject a `CoroutineScope` (e.g. `TestScope(testDispatcher)` from `runTest`) for deterministic execution. Use `runTest(testDispatcher)` and `advanceUntilIdle()`; collect `uiState`/`uiEvent` in a list and assert on the latest value so `stateIn`/`shareIn` updates are observed.
 - **androidTest / iOS**: Integration or UI tests as needed.
 
 ---

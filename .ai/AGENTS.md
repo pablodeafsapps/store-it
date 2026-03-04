@@ -86,11 +86,10 @@ The multiplatform module (`:composeApp`) is configured roughly as:
 
 - **Presentation**:
   - Option A (recommended for heavy sharing):
-    - Shared ViewModels / state holders in `commonMain`:
-      - Expose **immutable state** and **events** via `StateFlow`, `SharedFlow`, or MVI-style reducers.
-      - No direct reference to Android or iOS view types.
-      - **Automatic data loading**: Prefer deriving state from a cold flow collected with `stateIn` (e.g. `flow { … }.stateIn(scope, SharingStarted.WhileSubscribed(…), initialValue)`) so data loads when the flow is collected. Do not require an explicit “load” call from the UI; the initial value can represent loading (e.g. `UiState.getDefault()` with `isLoading = true`). For testability, ViewModels accept use cases via constructor and an optional `CoroutineScope?` so tests can inject a test scope.
-    - Thin UI layers in Android/iOS render state and forward user actions.
+    - **Pure Kotlin ViewModels in `commonMain`**: Shared state holders are plain Kotlin classes (no AndroidX `ViewModel` or iOS types). Annotate with `@Factory`; inject a `CoroutineScope` via `@Provided` and use cases via constructor (scope is owned by the platform). Expose state and events via `StateFlow`/`SharedFlow`. Implement `clear()` that calls `coroutineScope.cancel()` so the platform wrapper can cancel when the screen is disposed.
+    - **Platform wrappers**: **Android** (`composeApp/androidMain`): AndroidX `ViewModel` (`@KoinViewModel`) that holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. **iOS**: Swift `ObservableObject` that gets the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
+    - **Data loading**: Use `stateIn` or an `init { coroutineScope.launch { ... } }` block; initial value can have `isLoading = true`. For testability inject a `CoroutineScope` (e.g. `TestScope` from `runTest`).
+    - Thin UI layers bind to the pure ViewModel (Android) or Swift wrapper (iOS) and forward user actions.
   - Option B (platform-first UI):
     - Presentation layer lives in platform modules only; shared module stops at Domain/Data.
 
@@ -167,7 +166,7 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 
 - **Module**: A single `@Module` with `@ComponentScan("org.deafsapps.storeit")` in `commonMain` discovers and registers all annotated types. The generated module is loaded via `AppModule().module` in `initKoin()`.
 - **Registration**: Use cases and repositories are registered with `@Factory(binds = [UseCaseType::class])` or `@Single(binds = [Repository::class])`; use a typealias for the use case interface so the implementation binds to it (e.g. `GetRacksUseCaseType`, `SaveRackUseCaseType`).
-- **ViewModels**: Shared ViewModels are annotated with `@KoinViewModel`; they receive use cases (and optionally an optional `CoroutineScope` for tests) via constructor injection. Koin generates the factory; no `KoinComponent`/`inject()` in the ViewModel when using constructor injection.
+- **ViewModels**: Shared presentation uses **pure Kotlin ViewModels** in `commonMain` (see §3.1): annotated with `@Factory`, they receive a `CoroutineScope` via `@Provided` and use cases via constructor. Resolution with a scope is done via `parametersOf(scope)` at the call site (e.g. Android wrappers pass `viewModelScope`; iOS uses `IosKoinHelper.getXxxViewModel()` with `parametersOf(createViewModelScope())`). Platform wrappers (AndroidX `ViewModel` in `androidMain`, Swift `ObservableObject` in `iosApp`) are the ones annotated with `@KoinViewModel` on Android and use the Koin helper on iOS; they own the scope and call `clear()` on the pure ViewModel when the screen is disposed.
 - **Initialisation**:
   - **Android**: Call `initKoin { androidLogger(); androidContext(this@Application) }` in `Application.onCreate()`. The app is annotated with `@KoinApplication(modules = [AppModule::class])`.
   - **iOS**: Call `KoinInitKt.doInitKoinIos()` from the Swift app’s `init()` (e.g. in `@main struct iOSApp: App`). This starts Koin without platform-specific options.
@@ -181,7 +180,7 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
   - Optional: preferably Koin for DI at the app level; wrap them so shared code remains unaware.
 - **iOS**:
   - SwiftUI as the primary UI framework; all iOS UI lives in the **`iosApp`** target (Swift), not in the KMP module. The shared framework produced by `:composeApp` is consumed as a dependency (`ComposeApp`).
-  - Integration with shared KMP ViewModels: instantiate ViewModels in Swift (e.g. `AddRackViewModel()`) and observe state/events via the Skie or KMP runtime bridge, e.g. `Observing(viewModel.uiState, viewModel.uiEvent.withInitialValue(nil)) { state, event in … }` so the SwiftUI view receives state and event callbacks.
+  - Integration with shared KMP ViewModels: use **Swift `ObservableObject` wrappers** that obtain the pure Kotlin ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, expose its `uiState` and `uiEvent` to SwiftUI (e.g. via Skie or `Observing`), and call the ViewModel’s `clear()` in `deinit` so the coroutine scope is cancelled when the view is dismissed.
   - Koin is initialised from the iOS app entry point with `KoinInitKt.doInitKoinIos()` so shared dependencies are available.
 
 ---
@@ -273,15 +272,16 @@ This section describes how an engineer (or automation agent) should add or modif
 ### 6.3 Presentation & UI
 
 - If using shared presentation:
-  - Create or extend ViewModel/state holder in `commonMain`.
-  - Expose state as immutable streams (e.g. `StateFlow<UiState>`).
-  - Route events (user intents) through explicit functions.
+  - Create or extend **pure Kotlin ViewModels** in `commonMain`: plain classes with `@Factory`, `@Provided CoroutineScope`, use cases, `StateFlow`/`SharedFlow`, and `clear()` that cancels the scope.
+  - Expose state as immutable streams (e.g. `StateFlow<UiState>`); route events through explicit functions.
+  - On Android: add an **AndroidX ViewModel wrapper** in `composeApp/androidMain` (`@KoinViewModel`) that constructs the pure ViewModel with `viewModelScope` and use cases, exposes it to the Activity/Compose screen, and calls `pureViewModel.clear()` in `onCleared()`.
+  - On iOS: add a **Swift `ObservableObject` wrapper** that gets the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `clear()` in `deinit`.
 - On Android:
-  - Bind Compose UI to shared or Android-specific ViewModels.
+  - Bind Compose UI to the **pure ViewModel** held by the wrapper (e.g. `androidRackListViewModel.rackListViewModel`).
   - Maintain unidirectional data flow: UI → events → ViewModel → state → UI.
 - On iOS:
-  - Bind SwiftUI views to shared ViewModels or Swift wrappers.
-  - Use `async/await`, Combine, or other mechanisms to observe KMP state consistently.
+  - Bind SwiftUI views to the Swift wrapper; the wrapper holds and observes the pure Kotlin ViewModel.
+  - Use Skie, `Observing`, or equivalent to observe KMP state/events consistently.
 
 ### 6.4 Code style
 
@@ -298,8 +298,8 @@ This section describes how an engineer (or automation agent) should add or modif
   - **Suspend / coroutines**: Use `runTest { }` from `kotlinx-coroutines-test` (not `runBlocking`) for tests that call suspend functions. Add `kotlinx-coroutines-test` to `commonTest` dependencies; use `fun testName() = runTest { ... }`.
   - **Test naming**: Follow GIVEN–WHEN–THEN with **GIVEN**, **WHEN**, **THEN** in caps in the test name (e.g. `` `GIVEN empty repository WHEN getAllRacks THEN returns empty list`() ``).
   - **Test body structure**: Structure each test in three sections (setup → action → assertions) separated by **blank lines only**; do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup (e.g. “empty repository” or “any state”), leave a single blank line after the test opening, then the WHEN and THEN blocks.
-- **Android ViewModel tests** (when the ViewModel lives in `commonMain` but extends AndroidX `ViewModel`):
-  - Place unit tests in **`androidApp/src/test`** so AndroidX and JUnit are available. Use **fakes** for use cases (e.g. `FakeGetRacksUseCase`) and inject an optional **`CoroutineScope`** (e.g. the `TestScope` from `runTest`) into the ViewModel constructor so execution is deterministic. Use `runTest` and `advanceUntilIdle()` from `kotlinx-coroutines-test`; add `kotlinx-coroutines-test` to the Android module’s `testImplementation` dependencies.
+- **Android ViewModel tests** (pure Kotlin ViewModels in `commonMain`):
+  - Place unit tests in **`androidApp/src/test`** so JUnit and coroutines-test are available. Test the **pure ViewModel** directly: use **fakes** for use cases (e.g. `FakeGetRacksUseCase`) and inject a **`CoroutineScope`** (e.g. `TestScope(testDispatcher)` from `runTest`) so execution is deterministic. Use `runTest(testDispatcher)` and `advanceUntilIdle()`; collect `uiState`/`uiEvent` in a list and assert on the latest value so `stateIn`/`shareIn` updates are observed. Add `kotlinx-coroutines-test` to the Android module’s `testImplementation` dependencies.
 - **Android/iOS integration tests**:
   - Verify integration with platform-specific services, navigation, and lifecycle.
 
