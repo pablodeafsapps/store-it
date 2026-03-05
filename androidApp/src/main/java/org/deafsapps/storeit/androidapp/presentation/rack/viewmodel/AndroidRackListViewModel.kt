@@ -7,7 +7,7 @@ import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.koin.android.annotation.KoinViewModel
 
 @KoinViewModel
-class AndroidRackListViewModel(
+internal class AndroidRackListViewModel(
     private val getRacksUseCase: GetRacksFlowUseCaseType,
 ) : ViewModel() {
 

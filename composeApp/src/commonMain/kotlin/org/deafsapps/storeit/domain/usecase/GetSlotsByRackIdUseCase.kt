@@ -7,12 +7,12 @@ import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.repository.SlotRepository
 import org.koin.core.annotation.Factory
 
-interface GetSlotsByRackUseCaseType : UseCase<String, Result<DomainError, List<ShelfSlot>>>
+interface GetSlotsByRackIdUseCaseType : UseCase<String, Result<DomainError, List<ShelfSlot>>>
 
-@Factory(binds = [GetSlotsByRackUseCaseType::class])
-internal class GetSlotsByRackUseCase(
+@Factory(binds = [GetSlotsByRackIdUseCaseType::class])
+internal class GetSlotsByRackIdUseCase(
     private val slotRepository: SlotRepository,
-) : GetSlotsByRackUseCaseType {
+) : GetSlotsByRackIdUseCaseType {
     override suspend fun invoke(input: String): Result<DomainError, List<ShelfSlot>> =
         slotRepository.getSlotsByRack(rackId = input)
 }

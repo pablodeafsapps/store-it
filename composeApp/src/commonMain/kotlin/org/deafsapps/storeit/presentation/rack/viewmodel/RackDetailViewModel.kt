@@ -18,8 +18,7 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.domain.usecase.DeleteRackUseCaseType
-import org.deafsapps.storeit.domain.usecase.GetRackByIdUseCaseType
-import org.deafsapps.storeit.domain.usecase.GetSlotsByRackUseCaseType
+import org.deafsapps.storeit.domain.usecase.GetRackDataByRackIdUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotView
@@ -38,8 +37,7 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 class RackDetailViewModel(
     @Provided private val coroutineScope: CoroutineScope,
     @InjectedParam private val rackId: String,
-    private val getRackByIdUseCase: GetRackByIdUseCaseType,
-    private val getSlotsByRackUseCase: GetSlotsByRackUseCaseType,
+    private val getRackDataByRackIdUseCase: GetRackDataByRackIdUseCaseType,
     private val saveSlotUseCase: SaveSlotUseCaseType,
     private val saveRackUseCase: SaveRackUseCaseType,
     private val deleteRackUseCase: DeleteRackUseCaseType,
@@ -48,7 +46,7 @@ class RackDetailViewModel(
     private val _uiState = MutableStateFlow(RackDetailUiState.getDefault())
     val uiState: StateFlow<RackDetailUiState> =
         flow {
-            getRackByIdUseCase(input = rackId).fold(
+            getRackDataByRackIdUseCase(input = rackId).fold(
                 ifErr = { error ->
                     emit(
                         _uiState.value.copy(
@@ -56,36 +54,23 @@ class RackDetailViewModel(
                             error = error.toErrorCause(),
                         )
                     )
-                        }, ifOk = { rack ->
-                            getSlotsByRackUseCase(input = rackId).fold(
-                                ifErr = { err ->
-                                    emit(
-                                        _uiState.value.copy(
-                                            rack = rack,
-                                            slots = emptyList(),
-                                            isLoading = false,
-                                            error = err.toErrorCause(),
-                                        )
-                                    )
-                                        }, ifOk = { slotList ->
-                                            emit(
-                                                _uiState.value.copy(
-                                                    rack = rack,
-                                                    slots = slotList.map { s ->
-                                                        RackDetailSlotView(
-                                                            id = s.id,
-                                                            xRel = s.position.xRel,
-                                                            yRel = s.position.yRel,
-                                                        )
-                                                    },
-                                                    isLoading = false,
-                                                    error = null,
-                                                )
-                                            )
-                                                  },
+                }, ifOk = { rackData ->
+                    emit(
+                        _uiState.value.copy(
+                            rack = rackData.rack,
+                            slots = rackData.shelfSlots.map { slot ->
+                                RackDetailSlotView(
+                                    id = slot.id,
+                                    xRel = slot.position.xRel,
+                                    yRel = slot.position.yRel,
                                 )
-                                  },
-                )
+                            },
+                            isLoading = false,
+                            error = null,
+                        )
+                    )
+                }
+            )
         }.stateIn(
             scope = coroutineScope,
             started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
