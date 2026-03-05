@@ -1,10 +1,23 @@
 import SwiftUI
 import ComposeApp
 
-private enum NavScreen {
+enum NavScreen {
     case rackList
     case addRack
     case rackDetail(rackId: String)
+}
+
+enum RackListNavigation {
+    static func nextScreen(current: NavScreen, event: RackListUiEvent?) -> NavScreen {
+        guard let event = event else { return current }
+        if event is RackListUiEventNavigateToAddRack {
+            return .addRack
+        } else if let detail = event as? RackListUiEventNavigateToRackDetail {
+            return .rackDetail(rackId: detail.rackId)
+        } else {
+            return current
+        }
+    }
 }
 
 struct ContentView: View {
@@ -53,12 +66,7 @@ struct ContentView: View {
     }
 
     private func handleRackListEvent(_ event: RackListUiEvent?) {
-        guard let event = event else { return }
-        if event is RackListUiEventNavigateToAddRack {
-            currentScreen = .addRack
-        } else if let detail = event as? RackListUiEventNavigateToRackDetail {
-            currentScreen = .rackDetail(rackId: detail.rackId)
-        }
+        currentScreen = RackListNavigation.nextScreen(current: currentScreen, event: event)
     }
 }
 

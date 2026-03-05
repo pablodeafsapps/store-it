@@ -34,6 +34,7 @@ struct RackListView: View {
                     Button(action: onAddRackSelect) {
                         Image(systemName: "plus")
                     }
+                    .accessibilityIdentifier("addRackToolbarButton")
                 }
             }
         }
@@ -52,6 +53,7 @@ struct RackListView: View {
                 Text("Add Rack")
                     .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("addRackButton")
             .buttonStyle(.borderedProminent)
             .padding(.top, 8)
         }

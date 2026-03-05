@@ -62,6 +62,7 @@ struct AddRackView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
+                    .accessibilityIdentifier("saveRackButton")
                     .disabled(uiState.isLoading)
                 }
             }
@@ -72,6 +73,7 @@ struct AddRackView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityIdentifier("cancelButton")
                 }
             }
             .photosPicker(
@@ -128,6 +130,7 @@ struct AddRackView: View {
                 Text(uiState.photoUri != nil ? "Change Photo" : "Select Photo")
                     .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("changeOrSelectPhotoButton")
             .buttonStyle(.borderedProminent)
         }
     }

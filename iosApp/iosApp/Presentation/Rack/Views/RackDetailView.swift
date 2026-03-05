@@ -76,6 +76,7 @@ struct RackDetailView: View {
                     Button("Back") {
                         onNavigateBack()
                     }
+                    .accessibilityIdentifier("rackDetailBackButton")
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
@@ -88,6 +89,7 @@ struct RackDetailView: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                    .accessibilityIdentifier("rackDetailMenuButton")
                 }
             }
             .sheet(isPresented: Binding(
@@ -181,7 +183,7 @@ private struct RackImageView: View {
     }
 }
 
-private extension Comparable {
+extension Comparable {
     func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
@@ -210,9 +212,11 @@ private struct EditRackSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onDismiss() }
+                        .accessibilityIdentifier("editRackCancelButton")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { onSave() }
+                        .accessibilityIdentifier("editRackSaveButton")
                 }
             }
         }
