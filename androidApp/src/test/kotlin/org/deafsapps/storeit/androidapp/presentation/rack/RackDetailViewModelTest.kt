@@ -8,14 +8,14 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeDeleteRackUseCase
-import org.deafsapps.storeit.androidapp.fake.FakeGetRackByIdUseCase
-import org.deafsapps.storeit.androidapp.fake.FakeGetSlotsByRackUseCase
+import org.deafsapps.storeit.androidapp.fake.FakeGetRackDataByRackIdUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeSaveRackUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeSaveSlotUseCase
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.domain.model.RackData
 import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
@@ -32,8 +32,7 @@ import org.junit.Test
 class RackDetailViewModelTest {
 
     private lateinit var sut: RackDetailViewModel
-    private lateinit var fakeGetRackById: FakeGetRackByIdUseCase
-    private lateinit var fakeGetSlotsByRack: FakeGetSlotsByRackUseCase
+    private lateinit var fakeGetRackDataByRackId: FakeGetRackDataByRackIdUseCase
     private lateinit var fakeSaveSlot: FakeSaveSlotUseCase
     private lateinit var fakeSaveRack: FakeSaveRackUseCase
     private lateinit var fakeDeleteRack: FakeDeleteRackUseCase
@@ -44,8 +43,7 @@ class RackDetailViewModelTest {
 
     @Before
     fun setUp() {
-        fakeGetRackById = FakeGetRackByIdUseCase()
-        fakeGetSlotsByRack = FakeGetSlotsByRackUseCase()
+        fakeGetRackDataByRackId = FakeGetRackDataByRackIdUseCase()
         fakeSaveSlot = FakeSaveSlotUseCase()
         fakeSaveRack = FakeSaveRackUseCase()
         fakeDeleteRack = FakeDeleteRackUseCase()
@@ -54,15 +52,18 @@ class RackDetailViewModelTest {
     @Test
     fun `GIVEN getRack and getSlots succeed WHEN ViewModel created THEN uiState has rack and slots`() =
         runTest(testDispatcher) {
-            fakeGetRackById.invokeResult = dummyRack.ok()
-            val slot = ShelfSlot("s1", dummyRackId, SlotPosition(0f, 0f, 0.5f, 0.5f))
-            fakeGetSlotsByRack.invokeResult = listOf(slot).ok()
+            val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = listOf(slot),
+                items = emptyList(),
+            ).ok()
 
             sut = RackDetailViewModel(
                 coroutineScope = testScope,
                 rackId = dummyRackId,
-                getRackByIdUseCase = fakeGetRackById,
-                getSlotsByRackUseCase = fakeGetSlotsByRack,
+                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
                 saveSlotUseCase = fakeSaveSlot,
                 saveRackUseCase = fakeSaveRack,
                 deleteRackUseCase = fakeDeleteRack,
@@ -82,13 +83,12 @@ class RackDetailViewModelTest {
 
     @Test
     fun `GIVEN getRack fails WHEN ViewModel created THEN uiState has error`() = runTest(testDispatcher) {
-        fakeGetRackById.invokeResult = DomainError.NotFound(resource = "Rack", id = dummyRackId).err()
+        fakeGetRackDataByRackId.invokeResult = DomainError.NotFound(resource = "Rack", id = dummyRackId).err()
 
         sut = RackDetailViewModel(
             coroutineScope = testScope,
             rackId = dummyRackId,
-            getRackByIdUseCase = fakeGetRackById,
-            getSlotsByRackUseCase = fakeGetSlotsByRack,
+            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
             saveSlotUseCase = fakeSaveSlot,
             saveRackUseCase = fakeSaveRack,
             deleteRackUseCase = fakeDeleteRack,
@@ -104,16 +104,14 @@ class RackDetailViewModelTest {
     }
 
     @Test
-    fun `GIVEN getRack succeeds getSlots fails WHEN ViewModel created THEN uiState has rack and error`() =
+    fun `GIVEN getRackData fails WHEN ViewModel created THEN uiState has error`() =
         runTest(testDispatcher) {
-            fakeGetRackById.invokeResult = dummyRack.ok()
-            fakeGetSlotsByRack.invokeResult = DomainError.NotFound(resource = "Slot", id = null).err()
+            fakeGetRackDataByRackId.invokeResult = DomainError.NotFound(resource = "Slot", id = null).err()
 
             sut = RackDetailViewModel(
                 coroutineScope = testScope,
                 rackId = dummyRackId,
-                getRackByIdUseCase = fakeGetRackById,
-                getSlotsByRackUseCase = fakeGetSlotsByRack,
+                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
                 saveSlotUseCase = fakeSaveSlot,
                 saveRackUseCase = fakeSaveRack,
                 deleteRackUseCase = fakeDeleteRack,
@@ -123,8 +121,7 @@ class RackDetailViewModelTest {
             advanceUntilIdle()
 
             val state = collectedStates.firstOrNull { !it.isLoading } ?: collectedStates.last()
-            assertEquals(dummyRack, state.rack)
-            assertTrue(state.slots.isEmpty())
+            assertNull(state.rack)
             assertTrue(state.error != null)
             collectJob.cancel()
         }
@@ -132,13 +129,16 @@ class RackDetailViewModelTest {
     @Test
     fun `GIVEN rack loaded WHEN onEditClick THEN uiState reflects load and dialog state unchanged`() =
         runTest(testDispatcher) {
-            fakeGetRackById.invokeResult = dummyRack.ok()
-            fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = emptyList(),
+                items = emptyList(),
+            ).ok()
             sut = RackDetailViewModel(
                 coroutineScope = testScope,
                 rackId = dummyRackId,
-                getRackByIdUseCase = fakeGetRackById,
-                getSlotsByRackUseCase = fakeGetSlotsByRack,
+                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
                 saveSlotUseCase = fakeSaveSlot,
                 saveRackUseCase = fakeSaveRack,
                 deleteRackUseCase = fakeDeleteRack,
@@ -161,13 +161,16 @@ class RackDetailViewModelTest {
 
     @Test
     fun `GIVEN edit dialog open WHEN dismissEditDialog THEN showEditDialog false`() = runTest(testDispatcher) {
-        fakeGetRackById.invokeResult = dummyRack.ok()
-        fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+        fakeGetRackDataByRackId.invokeResult = RackData(
+            id = dummyRackId,
+            rack = dummyRack,
+            shelfSlots = emptyList(),
+            items = emptyList(),
+        ).ok()
         sut = RackDetailViewModel(
             coroutineScope = testScope,
             rackId = dummyRackId,
-            getRackByIdUseCase = fakeGetRackById,
-            getSlotsByRackUseCase = fakeGetSlotsByRack,
+            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
             saveSlotUseCase = fakeSaveSlot,
             saveRackUseCase = fakeSaveRack,
             deleteRackUseCase = fakeDeleteRack,
@@ -188,13 +191,16 @@ class RackDetailViewModelTest {
     @Test
     fun `GIVEN rack loaded WHEN saveRackEdits called THEN uiState unchanged`() =
         runTest(testDispatcher) {
-            fakeGetRackById.invokeResult = dummyRack.ok()
-            fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = emptyList(),
+                items = emptyList(),
+            ).ok()
             sut = RackDetailViewModel(
                 coroutineScope = testScope,
                 rackId = dummyRackId,
-                getRackByIdUseCase = fakeGetRackById,
-                getSlotsByRackUseCase = fakeGetSlotsByRack,
+                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
                 saveSlotUseCase = fakeSaveSlot,
                 saveRackUseCase = fakeSaveRack,
                 deleteRackUseCase = fakeDeleteRack,
@@ -218,13 +224,16 @@ class RackDetailViewModelTest {
 
     @Test
     fun `GIVEN rack loaded WHEN onRemoveRackClick THEN uiState rack and slots unchanged`() = runTest(testDispatcher) {
-        fakeGetRackById.invokeResult = dummyRack.ok()
-        fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+        fakeGetRackDataByRackId.invokeResult = RackData(
+            id = dummyRackId,
+            rack = dummyRack,
+            shelfSlots = emptyList(),
+            items = emptyList(),
+        ).ok()
         sut = RackDetailViewModel(
             coroutineScope = testScope,
             rackId = dummyRackId,
-            getRackByIdUseCase = fakeGetRackById,
-            getSlotsByRackUseCase = fakeGetSlotsByRack,
+            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
             saveSlotUseCase = fakeSaveSlot,
             saveRackUseCase = fakeSaveRack,
             deleteRackUseCase = fakeDeleteRack,
@@ -245,13 +254,16 @@ class RackDetailViewModelTest {
     @Test
     fun `GIVEN delete confirm shown WHEN dismissDeleteConfirm THEN showDeleteConfirm false`() =
         runTest(testDispatcher) {
-            fakeGetRackById.invokeResult = dummyRack.ok()
-            fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = emptyList(),
+                items = emptyList(),
+            ).ok()
             sut = RackDetailViewModel(
                 coroutineScope = testScope,
                 rackId = dummyRackId,
-                getRackByIdUseCase = fakeGetRackById,
-                getSlotsByRackUseCase = fakeGetSlotsByRack,
+                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
                 saveSlotUseCase = fakeSaveSlot,
                 saveRackUseCase = fakeSaveRack,
                 deleteRackUseCase = fakeDeleteRack,
@@ -267,14 +279,17 @@ class RackDetailViewModelTest {
     @Test
     fun `GIVEN delete confirm and delete succeeds WHEN confirmDeleteRack THEN uiEvent NavigateBack`() =
         runTest(testDispatcher) {
-            fakeGetRackById.invokeResult = dummyRack.ok()
-            fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = emptyList(),
+                items = emptyList(),
+            ).ok()
             fakeDeleteRack.invokeResult = Unit.ok()
             sut = RackDetailViewModel(
                 coroutineScope = testScope,
                 rackId = dummyRackId,
-                getRackByIdUseCase = fakeGetRackById,
-                getSlotsByRackUseCase = fakeGetSlotsByRack,
+                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
                 saveSlotUseCase = fakeSaveSlot,
                 saveRackUseCase = fakeSaveRack,
                 deleteRackUseCase = fakeDeleteRack,
@@ -297,15 +312,18 @@ class RackDetailViewModelTest {
     @Test
     fun `GIVEN rack loaded and saveSlot succeeds WHEN onImageTap THEN uiState slots unchanged`() =
         runTest(testDispatcher) {
-            fakeGetRackById.invokeResult = dummyRack.ok()
-            fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
-            val savedSlot = ShelfSlot("saved-1", dummyRackId, SlotPosition(0f, 0f, 0.3f, 0.4f))
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = emptyList(),
+                items = emptyList(),
+            ).ok()
+            val savedSlot = ShelfSlot(id = "saved-1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.3f, 0.4f))
             fakeSaveSlot.invokeResult = savedSlot.ok()
             sut = RackDetailViewModel(
                 coroutineScope = testScope,
                 rackId = dummyRackId,
-                getRackByIdUseCase = fakeGetRackById,
-                getSlotsByRackUseCase = fakeGetSlotsByRack,
+                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
                 saveSlotUseCase = fakeSaveSlot,
                 saveRackUseCase = fakeSaveRack,
                 deleteRackUseCase = fakeDeleteRack,
@@ -317,7 +335,7 @@ class RackDetailViewModelTest {
             val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
             advanceUntilIdle()
 
-            sut.onImageTap(0.3f, 0.4f)
+            sut.onImageTap(xRel = 0.3f, yRel = 0.4f)
             advanceUntilIdle()
 
             val state = collectedStates.last()
@@ -329,14 +347,17 @@ class RackDetailViewModelTest {
 
     @Test
     fun `GIVEN saveRackEdits would fail WHEN saveRackEdits THEN no ShowError emitted`() = runTest(testDispatcher) {
-        fakeGetRackById.invokeResult = dummyRack.ok()
-        fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+        fakeGetRackDataByRackId.invokeResult = RackData(
+            id = dummyRackId,
+            rack = dummyRack,
+            shelfSlots = emptyList(),
+            items = emptyList(),
+        ).ok()
         fakeSaveRack.invokeResult = DomainError.ValidationError(reason = "Name too long").err()
         sut = RackDetailViewModel(
             coroutineScope = testScope,
             rackId = dummyRackId,
-            getRackByIdUseCase = fakeGetRackById,
-            getSlotsByRackUseCase = fakeGetSlotsByRack,
+            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
             saveSlotUseCase = fakeSaveSlot,
             saveRackUseCase = fakeSaveRack,
             deleteRackUseCase = fakeDeleteRack,
@@ -361,14 +382,17 @@ class RackDetailViewModelTest {
 
     @Test
     fun `GIVEN confirmDeleteRack fails WHEN confirmDeleteRack THEN uiEvent ShowError`() = runTest(testDispatcher) {
-        fakeGetRackById.invokeResult = dummyRack.ok()
-        fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+        fakeGetRackDataByRackId.invokeResult = RackData(
+            id = dummyRackId,
+            rack = dummyRack,
+            shelfSlots = emptyList(),
+            items = emptyList(),
+        ).ok()
         fakeDeleteRack.invokeResult = DomainError.NotFound(resource = "Rack", id = dummyRackId).err()
         sut = RackDetailViewModel(
             coroutineScope = testScope,
             rackId = dummyRackId,
-            getRackByIdUseCase = fakeGetRackById,
-            getSlotsByRackUseCase = fakeGetSlotsByRack,
+            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
             saveSlotUseCase = fakeSaveSlot,
             saveRackUseCase = fakeSaveRack,
             deleteRackUseCase = fakeDeleteRack,
@@ -394,14 +418,17 @@ class RackDetailViewModelTest {
 
     @Test
     fun `GIVEN saveSlot would fail WHEN onImageTap THEN no ShowError emitted`() = runTest(testDispatcher) {
-        fakeGetRackById.invokeResult = dummyRack.ok()
-        fakeGetSlotsByRack.invokeResult = emptyList<ShelfSlot>().ok()
+        fakeGetRackDataByRackId.invokeResult = RackData(
+            id = dummyRackId,
+            rack = dummyRack,
+            shelfSlots = emptyList(),
+            items = emptyList(),
+        ).ok()
         fakeSaveSlot.invokeResult = DomainError.ValidationError(reason = "Invalid position").err()
         sut = RackDetailViewModel(
             coroutineScope = testScope,
             rackId = dummyRackId,
-            getRackByIdUseCase = fakeGetRackById,
-            getSlotsByRackUseCase = fakeGetSlotsByRack,
+            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
             saveSlotUseCase = fakeSaveSlot,
             saveRackUseCase = fakeSaveRack,
             deleteRackUseCase = fakeDeleteRack,
@@ -413,7 +440,7 @@ class RackDetailViewModelTest {
         val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
         advanceUntilIdle()
 
-        sut.onImageTap(0.5f, 0.5f)
+        sut.onImageTap(xRel = 0.5f, yRel = 0.5f)
         advanceUntilIdle()
 
         assertTrue(collectedStates.last().slots.isEmpty())
