@@ -53,4 +53,8 @@ internal class FakeItemRepository : ItemRepository {
         items.keys.toList().filter { items[it]?.rackId == rackId }.forEach { items.remove(it) }
         Unit.ok()
     }
+
+    override suspend fun clear() {
+        items.clear()
+    }
 }

@@ -11,9 +11,10 @@ import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
+import org.deafsapps.storeit.domain.repository.ItemRepository
 
 class InMemoryItemRepositoryTest {
-    private lateinit var sut: InMemoryItemRepository
+    private lateinit var sut: ItemRepository
 
     @BeforeTest
     fun setUp() {

@@ -7,7 +7,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.deafsapps.storeit.androidapp.fake.FakeGetRacksUseCase
+import org.deafsapps.storeit.androidapp.fake.FakeGetRacksFlowUseCase
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
@@ -25,20 +25,20 @@ import org.junit.Test
 class RackListViewModelTest {
 
   private lateinit var sut: RackListViewModel
-  private lateinit var fakeGetRacksUseCase: FakeGetRacksUseCase
+  private lateinit var fakeGetRacksUseCase: FakeGetRacksFlowUseCase
   private val testDispatcher = StandardTestDispatcher()
   private val testScope = TestScope(testDispatcher)
 
   @Before
   fun setUp() {
-    fakeGetRacksUseCase = FakeGetRacksUseCase()
+    fakeGetRacksUseCase = FakeGetRacksFlowUseCase()
   }
 
   @Test
   fun `GIVEN fake returns empty list WHEN ViewModel is created THEN uiState has empty racks`() =
       runTest(testDispatcher) {
           fakeGetRacksUseCase.invokeResult = emptyList<Rack>().ok()
-          sut = RackListViewModel(coroutineScope = testScope, getRacksUseCase = fakeGetRacksUseCase)
+          sut = RackListViewModel(coroutineScope = testScope, getRacksFlowUseCase = fakeGetRacksUseCase)
           val states = mutableListOf<RackListUiState>()
           val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
 
@@ -57,7 +57,7 @@ class RackListViewModelTest {
           val rack1 = Rack(id = "1", name = "Rack 1")
           val rack2 = Rack(id = "2", name = "Rack 2")
           fakeGetRacksUseCase.invokeResult = listOf(rack1, rack2).ok()
-          sut = RackListViewModel(coroutineScope = testScope, getRacksUseCase = fakeGetRacksUseCase)
+          sut = RackListViewModel(coroutineScope = testScope, getRacksFlowUseCase = fakeGetRacksUseCase)
           val states = mutableListOf<RackListUiState>()
           val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
 
@@ -76,7 +76,7 @@ class RackListViewModelTest {
       runTest(testDispatcher) {
           fakeGetRacksUseCase.invokeResult =
               DomainError.ValidationError(field = "id", reason = "Invalid id").err()
-          sut = RackListViewModel(coroutineScope = testScope, getRacksUseCase = fakeGetRacksUseCase)
+          sut = RackListViewModel(coroutineScope = testScope, getRacksFlowUseCase = fakeGetRacksUseCase)
           val states = mutableListOf<RackListUiState>()
           val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
 
@@ -92,7 +92,7 @@ class RackListViewModelTest {
   fun `GIVEN fake returns NotFound WHEN ViewModel is created THEN uiState has Racks not found message`() =
       runTest(testDispatcher) {
           fakeGetRacksUseCase.invokeResult = DomainError.NotFound(resource = "Rack", id = "x").err()
-          sut = RackListViewModel(coroutineScope = testScope, getRacksUseCase = fakeGetRacksUseCase)
+          sut = RackListViewModel(coroutineScope = testScope, getRacksFlowUseCase = fakeGetRacksUseCase)
           val states = mutableListOf<RackListUiState>()
           val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
 
@@ -108,7 +108,7 @@ class RackListViewModelTest {
   fun `GIVEN fake returns Unknown WHEN ViewModel is created THEN uiState has unknown error message`() =
       runTest(testDispatcher) {
           fakeGetRacksUseCase.invokeResult = DomainError.Unknown.err()
-          sut = RackListViewModel(coroutineScope = testScope, getRacksUseCase = fakeGetRacksUseCase)
+          sut = RackListViewModel(coroutineScope = testScope, getRacksFlowUseCase = fakeGetRacksUseCase)
           val states = mutableListOf<RackListUiState>()
           val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
 
@@ -124,7 +124,7 @@ class RackListViewModelTest {
   fun `GIVEN any state WHEN onAddRackSelect THEN uiEvent emits NavigateToAddRack`() =
       runTest(testDispatcher) {
           fakeGetRacksUseCase.invokeResult = emptyList<Rack>().ok()
-          sut = RackListViewModel(coroutineScope = TestScope(testDispatcher), getRacksUseCase = fakeGetRacksUseCase)
+          sut = RackListViewModel(coroutineScope = TestScope(testDispatcher), getRacksFlowUseCase = fakeGetRacksUseCase)
           val events = mutableListOf<RackListUiEvent?>()
           val collectJob: Job = launch { sut.uiEvent.collect { events.add(it) } }
           advanceUntilIdle()
@@ -141,7 +141,7 @@ class RackListViewModelTest {
   fun `GIVEN any state WHEN onRackSelect THEN uiEvent emits NavigateToRackDetail with rack id`() =
       runTest(testDispatcher) {
           fakeGetRacksUseCase.invokeResult = emptyList<Rack>().ok()
-          sut = RackListViewModel(coroutineScope = testScope, getRacksUseCase = fakeGetRacksUseCase)
+          sut = RackListViewModel(coroutineScope = testScope, getRacksFlowUseCase = fakeGetRacksUseCase)
           val events = mutableListOf<RackListUiEvent?>()
           val collectJob: Job = launch { sut.uiEvent.collect { events.add(it) } }
           advanceUntilIdle()

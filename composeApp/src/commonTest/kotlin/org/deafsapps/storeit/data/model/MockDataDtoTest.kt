@@ -1,11 +1,13 @@
 package org.deafsapps.storeit.data.model
 
+import kotlinx.coroutines.flow.map
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.base.getOrNull
+import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.deafsapps.storeit.domain.repository.SlotRepository
@@ -43,9 +45,9 @@ class MockDataDtoTest {
         val items = sut.getSampleItems()
         assertEquals(expected = 3, actual = items.size)
         assertEquals(expected = sut.MOCK_RACK_ID, actual = items[0].rackId)
-        assertTrue(actual = items.any { it.name == "Power drill" })
-        assertTrue(actual = items.any { it.name == "Paint cans" })
-        assertTrue(actual = items.any { it.name == "Toolbox" })
+        assertTrue(actual = items.any { item -> item.name == "Power drill" })
+        assertTrue(actual = items.any { item -> item.name == "Paint cans" })
+        assertTrue(actual = items.any { item -> item.name == "Toolbox" })
     }
 
     @Test
@@ -59,7 +61,9 @@ class MockDataDtoTest {
             itemRepository = fakeItemRepository,
         )
 
-        val racks = fakeRackRepository.getAllRacks().getOrNull() ?: emptyList()
+        val racks = mutableListOf<Rack>()
+        fakeRackRepository.getAllRacksFlow().map { f -> f.getOrNull() }
+            .collect { r -> racks.addAll(r ?: emptyList()) }
         assertEquals(expected = 1, actual = racks.size)
         assertEquals(expected = sut.MOCK_RACK_ID, actual = racks[0].id)
 

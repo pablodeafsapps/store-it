@@ -94,7 +94,7 @@ internal fun AddRackScreen(
 
             OutlinedTextField(
                 value = uiState.name,
-                onValueChange = { viewModel.updateName(it) },
+                onValueChange = { name -> viewModel.updateName(name) },
                 label = { Text("Name *") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -102,7 +102,7 @@ internal fun AddRackScreen(
 
             OutlinedTextField(
                 value = uiState.description,
-                onValueChange = { viewModel.updateDescription(it) },
+                onValueChange = { descr -> viewModel.updateDescription(descr) },
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3,
@@ -110,7 +110,7 @@ internal fun AddRackScreen(
 
             OutlinedTextField(
                 value = uiState.location,
-                onValueChange = { viewModel.updateLocation(it) },
+                onValueChange = { loc -> viewModel.updateLocation(loc) },
                 label = { Text("Location") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -125,7 +125,7 @@ internal fun AddRackScreen(
             }
 
             Button(
-                onClick = { viewModel.saveRack() },
+                onClick = viewModel::saveRack,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading,
             ) {

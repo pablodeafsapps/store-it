@@ -1,7 +1,7 @@
 package org.deafsapps.storeit.base
 
 /**
- * Base interface for all use cases in the application.
+ * Base interface for most use cases in the application.
  * Use cases represent single business actions and should be lightweight.
  */
 interface UseCase<in Input, out Output> {

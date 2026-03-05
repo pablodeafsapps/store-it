@@ -12,4 +12,5 @@ internal interface ItemRepository {
     suspend fun saveItem(item: Item): Result<DomainError, Item>
     suspend fun deleteItem(id: String): Result<DomainError, Unit>
     suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Unit>
+    suspend fun clear()
 }

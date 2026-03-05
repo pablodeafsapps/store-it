@@ -44,7 +44,7 @@ internal class InMemorySlotRepository : SlotRepository {
         }
     }
 
-    suspend fun clear() = mutex.withLock {
+    override suspend fun clear() = mutex.withLock {
         slots.clear()
     }
 }

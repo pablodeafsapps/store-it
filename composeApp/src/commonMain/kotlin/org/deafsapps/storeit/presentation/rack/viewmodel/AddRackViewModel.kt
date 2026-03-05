@@ -46,7 +46,6 @@ class AddRackViewModel(
         .shareIn(
             scope = coroutineScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
-            replay = 1,
         )
 
     fun updateName(name: String) {
@@ -98,7 +97,7 @@ class AddRackViewModel(
                 },
                 ifOk = { _ ->
                     _uiState.update {
-                        currentState.copy(isLoading = false, isSuccess = true)
+                        AddRackUiState.getDefault().copy(isLoading = false, isSuccess = true)
                     }
                     _uiEvent.emit(AddRackUiEvent.NavigateBack)
                 },

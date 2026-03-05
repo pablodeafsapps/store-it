@@ -1,20 +1,22 @@
 package org.deafsapps.storeit.presentation.rack.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
-import org.deafsapps.storeit.domain.usecase.GetRacksUseCaseType
+import org.deafsapps.storeit.domain.usecase.GetRacksFlowUseCaseType
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
 import org.koin.core.annotation.Factory
@@ -26,16 +28,17 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 @Factory
 class RackListViewModel(
     @Provided private val coroutineScope: CoroutineScope,
-    private val getRacksUseCase: GetRacksUseCaseType,
+    getRacksFlowUseCase: GetRacksFlowUseCaseType,
 ) {
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<RackListUiState> =
-        flow {
-            getRacksUseCase(input = Unit)
-                .fold(ifErr = { error ->
-                    emit(RackListUiState.getDefault().copy(error = error.toErrorCause()))
+        getRacksFlowUseCase(input = Unit)
+            .mapLatest { result ->
+                result.fold(ifErr = { error ->
+                    RackListUiState.getDefault().copy(error = error.toErrorCause())
                 }, ifOk = { racks ->
-                    emit(RackListUiState.getDefault().copy(racks = racks))
+                    RackListUiState.getDefault().copy(racks = racks)
                 })
         }.stateIn(
             scope = coroutineScope,
@@ -48,7 +51,6 @@ class RackListViewModel(
         .shareIn(
             scope = coroutineScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
-            replay = 1,
         )
 
     fun onAddRackSelect() {

@@ -97,7 +97,6 @@ class RackDetailViewModel(
         .shareIn(
             scope = coroutineScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
-            replay = 1,
         )
 
     @OptIn(ExperimentalUuidApi::class)

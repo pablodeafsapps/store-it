@@ -21,4 +21,8 @@ internal class FakeSlotRepository : SlotRepository {
             slots.keys.toList().filter { slots[it]?.rackId == rackId }.forEach { slots.remove(it) }
         }
     }
+
+    override suspend fun clear() {
+        slots.clear()
+    }
 }

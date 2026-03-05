@@ -1,5 +1,7 @@
 package org.deafsapps.storeit.fake
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
@@ -15,8 +17,8 @@ internal class FakeRackRepository : RackRepository {
     var saveRackResult: Result<DomainError, Rack>? = null
     var deleteRackResult: Result<DomainError, Unit>? = null
 
-    override suspend fun getAllRacks(): Result<DomainError, List<Rack>> =
-        getAllRacksResult ?: racks.values.toList().ok()
+    override fun getAllRacksFlow(): Flow<Result<DomainError, List<Rack>>> =
+        flow { emit(getAllRacksResult ?: racks.values.toList().ok()) }
 
     override suspend fun getRackById(id: String): Result<DomainError, Rack> =
         getRackByIdResult ?: (racks[id]?.ok() ?: DomainError.NotFound(resource = "Rack", id = id).err())
@@ -32,4 +34,8 @@ internal class FakeRackRepository : RackRepository {
             racks.remove(id)
             Unit.ok()
         }
+
+    override suspend fun clear() {
+        racks.clear()
+    }
 }

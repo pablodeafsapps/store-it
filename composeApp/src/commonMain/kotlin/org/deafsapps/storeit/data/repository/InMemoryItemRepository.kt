@@ -9,20 +9,24 @@ import org.koin.core.annotation.Single
 import kotlin.time.Clock
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.deafsapps.storeit.base.Result
 
 @Single(binds = [ItemRepository::class])
 internal class InMemoryItemRepository : ItemRepository {
     private val items = mutableMapOf<String, Item>()
     private val mutex = Mutex()
 
-    override suspend fun getItemsByRack(rackId: String) = mutex.withLock {
+    override suspend fun getItemsByRack(rackId: String): Result<DomainError, List<Item>> = mutex.withLock {
         when {
             rackId.isBlank() -> DomainError.ValidationError(field = "rackId", reason = "Rack ID cannot be blank").err()
             else -> items.values.filter { it.rackId == rackId }.ok()
         }
     }
 
-    override suspend fun getItemsBySlot(rackId: String, slotId: String) = mutex.withLock {
+    override suspend fun getItemsBySlot(
+        rackId: String,
+        slotId: String,
+    ): Result<DomainError, List<Item>> = mutex.withLock {
         when {
             rackId.isBlank() -> DomainError.ValidationError(field = "rackId", reason = "Rack ID cannot be blank").err()
             slotId.isBlank() -> DomainError.ValidationError(field = "slotId", reason = "Slot ID cannot be blank").err()
@@ -30,14 +34,14 @@ internal class InMemoryItemRepository : ItemRepository {
         }
     }
 
-    override suspend fun getItemById(id: String) = mutex.withLock {
+    override suspend fun getItemById(id: String): Result<DomainError, Item> = mutex.withLock {
         when {
             id.isBlank() -> DomainError.ValidationError(field = "id", reason = "ID cannot be blank").err()
             else -> items[id]?.ok() ?: DomainError.NotFound(resource = "Item", id = id).err()
         }
     }
 
-    override suspend fun searchItems(query: String) = mutex.withLock {
+    override suspend fun searchItems(query: String): Result<DomainError, List<Item>> = mutex.withLock {
         when {
             query.isBlank() -> emptyList<Item>().ok()
             else -> {
@@ -50,7 +54,7 @@ internal class InMemoryItemRepository : ItemRepository {
         }
     }
 
-    override suspend fun saveItem(item: Item) = mutex.withLock {
+    override suspend fun saveItem(item: Item): Result<DomainError, Item> = mutex.withLock {
         when {
             item.id.isBlank() ->
                 DomainError.ValidationError(field = "id", reason = "ID cannot be blank").err()
@@ -73,7 +77,7 @@ internal class InMemoryItemRepository : ItemRepository {
         }
     }
 
-    override suspend fun deleteItem(id: String) = mutex.withLock {
+    override suspend fun deleteItem(id: String): Result<DomainError, Unit> = mutex.withLock {
         when {
             id.isBlank() -> DomainError.ValidationError(field = "id", reason = "ID cannot be blank").err()
             items.remove(id) != null -> Unit.ok()
@@ -81,7 +85,7 @@ internal class InMemoryItemRepository : ItemRepository {
         }
     }
 
-    override suspend fun deleteItemsByRack(rackId: String) = mutex.withLock {
+    override suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Unit> = mutex.withLock {
         when {
             rackId.isBlank() -> DomainError.ValidationError(field = "rackId", reason = "Rack ID cannot be blank").err()
             else -> {
@@ -92,7 +96,7 @@ internal class InMemoryItemRepository : ItemRepository {
         }
     }
 
-    suspend fun clear() = mutex.withLock {
+    override suspend fun clear() = mutex.withLock {
         items.clear()
     }
 }

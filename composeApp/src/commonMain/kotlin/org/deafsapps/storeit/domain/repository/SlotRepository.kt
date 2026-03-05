@@ -8,4 +8,5 @@ interface SlotRepository {
     suspend fun getSlotsByRack(rackId: String): Result<DomainError, List<ShelfSlot>>
     suspend fun saveSlot(slot: ShelfSlot): Result<DomainError, ShelfSlot>
     suspend fun deleteByRack(rackId: String): Result<DomainError, Unit>
+    suspend fun clear()
 }

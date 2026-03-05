@@ -2,17 +2,17 @@ package org.deafsapps.storeit.androidapp.presentation.rack.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import org.deafsapps.storeit.domain.usecase.GetRacksUseCaseType
+import org.deafsapps.storeit.domain.usecase.GetRacksFlowUseCaseType
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.koin.android.annotation.KoinViewModel
 
 @KoinViewModel
 class AndroidRackListViewModel(
-    private val getRacksUseCase: GetRacksUseCaseType,
+    private val getRacksUseCase: GetRacksFlowUseCaseType,
 ) : ViewModel() {
 
     val rackListViewModel: RackListViewModel =
-        RackListViewModel(coroutineScope = viewModelScope, getRacksUseCase = getRacksUseCase)
+        RackListViewModel(coroutineScope = viewModelScope, getRacksFlowUseCase = getRacksUseCase)
 
     override fun onCleared() {
         rackListViewModel.clear()

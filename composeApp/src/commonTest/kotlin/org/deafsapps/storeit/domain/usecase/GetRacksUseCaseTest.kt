@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
+import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
@@ -14,20 +15,21 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.fake.FakeRackRepository
 
 class GetRacksUseCaseTest {
+    private lateinit var sut: GetRacksFlowUseCase
     private lateinit var fakeRackRepository: FakeRackRepository
-    private lateinit var sut: GetRacksUseCase
+    private lateinit var result: Result<DomainError, List<Rack>>
 
     @BeforeTest
     fun setUp() {
         fakeRackRepository = FakeRackRepository()
-        sut = GetRacksUseCase(rackRepository = fakeRackRepository)
+        sut = GetRacksFlowUseCase(rackRepository = fakeRackRepository)
     }
 
     @Test
     fun `GIVEN fake returns empty list WHEN invoke THEN returns empty list`() = runTest {
         fakeRackRepository.getAllRacksResult = emptyList<Rack>().ok()
 
-        val result = sut(input = Unit)
+        sut(input = Unit).collect { allRacks -> result = allRacks }
 
         assertTrue(actual = result.isOk)
         val racks = result.getOrNull() ?: emptyList()
@@ -40,7 +42,7 @@ class GetRacksUseCaseTest {
         val rack2 = Rack(id = "2", name = "Rack 2")
         fakeRackRepository.getAllRacksResult = listOf(rack1, rack2).ok()
 
-        val result = sut(input = Unit)
+        sut(input = Unit).collect { allRacks -> result = allRacks }
 
         assertTrue(actual = result.isOk)
         val racks = result.getOrNull() ?: emptyList()
@@ -52,7 +54,7 @@ class GetRacksUseCaseTest {
     fun `GIVEN fake returns error WHEN invoke THEN returns same error`() = runTest {
         fakeRackRepository.getAllRacksResult = DomainError.Unknown.err()
 
-        val result = sut(input = Unit)
+        sut(input = Unit).collect { allRacks -> result = allRacks }
 
         assertTrue(actual = result.isErr)
         val error = result.failureOrNull()
