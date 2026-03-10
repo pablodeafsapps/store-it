@@ -60,14 +60,7 @@ class RackDetailViewModelTest {
                 items = emptyList(),
             ).ok()
 
-            sut = RackDetailViewModel(
-                coroutineScope = testScope,
-                rackId = dummyRackId,
-                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-                saveSlotUseCase = fakeSaveSlot,
-                saveRackUseCase = fakeSaveRack,
-                deleteRackUseCase = fakeDeleteRack,
-            )
+            sut = getDummyRackDetailViewModel()
             val collectedStates = mutableListOf<RackDetailUiState>()
             val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
@@ -85,14 +78,7 @@ class RackDetailViewModelTest {
     fun `GIVEN getRack fails WHEN ViewModel created THEN uiState has error`() = runTest(testDispatcher) {
         fakeGetRackDataByRackId.invokeResult = DomainError.NotFound(resource = "Rack", id = dummyRackId).err()
 
-        sut = RackDetailViewModel(
-            coroutineScope = testScope,
-            rackId = dummyRackId,
-            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-            saveSlotUseCase = fakeSaveSlot,
-            saveRackUseCase = fakeSaveRack,
-            deleteRackUseCase = fakeDeleteRack,
-        )
+        sut = getDummyRackDetailViewModel()
         val collectedStates = mutableListOf<RackDetailUiState>()
         val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
@@ -108,14 +94,7 @@ class RackDetailViewModelTest {
         runTest(testDispatcher) {
             fakeGetRackDataByRackId.invokeResult = DomainError.NotFound(resource = "Slot", id = null).err()
 
-            sut = RackDetailViewModel(
-                coroutineScope = testScope,
-                rackId = dummyRackId,
-                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-                saveSlotUseCase = fakeSaveSlot,
-                saveRackUseCase = fakeSaveRack,
-                deleteRackUseCase = fakeDeleteRack,
-            )
+            sut = getDummyRackDetailViewModel()
             val collectedStates = mutableListOf<RackDetailUiState>()
             val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
@@ -135,14 +114,7 @@ class RackDetailViewModelTest {
                 shelfSlots = emptyList(),
                 items = emptyList(),
             ).ok()
-            sut = RackDetailViewModel(
-                coroutineScope = testScope,
-                rackId = dummyRackId,
-                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-                saveSlotUseCase = fakeSaveSlot,
-                saveRackUseCase = fakeSaveRack,
-                deleteRackUseCase = fakeDeleteRack,
-            )
+            sut = getDummyRackDetailViewModel()
             val collectedStates = mutableListOf<RackDetailUiState>()
             val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
@@ -167,21 +139,14 @@ class RackDetailViewModelTest {
             shelfSlots = emptyList(),
             items = emptyList(),
         ).ok()
-        sut = RackDetailViewModel(
-            coroutineScope = testScope,
-            rackId = dummyRackId,
-            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-            saveSlotUseCase = fakeSaveSlot,
-            saveRackUseCase = fakeSaveRack,
-            deleteRackUseCase = fakeDeleteRack,
-        )
+        sut = getDummyRackDetailViewModel()
         val collectedStates = mutableListOf<RackDetailUiState>()
         val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
         sut.onEditClick()
         advanceUntilIdle()
 
-        sut.dismissEditDialog()
+        sut.onDismissEditDialog()
         advanceUntilIdle()
 
         assertFalse(collectedStates.last().showEditDialog)
@@ -197,23 +162,16 @@ class RackDetailViewModelTest {
                 shelfSlots = emptyList(),
                 items = emptyList(),
             ).ok()
-            sut = RackDetailViewModel(
-                coroutineScope = testScope,
-                rackId = dummyRackId,
-                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-                saveSlotUseCase = fakeSaveSlot,
-                saveRackUseCase = fakeSaveRack,
-                deleteRackUseCase = fakeDeleteRack,
-            )
+            sut = getDummyRackDetailViewModel()
             val collectedStates = mutableListOf<RackDetailUiState>()
             val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
             sut.onEditClick()
             advanceUntilIdle()
-            sut.updateEditName("New Name")
+            sut.onUpdateEditName("New Name")
             fakeSaveRack.invokeResult = dummyRack.copy(name = "New Name").ok()
 
-            sut.saveRackEdits()
+            sut.onSaveRackEdits()
             advanceUntilIdle()
 
             val state = collectedStates.last()
@@ -230,19 +188,12 @@ class RackDetailViewModelTest {
             shelfSlots = emptyList(),
             items = emptyList(),
         ).ok()
-        sut = RackDetailViewModel(
-            coroutineScope = testScope,
-            rackId = dummyRackId,
-            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-            saveSlotUseCase = fakeSaveSlot,
-            saveRackUseCase = fakeSaveRack,
-            deleteRackUseCase = fakeDeleteRack,
-        )
+        sut = getDummyRackDetailViewModel()
         val collectedStates = mutableListOf<RackDetailUiState>()
         val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
 
-        sut.onRemoveRackClick()
+        sut.onRemoveRackSelect()
         advanceUntilIdle()
 
         val state = collectedStates.last()
@@ -260,18 +211,11 @@ class RackDetailViewModelTest {
                 shelfSlots = emptyList(),
                 items = emptyList(),
             ).ok()
-            sut = RackDetailViewModel(
-                coroutineScope = testScope,
-                rackId = dummyRackId,
-                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-                saveSlotUseCase = fakeSaveSlot,
-                saveRackUseCase = fakeSaveRack,
-                deleteRackUseCase = fakeDeleteRack,
-            )
+            sut = getDummyRackDetailViewModel()
             advanceUntilIdle()
-            sut.onRemoveRackClick()
+            sut.onRemoveRackSelect()
 
-            sut.dismissDeleteConfirm()
+            sut.onDismissDeleteConfirm()
 
             assertFalse(sut.uiState.value.showDeleteConfirm)
         }
@@ -286,21 +230,14 @@ class RackDetailViewModelTest {
                 items = emptyList(),
             ).ok()
             fakeDeleteRack.invokeResult = Unit.ok()
-            sut = RackDetailViewModel(
-                coroutineScope = testScope,
-                rackId = dummyRackId,
-                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-                saveSlotUseCase = fakeSaveSlot,
-                saveRackUseCase = fakeSaveRack,
-                deleteRackUseCase = fakeDeleteRack,
-            )
+            sut = getDummyRackDetailViewModel()
             advanceUntilIdle()
-            sut.onRemoveRackClick()
+            sut.onRemoveRackSelect()
             val collectedEvents = mutableListOf<RackDetailUiEvent?>()
             val collectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
             advanceUntilIdle()
 
-            sut.confirmDeleteRack()
+            sut.onConfirmDeleteRack()
             advanceUntilIdle()
 
             assertFalse(sut.uiState.value.showDeleteConfirm)
@@ -320,14 +257,7 @@ class RackDetailViewModelTest {
             ).ok()
             val savedSlot = ShelfSlot(id = "saved-1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.3f, 0.4f))
             fakeSaveSlot.invokeResult = savedSlot.ok()
-            sut = RackDetailViewModel(
-                coroutineScope = testScope,
-                rackId = dummyRackId,
-                getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-                saveSlotUseCase = fakeSaveSlot,
-                saveRackUseCase = fakeSaveRack,
-                deleteRackUseCase = fakeDeleteRack,
-            )
+            sut = getDummyRackDetailViewModel()
             val collectedStates = mutableListOf<RackDetailUiState>()
             val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
@@ -354,14 +284,7 @@ class RackDetailViewModelTest {
             items = emptyList(),
         ).ok()
         fakeSaveRack.invokeResult = DomainError.ValidationError(reason = "Name too long").err()
-        sut = RackDetailViewModel(
-            coroutineScope = testScope,
-            rackId = dummyRackId,
-            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-            saveSlotUseCase = fakeSaveSlot,
-            saveRackUseCase = fakeSaveRack,
-            deleteRackUseCase = fakeDeleteRack,
-        )
+        sut = getDummyRackDetailViewModel()
         val collectedStates = mutableListOf<RackDetailUiState>()
         val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
@@ -371,7 +294,7 @@ class RackDetailViewModelTest {
         val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
         advanceUntilIdle()
 
-        sut.saveRackEdits()
+        sut.onSaveRackEdits()
         advanceUntilIdle()
 
         val showErrors = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.ShowError>()
@@ -389,24 +312,17 @@ class RackDetailViewModelTest {
             items = emptyList(),
         ).ok()
         fakeDeleteRack.invokeResult = DomainError.NotFound(resource = "Rack", id = dummyRackId).err()
-        sut = RackDetailViewModel(
-            coroutineScope = testScope,
-            rackId = dummyRackId,
-            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-            saveSlotUseCase = fakeSaveSlot,
-            saveRackUseCase = fakeSaveRack,
-            deleteRackUseCase = fakeDeleteRack,
-        )
+        sut = getDummyRackDetailViewModel()
         val collectedStates = mutableListOf<RackDetailUiState>()
         val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
-        sut.onRemoveRackClick()
+        sut.onRemoveRackSelect()
         advanceUntilIdle()
         val collectedEvents = mutableListOf<RackDetailUiEvent?>()
         val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
         advanceUntilIdle()
 
-        sut.confirmDeleteRack()
+        sut.onConfirmDeleteRack()
         advanceUntilIdle()
 
         val showErrors = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.ShowError>()
@@ -425,14 +341,7 @@ class RackDetailViewModelTest {
             items = emptyList(),
         ).ok()
         fakeSaveSlot.invokeResult = DomainError.ValidationError(reason = "Invalid position").err()
-        sut = RackDetailViewModel(
-            coroutineScope = testScope,
-            rackId = dummyRackId,
-            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-            saveSlotUseCase = fakeSaveSlot,
-            saveRackUseCase = fakeSaveRack,
-            deleteRackUseCase = fakeDeleteRack,
-        )
+        sut = getDummyRackDetailViewModel()
         val collectedStates = mutableListOf<RackDetailUiState>()
         val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
@@ -449,4 +358,14 @@ class RackDetailViewModelTest {
         stateCollectJob.cancel()
         eventCollectJob.cancel()
     }
+
+    private fun getDummyRackDetailViewModel(): RackDetailViewModel =
+        RackDetailViewModel(
+            coroutineScope = testScope,
+            rackId = dummyRackId,
+            getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
+            saveSlotUseCase = fakeSaveSlot,
+            saveRackUseCase = fakeSaveRack,
+            deleteRackUseCase = fakeDeleteRack,
+        )
 }

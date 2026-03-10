@@ -21,12 +21,12 @@ import org.deafsapps.storeit.domain.usecase.DeleteRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.GetRackDataByRackIdUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
+import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotView
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
-import org.koin.core.annotation.Provided
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -35,13 +35,13 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 
 @Factory
 class RackDetailViewModel(
-    @Provided private val coroutineScope: CoroutineScope,
     @InjectedParam private val rackId: String,
+    coroutineScope: CoroutineScope? = null,
     private val getRackDataByRackIdUseCase: GetRackDataByRackIdUseCaseType,
     private val saveSlotUseCase: SaveSlotUseCaseType,
     private val saveRackUseCase: SaveRackUseCaseType,
     private val deleteRackUseCase: DeleteRackUseCaseType,
-) {
+) : StoreItViewModel(coroutineScope = coroutineScope) {
 
     private val _uiState = MutableStateFlow(RackDetailUiState.getDefault())
     val uiState: StateFlow<RackDetailUiState> =
@@ -72,7 +72,7 @@ class RackDetailViewModel(
                 }
             )
         }.stateIn(
-            scope = coroutineScope,
+            scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
             initialValue = RackDetailUiState.getDefault().copy(isLoading = true),
         )
@@ -80,13 +80,13 @@ class RackDetailViewModel(
     private val _uiEvent = MutableSharedFlow<RackDetailUiEvent?>()
     val uiEvent: SharedFlow<RackDetailUiEvent?> = _uiEvent.asSharedFlow()
         .shareIn(
-            scope = coroutineScope,
+            scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
         )
 
     @OptIn(ExperimentalUuidApi::class)
     fun onImageTap(xRel: Float, yRel: Float) {
-        coroutineScope.launch {
+        viewModelScope.launch {
             val rack = _uiState.value.rack ?: return@launch
             val slot = ShelfSlot(
                 id = Uuid.random().toString(),
@@ -124,26 +124,26 @@ class RackDetailViewModel(
         }
     }
 
-    fun updateEditName(name: String) {
+    fun onUpdateEditName(name: String) {
         _uiState.update { state -> state.copy(editName = name) }
     }
 
-    fun updateEditDescription(description: String) {
+    fun onUpdateEditDescription(description: String) {
         _uiState.update { state -> state.copy(editDescription = description) }
     }
 
-    fun updateEditLocation(location: String) {
+    fun onUpdateEditLocation(location: String) {
         _uiState.update { state -> state.copy(editLocation = location) }
     }
 
-    fun dismissEditDialog() {
+    fun onDismissEditDialog() {
         _uiState.update { state -> state.copy(showEditDialog = false) }
     }
 
-    fun saveRackEdits() {
+    fun onSaveRackEdits() {
         val state = _uiState.value
         val rack = state.rack ?: return
-        coroutineScope.launch {
+        viewModelScope.launch {
             val updated = rack.copy(
                 name = state.editName.trim(),
                 description = state.editDescription.trim(),
@@ -158,16 +158,16 @@ class RackDetailViewModel(
         }
     }
 
-    fun onRemoveRackClick() {
+    fun onRemoveRackSelect() {
         _uiState.update { state -> state.copy(showDeleteConfirm = true) }
     }
 
-    fun dismissDeleteConfirm() {
+    fun onDismissDeleteConfirm() {
         _uiState.update { state -> state.copy(showDeleteConfirm = false) }
     }
 
-    fun confirmDeleteRack() {
-        coroutineScope.launch {
+    fun onConfirmDeleteRack() {
+        viewModelScope.launch {
             deleteRackUseCase(input = rackId).fold(
                 ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
                 ifOk = {
@@ -178,8 +178,8 @@ class RackDetailViewModel(
         }
     }
 
-    fun clear() {
-        coroutineScope.cancel()
+    fun onClear() {
+        viewModelScope.cancel()
     }
 }
 

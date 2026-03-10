@@ -11,4 +11,4 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) =
     }
 
 // called by iOS
-fun initKoinIos() = initKoin() {}
+fun initKoinIos() = initKoin {}

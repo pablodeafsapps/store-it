@@ -100,7 +100,7 @@ internal fun RackDetailScreen(
                             text = { Text("Remove rack") },
                             onClick = {
                                 showMenu = false
-                                viewModel.onRemoveRackClick()
+                                viewModel.onRemoveRackSelect()
                             },
                         )
                     }
@@ -178,26 +178,26 @@ internal fun RackDetailScreen(
             name = uiState.editName,
             description = uiState.editDescription,
             location = uiState.editLocation,
-            onNameChange = viewModel::updateEditName,
-            onDescriptionChange = viewModel::updateEditDescription,
-            onLocationChange = viewModel::updateEditLocation,
-            onDismiss = viewModel::dismissEditDialog,
-            onSave = viewModel::saveRackEdits,
+            onNameChange = viewModel::onUpdateEditName,
+            onDescriptionChange = viewModel::onUpdateEditDescription,
+            onLocationChange = viewModel::onUpdateEditLocation,
+            onDismiss = viewModel::onDismissEditDialog,
+            onSave = viewModel::onSaveRackEdits,
         )
     }
 
     if (uiState.showDeleteConfirm) {
         AlertDialog(
-            onDismissRequest = viewModel::dismissDeleteConfirm,
+            onDismissRequest = viewModel::onDismissDeleteConfirm,
             title = { Text("Remove rack?") },
             text = { Text("This will delete the rack and all its slots and items. This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = viewModel::confirmDeleteRack) {
+                TextButton(onClick = viewModel::onConfirmDeleteRack) {
                     Text("Remove", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::dismissDeleteConfirm) {
+                TextButton(onClick = viewModel::onDismissDeleteConfirm) {
                     Text("Cancel")
                 }
             },

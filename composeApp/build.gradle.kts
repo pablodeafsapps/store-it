@@ -9,7 +9,7 @@ plugins {
 }
 
 kotlin {
-    androidLibrary {
+    android {
         compileSdk = 36
         minSdk = 24
         namespace = "org.deafsapps.storeit.composeapp"
@@ -32,6 +32,9 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.koin.androidx.compose)
+        }
+        iosMain.dependencies {
+            implementation(libs.kotlinx.coroutines.core)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

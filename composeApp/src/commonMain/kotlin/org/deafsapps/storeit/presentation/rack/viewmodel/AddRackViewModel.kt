@@ -17,10 +17,10 @@ import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
+import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.model.AddRackUiEvent
 import org.deafsapps.storeit.presentation.rack.model.AddRackUiState
 import org.koin.core.annotation.Factory
-import org.koin.core.annotation.Provided
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -29,14 +29,14 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 
 @Factory
 class AddRackViewModel(
-    @Provided private val coroutineScope: CoroutineScope,
+    coroutineScope: CoroutineScope? = null,
     private val saveRackUseCase: SaveRackUseCaseType,
-) {
+) : StoreItViewModel(coroutineScope = coroutineScope) {
 
     private val _uiState = MutableStateFlow(AddRackUiState.getDefault())
     val uiState: StateFlow<AddRackUiState> = _uiState.asStateFlow()
         .stateIn(
-            scope = coroutineScope,
+            scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
             initialValue = AddRackUiState.getDefault(),
         )
@@ -44,7 +44,7 @@ class AddRackViewModel(
     private val _uiEvent = MutableSharedFlow<AddRackUiEvent?>()
     val uiEvent: SharedFlow<AddRackUiEvent?> = _uiEvent.asSharedFlow()
         .shareIn(
-            scope = coroutineScope,
+            scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
         )
 
@@ -72,7 +72,7 @@ class AddRackViewModel(
             return
         }
 
-        coroutineScope.launch {
+        viewModelScope.launch {
             _uiState.update { currentState.copy(isLoading = true, error = null) }
 
             val rack = Rack(
@@ -105,7 +105,7 @@ class AddRackViewModel(
         }
     }
 
-    fun clear() {
-        coroutineScope.cancel()
+    fun onClear() {
+        viewModelScope.cancel()
     }
 }
