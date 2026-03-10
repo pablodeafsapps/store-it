@@ -5,7 +5,7 @@ import PhotosUI
 
 struct AddRackView: View {
     let uiState: AddRackUiState
-    let uiEvent: Optional<AddRackUiEvent>
+    let uiEvent: AddRackUiEvent?
     let onUpdateName: (String) -> Void
     let onUpdateDescription: (String) -> Void
     let onUpdateLocation: (String) -> Void

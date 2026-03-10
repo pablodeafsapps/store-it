@@ -2,131 +2,154 @@ import SwiftUI
 import ComposeApp
 
 struct RackDetailView: View {
-    let rackId: String
+    @StateObject private var rackDetailViewModel: ViewModelHolder<RackDetailViewModel>
     let onNavigateBack: () -> Void
 
-    @StateObject private var viewModel: ObservableRackDetailViewModel
 
     init(rackId: String, onNavigateBack: @escaping () -> Void) {
-        self.rackId = rackId
+        _rackDetailViewModel = StateObject(wrappedValue: ViewModelHolder(IosKoinHelper().getRackDetailViewModel(rackId: rackId)))
         self.onNavigateBack = onNavigateBack
-        _viewModel = StateObject(wrappedValue: ObservableRackDetailViewModel(rackId: rackId))
     }
 
     var body: some View {
-        Observing(
-            viewModel.sharedVm.uiState,
-            viewModel.sharedVm.uiEvent.withInitialValue(nil)
-        ) { state, event in
-            content(uiState: state)
-                .onChange(of: onEnum(of: event)) { _, _ in
-                    handleEvent(event)
-                }
-        }
-    }
-
-    @ViewBuilder
-    private func content(uiState: RackDetailUiState) -> some View {
         NavigationView {
-            ZStack {
-                if uiState.isLoading {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                } else if let rack = uiState.rack {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            RackImageView(
-                                photoUri: rack.photoUri,
-                                slots: uiState.slots,
-                                selectedSlotId: uiState.selectedSlotId,
-                                onTap: { xRel, yRel in
-                                    viewModel.sharedVm.onImageTap(xRel: xRel, yRel: yRel)
-                                }
-                            )
-                            if !rack.description.isEmpty {
-                                Text(rack.description)
-                                    .font(.body)
-                            }
-                            if !rack.location.isEmpty {
-                                Text("Location: \(rack.location)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding()
-                    }
-                } else {
-                    Text(uiState.error ?? "Rack not found")
-                        .foregroundColor(.red)
-                        .padding()
+            Observing(
+                rackDetailViewModel.sharedVm.uiState,
+                rackDetailViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
+                    RackDetailContent(
+                        state: state,
+                        event: event,
+                        onImageTap: rackDetailViewModel.sharedVm.onImageTap,
+                        onEditClick: rackDetailViewModel.sharedVm.onEditClick,
+                        onRemoveRackSelect: rackDetailViewModel.sharedVm.onRemoveRackSelect,
+                        onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
+                        onUpdateEditName: rackDetailViewModel.sharedVm.onUpdateEditName,
+                        onUpdateEditDescription: rackDetailViewModel.sharedVm.onUpdateEditDescription,
+                        onUpdateEditLocation: rackDetailViewModel.sharedVm.onUpdateEditLocation,
+                        onSaveRackEdits: rackDetailViewModel.sharedVm.onSaveRackEdits,
+                        onDismissDeleteConfirm: rackDetailViewModel.sharedVm.onDismissDeleteConfirm,
+                        onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack,
+                        onNavigateBack: onNavigateBack,
+                    )
                 }
-                if let error = uiState.error, uiState.rack != nil {
-                    VStack {
-                        Text(error)
-                            .foregroundColor(.red)
-                            .padding()
-                        Spacer()
-                    }
-                }
-            }
-            .navigationTitle(uiState.rack?.name ?? "Rack")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Back") {
-                        onNavigateBack()
-                    }
-                    .accessibilityIdentifier("rackDetailBackButton")
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button("Edit") {
-                            viewModel.sharedVm.onEditClick()
-                        }
-                        Button("Remove rack", role: .destructive) {
-                            viewModel.sharedVm.onRemoveRackClick()
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                    .accessibilityIdentifier("rackDetailMenuButton")
-                }
-            }
-            .sheet(isPresented: Binding(
-                get: { uiState.showEditDialog },
-                set: { if !$0 { viewModel.sharedVm.dismissEditDialog() } }
-            )) {
-                EditRackSheet(
-                    name: uiState.editName,
-                    description: uiState.editDescription,
-                    location: uiState.editLocation,
-                    onNameChange: viewModel.sharedVm.updateEditName,
-                    onDescriptionChange: viewModel.sharedVm.updateEditDescription,
-                    onLocationChange: viewModel.sharedVm.updateEditLocation,
-                    onDismiss: viewModel.sharedVm.dismissEditDialog,
-                    onSave: viewModel.sharedVm.saveRackEdits
-                )
-            }
-            .alert("Remove rack?", isPresented: Binding(
-                get: { uiState.showDeleteConfirm },
-                set: { if !$0 { viewModel.sharedVm.dismissDeleteConfirm() } }
-            )) {
-                Button("Cancel", role: .cancel) {
-                    viewModel.sharedVm.dismissDeleteConfirm()
-                }
-                Button("Remove", role: .destructive) {
-                    viewModel.sharedVm.confirmDeleteRack()
-                }
-            } message: {
-                Text("This will delete the rack and all its slots and items. This cannot be undone.")
-            }
         }
     }
 
-    private func handleEvent(_ event: RackDetailUiEvent?) {
+    private func handleEvent(_ event: RackDetailUiEvent?, _ onNavigateBack: () -> Void) {
         guard let event = event else { return }
         if event is RackDetailUiEventNavigateBack {
             onNavigateBack()
+        }
+    }
+}
+
+private struct RackDetailContent: View {
+    let state: RackDetailUiState
+    let event: RackDetailUiEvent?
+    let onImageTap: (Float, Float) -> Void
+    let onEditClick: () -> Void
+    let onRemoveRackSelect: () -> Void
+    let onDismissEditDialog: () -> Void
+    let onUpdateEditName: (String) -> Void
+    let onUpdateEditDescription: (String) -> Void
+    let onUpdateEditLocation: (String) -> Void
+    let onSaveRackEdits: () -> Void
+    let onDismissDeleteConfirm: () -> Void
+    let onConfirmDeleteRack: () -> Void
+    let onNavigateBack: () -> Void
+
+    var body: some View {
+        ZStack {
+            if state.isLoading {
+                ProgressView()
+                    .scaleEffect(1.2)
+            } else if let rack = state.rack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        RackImageView(
+                            photoUri: rack.photoUri,
+                            slots: state.slots,
+                            selectedSlotId: state.selectedSlotId,
+                            onTap: { xRel, yRel in
+                                onImageTap(xRel, yRel)
+                            }
+                        )
+                        if !rack.description.isEmpty {
+                            Text(rack.description)
+                                .font(.body)
+                        }
+                        if !rack.location.isEmpty {
+                            Text("Location: \(rack.location)")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding()
+                }
+            } else {
+                Text(state.error ?? "Rack not found")
+                    .foregroundColor(.red)
+                    .padding()
+            }
+            if let error = state.error, state.rack != nil {
+                VStack {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .padding()
+                    Spacer()
+                }
+            }
+        }
+        .navigationTitle(state.rack?.name ?? "Rack")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Back") {
+                    onNavigateBack()
+                }
+                .accessibilityIdentifier("rackDetailBackButton")
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button("Edit") {
+                        onEditClick()
+                    }
+                    Button("Remove rack", role: .destructive) {
+                        onRemoveRackSelect()
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityIdentifier("rackDetailMenuButton")
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { state.showEditDialog },
+            set: { if !$0 { onDismissEditDialog() } }
+        )) {
+            EditRackSheet(
+                name: state.editName,
+                description: state.editDescription,
+                location: state.editLocation,
+                onNameChange: onUpdateEditName,
+                onDescriptionChange: onUpdateEditDescription,
+                onLocationChange: onUpdateEditLocation,
+                onDismiss: onDismissEditDialog,
+                onSave: onSaveRackEdits
+            )
+        }
+        .alert("Remove rack?", isPresented: Binding(
+            get: { state.showDeleteConfirm },
+            set: { if !$0 { onDismissDeleteConfirm() } }
+        )) {
+            Button("Cancel", role: .cancel) {
+                onDismissDeleteConfirm()
+            }
+            Button("Remove", role: .destructive) {
+                onConfirmDeleteRack()
+            }
+        } message: {
+            Text("This will delete the rack and all its slots and items. This cannot be undone.")
         }
     }
 }

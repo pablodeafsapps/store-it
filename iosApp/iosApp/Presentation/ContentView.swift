@@ -21,9 +21,8 @@ enum RackListNavigation {
 }
 
 struct ContentView: View {
-    @StateObject private var rackListViewModel = ObservableRackListViewModel()
-    @StateObject private var addRackViewModel = ObservableAddRackViewModel()
-
+    @StateObject private var rackListViewModel: ViewModelHolder<RackListViewModel> = ViewModelHolder(IosKoinHelper().getRackListViewModel())
+    @StateObject private var addRackViewModel: ViewModelHolder<AddRackViewModel> = ViewModelHolder(IosKoinHelper().getAddRackViewModel())
     @State private var currentScreen: NavScreen = .rackList
 
     var body: some View {
@@ -57,11 +56,11 @@ struct ContentView: View {
                     }
                 }
             }
-        case .rackDetail(let rackId):
-            RackDetailView(
-                rackId: rackId,
-                onNavigateBack: { currentScreen = .rackList }
-            )
+            case .rackDetail(let rackId):
+                    RackDetailView(
+                        rackId: rackId,
+                        onNavigateBack: { currentScreen = .rackList },
+                    )
         }
     }
 
