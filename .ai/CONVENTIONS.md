@@ -104,30 +104,35 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 ### 3.1 Source Set Layout
 
 - In this project the KMP module is **`:composeApp`** (no separate `:shared` module; post-AGP 9.0 layout). **Principle:** Maximise code in **commonMain**; keep androidMain, iosMain, and app modules as thin as possible.
-- **commonMain**: Shared business logic, domain models, use cases, repository interfaces, shared presentation (pure Kotlin ViewModels, UI state), and expect declarations. No platform types.
-- **androidMain** / **iosMain**: Only **actual** implementations for platform services and minimal platform integrations (HTTP engine, logging, etc.). No UI, no ViewModel wrappers—those live in the app modules.
-- **androidApp** (separate module): Activities, Compose UI, and **AndroidX ViewModel wrappers** that hold the pure ViewModel from commonMain.
-- **iosApp** (Swift): SwiftUI UI and Swift `ObservableObject` ViewModel wrappers.
+- **commonMain**: Shared business logic, domain models, use cases, repository interfaces, shared presentation (pure Kotlin ViewModels, UI state), expect declarations, **AppModule**, **KoinInit** (`initKoin` / `initKoinIos`), and **IosKoinHelper**. No platform types.
+- **androidMain** / **iosMain**: Only **actual** implementations for platform services (e.g. **StoreItViewModel** actuals) and minimal platform integrations. No UI, no ViewModel wrappers—those live in the app modules.
+- **androidApp** (separate module): **StoreItApplication** (custom `Application` that initialises Koin with **AndroidModule**), Activities, Compose UI, and use of shared ViewModels via Koin (no wrapper ViewModels; shared ViewModels extend **StoreItViewModel** and are resolved with `viewModelScope` from the AndroidX environment).
+- **iosApp** (Swift): SwiftUI UI; `ViewModelHolder<T: StoreItViewModel>` holds the KMP ViewModel and calls `clear()` in `deinit`. ViewModels are obtained from **IosKoinHelper** (no scope passed; scope comes from **StoreItViewModel** iOS actual).
 - **commonTest**: Shared unit tests for common code; no platform APIs.
 
-### 3.2 Visibility & encapsulation
+### 3.2 Platform DI and linking (post–breaking change)
+
+- **Android**: Koin is started from **StoreItApplication** (`:androidApp`) with `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this) }`. `AndroidModule` includes `AppModule`; the app module owns the composition root. Shared ViewModels are resolved via Koin’s ViewModel support; they extend **StoreItViewModel** (actual in androidMain extends AndroidX `ViewModel`).
+- **iOS**: Koin is started from the Swift app entry with `KoinInitKt.doInitKoinIos()` (which runs `initKoin {}` — only `AppModule`). ViewModels are obtained from **IosKoinHelper** (commonMain). **Do not** pass a shared `CoroutineScope` from IosKoinHelper; the **StoreItViewModel** actual in iosMain provides the scope (e.g. `MainScope()` when `coroutineScope` is null). For parameterised ViewModels (e.g. `RackDetailViewModel`), pass only the business parameters: `getRackDetailViewModel(rackId: String)` with `parametersOf(rackId)`. Swift uses **ViewModelHolder** and calls `sharedVm.clear()` in `deinit`.
+
+### 3.3 Visibility & encapsulation
 
 - **Prefer `internal` by default**: Use `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Do not add `internal` to members inside an interface (e.g. sealed subclasses); the containing type’s visibility applies.
 - **Expect/actual**: Use `internal` on both `expect` and `actual` when the API is only used inside the module; use public only for types that other modules or the framework must see.
 
-### 3.3 Expect / Actual
+### 3.4 Expect / Actual
 
 - **Expect** in `commonMain`: minimal surface (what the platform must provide); prefer `internal` when not part of the public API.
 - **Actual** in platform source sets: one implementation per target; avoid branching inside actuals when possible.
 - Name expect/actual consistently: `expect class Platform()`, `expect fun currentTimeMillis(): Long`.
 - Prefer expect/actual for a small set of primitives (clock, UUID, crypto, logging, analytics); keep heavy or frequently changing APIs behind interfaces in common code and inject platform implementations.
 
-### 3.4 Naming Across Platforms
+### 3.5 Naming Across Platforms
 
 - Use the same logical names for shared concepts: e.g. `User`, `AuthToken`, `Result` so that Kotlin and Swift (or KMP-generated headers) align.
 - Repository and use case names should be identical in shared and platform code to avoid cognitive mismatch.
 
-### 3.5 Shared Models
+### 3.6 Shared Models
 
 - Keep shared models in commonMain: data classes or interfaces used in use cases and repositories.
 - Prefer immutable data: `data class` in Kotlin; in Swift, structs with `let` properties.
@@ -217,8 +222,9 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 ### 6.4 Dependency Injection (Koin)
 
-- This project uses **Koin** with **Koin Annotations** (KSP): one `@Module` with `@ComponentScan` in `commonMain`; use cases/repositories with `@Factory(binds = [Type::class])` or `@Single(binds = [Type::class])`. **Shared ViewModels** are plain Kotlin classes in `commonMain` with `@Factory` and `@Provided CoroutineScope`; they are resolved with `parametersOf(scope)` at the call site (Android wrappers in `:androidApp` pass `viewModelScope`; iOS uses `IosKoinHelper.getXxxViewModel()` with `parametersOf(createViewModelScope())`). **Android wrappers** live in **`:androidApp`** (not in composeApp/androidMain): AndroidX `ViewModel` classes with `@KoinViewModel` construct the pure ViewModel internally and call `clear()` in `onCleared()`. Prefer constructor injection; avoid `KoinComponent`/`inject()` in the pure ViewModels.
-- Initialise Koin once per platform: in Android `Application.onCreate()` with `initKoin { androidLogger(); androidContext(...) }`; in iOS call `KoinInitKt.doInitKoinIos()` from the app entry point.
+- This project uses **Koin** with **Koin Annotations** (KSP): **AppModule** in `commonMain` has `@Module` and `@ComponentScan("org.deafsapps.storeit")`. **Android** uses a custom **Application** subclass (**StoreItApplication** in `:androidApp`) declared in the manifest; in `onCreate()` it calls `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this@StoreItApplication) }`. **AndroidModule** (in `:androidApp`) is `@Module(includes = [AppModule::class])` and provides the composition root. **iOS** calls `KoinInitKt.doInitKoinIos()` from the app entry point; that runs `initKoin {}` (only `AppModule().module`, no platform options).
+- **Shared ViewModels** in `commonMain` extend **StoreItViewModel** (expect in commonMain; actuals in androidMain and iosMain). They take an optional `coroutineScope` (default `null`); on Android the scope comes from the ViewModel machinery; on iOS the **StoreItViewModel** actual uses `MainScope()` when null. **Do not** pass a shared `CoroutineScope` from **IosKoinHelper**; that pattern caused iOS bugs. **IosKoinHelper** (commonMain) exposes getters like `getRackListViewModel()`, `getAddRackViewModel()`, `getRackDetailViewModel(rackId: String)` and resolves with **only** business parameters (e.g. `parametersOf(rackId)` for RackDetail), not a scope.
+- **Android**: Use Koin’s `viewModel()` / `@KoinViewModel` in the app module; no wrapper ViewModel classes. **iOS**: Use `ViewModelHolder<T: StoreItViewModel>` in Swift; it holds the KMP ViewModel and calls `sharedVm.clear()` in `deinit`. Prefer constructor injection; avoid `KoinComponent`/`inject()` in the pure ViewModels.
 - Use case interfaces: expose a typealias (e.g. `GetRacksUseCaseType`) and bind the implementation to it so ViewModels depend on the interface.
 
 ### 6.5 Result / Either
@@ -269,7 +275,7 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 ### 8.2 iOS
 
-- All iOS UI lives in the **`iosApp`** Swift target; the shared framework (`ComposeApp`) is consumed as a dependency. Use SwiftUI views that take ViewModel state and event callbacks (e.g. `Observing(viewModel.uiState, viewModel.uiEvent.withInitialValue(nil)) { state, event in … }`).
+- All iOS UI lives in the **`iosApp`** Swift target; the shared framework (`ComposeApp`) is consumed as a dependency. Koin is initialised in the app entry with `KoinInitKt.doInitKoinIos()`. Obtain ViewModels from **IosKoinHelper** (e.g. `IosKoinHelper().getRackListViewModel()`, `getRackDetailViewModel(rackId:)`) and wrap them in **ViewModelHolder**; the holder calls `sharedVm.clear()` in `deinit`. Use SwiftUI views that take ViewModel state and event callbacks (e.g. `Observing(… uiState, … uiEvent.withInitialValue(nil)) { state, event in … }`).
 - Asset and storyboard names: PascalCase or kebab-case per team choice; be consistent. Swift code references by symbol name.
 
 ### 8.3 Shared Configuration

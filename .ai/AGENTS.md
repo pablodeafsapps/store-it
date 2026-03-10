@@ -32,6 +32,33 @@ The target audience is experienced Android engineers building or reviewing a KMP
 
 No layer may depend on a more external layer; dependencies always point inward.
 
+### 1.1 Platform linking and DI (post–breaking change)
+
+A previous approach that tied Android and iOS to shared logic via a single Koin setup and a shared `CoroutineScope` on iOS caused persistent bugs on iOS and made the app unreliable. The current design separates platform entry points and scope ownership clearly.
+
+- **Android**
+  - **Entry**: `StoreItApplication` in **`:androidApp`** (see `androidApp/.../StoreItApplication.kt`) extends `Application`, is declared in `AndroidManifest.xml` (`android:name=".StoreItApplication"`), and initialises Koin in `onCreate()`.
+  - **Koin**: Uses `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this@StoreItApplication) }`. **AndroidModule** (in `:androidApp`, `di/AndroidModule.kt`) is a `@Module(includes = [AppModule::class])` with `@ComponentScan("org.deafsapps.storeit")`, so it pulls in the shared **AppModule** and any Android-specific bindings. The Android app does **not** use the default `initKoin()` module list directly; it passes `AndroidModule().module` so that the app module owns the composition root.
+  - **ViewModels**: Android uses Koin’s `viewModel()` / `@KoinViewModel` in the app module; the shared pure ViewModels in `commonMain` receive `viewModelScope` from the AndroidX ViewModel wrapper (see §4.7 and §3.1).
+
+- **iOS**
+  - **Entry**: The Swift app entry (e.g. `@main struct iOSApp: App`) calls `KoinInitKt.doInitKoinIos()` in `init()`. That invokes **`initKoinIos()`** in `composeApp` commonMain (`di/KoinInit.kt`), which is `initKoin {}` — i.e. Koin starts with **only** `AppModule().module` and no platform-specific options.
+  - **ViewModels**: iOS does **not** use a single shared `CoroutineScope` for all ViewModels. **`IosKoinHelper`** (commonMain, `di/IosKoinHelper.kt`) is a `KoinComponent` object that exposes typed getters for each shared ViewModel. It resolves ViewModels **without** passing a scope: e.g. `getRackListViewModel(): RackListViewModel = get()`, `getRackDetailViewModel(rackId: String) = get(parameters = { parametersOf(rackId) })`. The **scope** is provided by the **actual** implementation of **`StoreItViewModel`** in **iosMain** (`StoreItViewModel.ios.kt`): when `coroutineScope` is `null`, the iOS actual uses `MainScope()`. So each ViewModel instance gets its own scope from the actual, avoiding a single shared scope that could cause lifecycle/cancellation bugs.
+  - **Lifecycle**: Swift **`ViewModelHolder<T: StoreItViewModel>`** (in `iosApp`) holds the KMP ViewModel and calls `sharedVm.clear()` in `deinit`, so when the Swift view is deallocated the ViewModel’s scope is cancelled.
+
+- **Shared base ViewModel**
+  - **`StoreItViewModel`** is an **expect** class in commonMain; **actuals** live in **androidMain** and **iosMain**.
+  - **androidMain**: `StoreItViewModel` extends AndroidX `ViewModel` and uses `viewModelScope` (or the injected scope). The Android app uses the shared ViewModel subclasses (e.g. `RackListViewModel`) via Koin’s ViewModel machinery; no wrapper ViewModels in the app module are needed.
+  - **iosMain**: `StoreItViewModel` is a `@Factory` class with `viewModelScope = MainScope()` when no scope is passed, and exposes a **`clear()`** method that calls `onCleared()` and `viewModelScope.cancel()`. Swift wraps the instance in `ViewModelHolder` and calls `clear()` in `deinit`.
+
+**Rule**: Do not reintroduce a shared `CoroutineScope` in `IosKoinHelper` or elsewhere for iOS ViewModels; scope is owned by each `StoreItViewModel` actual (or by the AndroidX ViewModel on Android). For parameterised ViewModels (e.g. `RackDetailViewModel(rackId)`), only pass the business parameters (e.g. `rackId`) in `parametersOf`, not a scope.
+
+**Relevant files**
+- Android: `androidApp/.../StoreItApplication.kt`, `androidApp/.../di/AndroidModule.kt`, `AndroidManifest.xml` (`android:name=".StoreItApplication"`).
+- Shared: `composeApp/.../di/KoinInit.kt` (`initKoin`, `initKoinIos`), `composeApp/.../di/IosKoinHelper.kt`, `composeApp/.../di/AppModule.kt`.
+- Platform ViewModel base: `composeApp/.../presentation/StoreItViewModel.kt` (expect), `StoreItViewModel.android.kt` (androidMain), `StoreItViewModel.ios.kt` (iosMain).
+- iOS: `iosApp/.../iOSApp.swift` (calls `KoinInitKt.doInitKoinIos()`), `iosApp/.../ViewModels/ViewModelHolder.swift` (holds KMP ViewModel, calls `clear()` in `deinit`).
+
 ---
 
 ## 2. KMP Module Structure (composeApp)
@@ -166,10 +193,10 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 
 - **Module**: A single `@Module` with `@ComponentScan("org.deafsapps.storeit")` in `commonMain` discovers and registers all annotated types. The generated module is loaded via `AppModule().module` in `initKoin()`.
 - **Registration**: Use cases and repositories are registered with `@Factory(binds = [UseCaseType::class])` or `@Single(binds = [Repository::class])`; use a typealias for the use case interface so the implementation binds to it (e.g. `GetRacksUseCaseType`, `SaveRackUseCaseType`).
-- **ViewModels**: Shared presentation uses **pure Kotlin ViewModels** in `commonMain` (see §3.1): annotated with `@Factory`, they receive a `CoroutineScope` via `@Provided` and use cases via constructor. Resolution with a scope is done via `parametersOf(scope)` at the call site (e.g. Android wrappers in `:androidApp` pass `viewModelScope`; iOS uses `IosKoinHelper.getXxxViewModel()` with `parametersOf(createViewModelScope())`). Platform wrappers live in the **app** modules: AndroidX `ViewModel` in **`:androidApp`** (not in composeApp/androidMain), Swift `ObservableObject` in **`iosApp`**; they own the scope and call `clear()` on the pure ViewModel when the screen is disposed.
+- **ViewModels**: Shared presentation uses **pure Kotlin ViewModels** in `commonMain` (see §3.1): annotated with `@Factory`, they receive a `CoroutineScope` via `@Provided` and use cases via constructor. Resolution with a scope is done at the call site: Android wrappers in `:androidApp` pass `viewModelScope` via Koin’s ViewModel machinery; iOS uses **`IosKoinHelper`** getters (e.g. `getRackListViewModel()`, `getRackDetailViewModel(rackId)`) which resolve ViewModels **without** passing a scope — the scope is provided by the **StoreItViewModel** actual in iosMain (e.g. `MainScope()` when `coroutineScope` is null). Platform wrappers live in the **app** modules: AndroidX `ViewModel` in **`:androidApp`** (not in composeApp/androidMain), Swift `ObservableObject` in **`iosApp`**; they own the scope and call `clear()` on the pure ViewModel when the screen is disposed.
 - **Initialisation**:
-  - **Android**: Call `initKoin { androidLogger(); androidContext(this@Application) }` in `Application.onCreate()`. The app is annotated with `@KoinApplication(modules = [AppModule::class])`.
-  - **iOS**: Call `KoinInitKt.doInitKoinIos()` from the Swift app’s `init()` (e.g. in `@main struct iOSApp: App`). This starts Koin without platform-specific options.
+  - **Android**: Use a custom `Application` subclass (**`StoreItApplication`** in `:androidApp`) declared in the manifest. In `onCreate()` call `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this@StoreItApplication) }`. `AndroidModule` includes `AppModule` and provides the composition root.
+  - **iOS**: Call `KoinInitKt.doInitKoinIos()` from the Swift app’s `init()` (e.g. in `@main struct iOSApp: App`). This runs `initKoin {}`, which starts Koin with only `AppModule().module` (no platform-specific options).
 - **Rule**: Domain/use case types remain framework-agnostic; only the composition root and ViewModel layer use Koin APIs.
 
 ### 4.8 UI Technologies
