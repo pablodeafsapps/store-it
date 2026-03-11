@@ -29,6 +29,7 @@ struct RackListView: View {
             }
             .navigationTitle("Racks")
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("racksListScreen")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: onAddRackSelect) {
@@ -53,7 +54,7 @@ struct RackListView: View {
                 Text("Add Rack")
                     .frame(maxWidth: .infinity)
             }
-            .accessibilityIdentifier("addRackButton")
+//            .accessibilityIdentifier("addRackButton")
             .buttonStyle(.borderedProminent)
             .padding(.top, 8)
         }

@@ -114,9 +114,11 @@ private struct RackDetailContent: View {
                     Button("Edit") {
                         onEditClick()
                     }
+                    .accessibilityIdentifier("editRackMenuItem")
                     Button("Remove rack", role: .destructive) {
                         onRemoveRackSelect()
                     }
+                    .accessibilityIdentifier("removeRackMenuItem")
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }

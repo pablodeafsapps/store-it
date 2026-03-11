@@ -29,6 +29,7 @@ struct AddRackView: View {
                         get: { uiState.name },
                         set: { onUpdateName($0) }
                     ))
+                    .accessibilityIdentifier("addRackNameField")
                     
                     TextField("Description", text: Binding(
                         get: { uiState.description_},
