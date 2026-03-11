@@ -67,7 +67,7 @@ final class UxTests: XCTestCase {
         nameField.typeText("Test Rack")
 
         let saveButton = app.buttons["saveRackButton"]
-        XCTAssertTrue(saveButton.exists)
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
         saveButton.tap()
 
         let racksTitle = app.navigationBars["Racks"]
