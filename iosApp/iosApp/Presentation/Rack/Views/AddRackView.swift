@@ -11,8 +11,8 @@ struct AddRackView: View {
     let onUpdateLocation: (String) -> Void
     let onUpdatePhotoUri: (String) -> Void
     let onSaveRack: () -> Void
+    let onNavigateBack: () -> Void
 
-    @Environment(\.dismiss) private var dismiss
     @State private var showImagePicker = false
     @State private var selectedPhoto: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
@@ -71,7 +71,7 @@ struct AddRackView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        onNavigateBack()
                     }
                     .accessibilityIdentifier("cancelButton")
                 }
@@ -97,7 +97,7 @@ struct AddRackView: View {
             }
             .onChange(of: onEnum(of: uiEvent)) { _, _ in
                 if uiEvent != nil {
-                    dismiss()
+                    onNavigateBack()
                 }
             }
         }
@@ -146,6 +146,7 @@ private struct AddRackView_Previews: PreviewProvider {
             onUpdateLocation: {_ in },
             onUpdatePhotoUri: {_ in },
             onSaveRack: {},
+            onNavigateBack: {},
         )
     }
 }

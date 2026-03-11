@@ -49,6 +49,7 @@ struct ContentView: View {
                     onUpdateLocation: addRackViewModel.sharedVm.updateLocation,
                     onUpdatePhotoUri: addRackViewModel.sharedVm.updatePhotoUri,
                     onSaveRack: addRackViewModel.sharedVm.saveRack,
+                    onNavigateBack: { currentScreen = .rackList },
                 )
                 .onChange(of: onEnum(of: event)) { _, _ in
                     if event != nil {
