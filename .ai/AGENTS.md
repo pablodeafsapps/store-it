@@ -311,7 +311,7 @@ This section describes how an engineer (or automation agent) should add or modif
 
 ### 6.4 Code style
 
-- **Named parameters**: Use named parameters at all call sites (functions and constructors), e.g. `paramName = value`, so that call sites stay readable and refactor-safe.
+- **Named parameters (mandatory)**: All function and constructor calls **must** use named arguments at every call site (Kotlin and Swift), including tests and calls to standard library or framework APIs, e.g. `paramName = value`, so that call sites stay readable and refactor-safe.
 
 ### 6.5 Testing
 

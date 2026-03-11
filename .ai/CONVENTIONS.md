@@ -31,7 +31,7 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 
 ### 1.4 Idioms
 
-- **Use named parameters** at all call sites: when calling functions or constructors, use the form `paramName = value` (e.g. `Rack(id = "1", name = "Rack 1")`, `sut.saveRack(rack = rack)`, `assertEquals(expected = 0, actual = list.size)`). This improves readability and makes refactors safer.
+- **Named parameters (mandatory)**: When calling any function or constructor, you **must** use named arguments at every call site (including tests and calls to standard library or framework APIs), using the form `paramName = value` (e.g. `Rack(id = "1", name = "Rack 1")`, `sut.saveRack(rack = rack)`, `assertEquals(expected = 0, actual = list.size)`). This improves readability and makes refactors safer and is enforced across the codebase.
 - Prefer `val` over `var`; use `var` only when state must change.
 - **Prefer expression-bodied functions**: Use `= expression` instead of `{ return expression }` when the body is a single expression (single- or multi-line). Avoid the `return` keyword where an expression form is clear: e.g. `fun get(id: String) = repo.findById(id)` or `fun delete(id: String) = when { id.isBlank() -> error.err(); else -> unit.ok() }`.
 - Use expression-bodied members when they fit on one line: `fun id(): String = uuid`.
