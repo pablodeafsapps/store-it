@@ -1,7 +1,9 @@
 package org.deafsapps.storeit.presentation.rack.model
 
+import androidx.compose.runtime.Immutable
 import org.deafsapps.storeit.domain.model.Rack
 
+@Immutable
 data class RackListUiState(
     val racks: List<Rack>,
     val isLoading: Boolean,

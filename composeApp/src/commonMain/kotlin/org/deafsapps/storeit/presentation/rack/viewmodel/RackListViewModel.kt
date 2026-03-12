@@ -2,7 +2,6 @@ package org.deafsapps.storeit.presentation.rack.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,7 +19,6 @@ import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
 import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 
 private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
 private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
@@ -63,10 +61,6 @@ class RackListViewModel(
         viewModelScope.launch {
             _uiEvent.emit(RackListUiEvent.NavigateToRackDetail(rackId = rack.id))
         }
-    }
-
-    fun onClear() {
-        viewModelScope.cancel()
     }
 }
 
