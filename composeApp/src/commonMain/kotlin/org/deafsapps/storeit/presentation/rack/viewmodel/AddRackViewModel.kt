@@ -1,7 +1,6 @@
 package org.deafsapps.storeit.presentation.rack.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -48,24 +47,24 @@ class AddRackViewModel(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
         )
 
-    fun updateName(name: String) {
+    fun onUpdateName(name: String) {
         _uiState.update { it.copy(name = name, error = null) }
     }
 
-    fun updateDescription(description: String) {
+    fun onUpdateDescription(description: String) {
         _uiState.update { it.copy(description = description, error = null) }
     }
 
-    fun updateLocation(location: String) {
+    fun onUpdateLocation(location: String) {
         _uiState.update { it.copy(location = location, error = null) }
     }
 
-    fun updatePhotoUri(uri: String?) {
+    fun onUpdatePhotoUri(uri: String?) {
         _uiState.update { it.copy(photoUri = uri, error = null) }
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    fun saveRack() {
+    fun onSaveRack() {
         val currentState = _uiState.value
         if (currentState.name.isBlank()) {
             _uiState.update { currentState.copy(error = "Name is required") }
@@ -105,7 +104,9 @@ class AddRackViewModel(
         }
     }
 
-    fun onClear() {
-        viewModelScope.cancel()
+    fun onNavigateBack() {
+        _uiState.update {
+            AddRackUiState.getDefault()
+        }
     }
 }

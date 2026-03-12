@@ -1,5 +1,8 @@
 package org.deafsapps.storeit.presentation.rack.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class AddRackUiState(
     val name: String,
     val description: String,

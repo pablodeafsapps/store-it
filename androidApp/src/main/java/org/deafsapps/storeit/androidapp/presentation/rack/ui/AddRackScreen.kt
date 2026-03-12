@@ -35,33 +35,32 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
+import kotlinx.coroutines.flow.Flow
 import org.deafsapps.storeit.presentation.rack.model.AddRackUiEvent
-import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
+import org.deafsapps.storeit.presentation.rack.model.AddRackUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AddRackScreen(
+    uiState: AddRackUiState,
+    uiEvent: () -> Flow<AddRackUiEvent?>,
+    onUpdatePhotoUri: (String) -> Unit,
+    onUpdateName: (String) -> Unit,
+    onUpdateDescription: (String) -> Unit,
+    onUpdateLocation: (String) -> Unit,
+    onSaveRack: () -> Unit,
     onNavigateBack: () -> Unit,
-    viewModel: AddRackViewModel,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.uiEvent.collect { uiEvent ->
-                when (uiEvent) {
-                    is AddRackUiEvent.NavigateBack -> {
-                        onNavigateBack()
-                    }
-                    is AddRackUiEvent.ShowError -> {
-                    }
-                    null -> {
-                        println("UI event not recognised!")
-                    }
+            uiEvent().collect { event ->
+                when (event) {
+                    is AddRackUiEvent.NavigateBack -> onNavigateBack()
+                    is AddRackUiEvent.ShowError -> { }
+                    null -> println("UI event not recognised!")
                 }
             }
         }
@@ -89,12 +88,12 @@ internal fun AddRackScreen(
         ) {
             PhotoPickerSection(
                 photoUri = uiState.photoUri,
-                onPhotoSelected = { uri -> viewModel.updatePhotoUri(uri) },
+                onPhotoSelected = { uri -> onUpdatePhotoUri(uri) },
             )
 
             OutlinedTextField(
                 value = uiState.name,
-                onValueChange = { name -> viewModel.updateName(name) },
+                onValueChange = { name -> onUpdateName(name) },
                 label = { Text("Name *") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -102,7 +101,7 @@ internal fun AddRackScreen(
 
             OutlinedTextField(
                 value = uiState.description,
-                onValueChange = { descr -> viewModel.updateDescription(descr) },
+                onValueChange = { descr -> onUpdateDescription(descr) },
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3,
@@ -110,7 +109,7 @@ internal fun AddRackScreen(
 
             OutlinedTextField(
                 value = uiState.location,
-                onValueChange = { loc -> viewModel.updateLocation(loc) },
+                onValueChange = { loc -> onUpdateLocation(loc) },
                 label = { Text("Location") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -125,7 +124,7 @@ internal fun AddRackScreen(
             }
 
             Button(
-                onClick = viewModel::saveRack,
+                onClick = onSaveRack,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading,
             ) {

@@ -60,10 +60,10 @@ class AddRackViewModelTest {
         val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
         advanceUntilIdle()
         fakeSaveRackUseCase.invokeResult = DomainError.ValidationError(reason = "x").err()
-        sut.saveRack()
+        sut.onSaveRack()
         advanceUntilIdle()
 
-        sut.updateName("My Rack")
+        sut.onUpdateName("My Rack")
         advanceUntilIdle()
 
         val state = states.last()
@@ -79,7 +79,7 @@ class AddRackViewModelTest {
         val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
         advanceUntilIdle()
 
-        sut.updateDescription("desc")
+        sut.onUpdateDescription("desc")
         advanceUntilIdle()
 
         assertEquals("desc", states.last().description)
@@ -93,7 +93,7 @@ class AddRackViewModelTest {
         val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
         advanceUntilIdle()
 
-        sut.updateLocation("garage")
+        sut.onUpdateLocation("garage")
         advanceUntilIdle()
 
         assertEquals("garage", states.last().location)
@@ -107,7 +107,7 @@ class AddRackViewModelTest {
         val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
         advanceUntilIdle()
 
-        sut.updatePhotoUri("content://photo")
+        sut.onUpdatePhotoUri("content://photo")
         advanceUntilIdle()
 
         assertEquals("content://photo", states.last().photoUri)
@@ -121,7 +121,7 @@ class AddRackViewModelTest {
         val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
         advanceUntilIdle()
 
-        sut.saveRack()
+        sut.onSaveRack()
         advanceUntilIdle()
 
         val state = states.last()
@@ -137,7 +137,7 @@ class AddRackViewModelTest {
             val states = mutableListOf<AddRackUiState>()
             val stateCollectJob: Job = launch { sut.uiState.collect { states.add(it) } }
             advanceUntilIdle()
-            sut.updateName("Rack 1")
+            sut.onUpdateName("Rack 1")
             advanceUntilIdle()
             val saved = Rack(id = "id1", name = "Rack 1")
             fakeSaveRackUseCase.invokeResult = saved.ok()
@@ -146,7 +146,7 @@ class AddRackViewModelTest {
             val eventCollectJob: Job = launch { sut.uiEvent.collect { events.add(it) } }
             advanceUntilIdle()
 
-            sut.saveRack()
+            sut.onSaveRack()
             advanceUntilIdle()
 
             val state = states.last()
@@ -165,11 +165,11 @@ class AddRackViewModelTest {
             val states = mutableListOf<AddRackUiState>()
             val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
             advanceUntilIdle()
-            sut.updateName("Rack 1")
+            sut.onUpdateName("Rack 1")
             advanceUntilIdle()
             fakeSaveRackUseCase.invokeResult = DomainError.ValidationError(reason = "Invalid name").err()
 
-            sut.saveRack()
+            sut.onSaveRack()
             advanceUntilIdle()
 
             val state = states.last()
@@ -185,11 +185,11 @@ class AddRackViewModelTest {
             val states = mutableListOf<AddRackUiState>()
             val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
             advanceUntilIdle()
-            sut.updateName("Rack 1")
+            sut.onUpdateName("Rack 1")
             advanceUntilIdle()
             fakeSaveRackUseCase.invokeResult = DomainError.NotFound(resource = "Rack", id = "x").err()
 
-            sut.saveRack()
+            sut.onSaveRack()
             advanceUntilIdle()
 
             val state = states.last()
@@ -205,11 +205,11 @@ class AddRackViewModelTest {
             val states = mutableListOf<AddRackUiState>()
             val collectJob: Job = launch { sut.uiState.collect { states.add(it) } }
             advanceUntilIdle()
-            sut.updateName("Rack 1")
+            sut.onUpdateName("Rack 1")
             advanceUntilIdle()
             fakeSaveRackUseCase.invokeResult = DomainError.Unknown.err()
 
-            sut.saveRack()
+            sut.onSaveRack()
             advanceUntilIdle()
 
             val state = states.last()
