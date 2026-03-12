@@ -1,16 +1,17 @@
 package org.deafsapps.storeit.presentation.rack.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.deafsapps.storeit.base.fold
@@ -30,7 +31,6 @@ import org.koin.core.annotation.InjectedParam
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
 private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 
 @Factory
@@ -44,16 +44,20 @@ class RackDetailViewModel(
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 
     private val _uiState = MutableStateFlow(RackDetailUiState.getDefault())
-    val uiState: StateFlow<RackDetailUiState> =
+    val uiState: StateFlow<RackDetailUiState> = _uiState.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<RackDetailUiEvent?>()
+    val uiEvent: SharedFlow<RackDetailUiEvent?> = _uiEvent.asSharedFlow()
+        .shareIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
+        )
+
+    init {
         flow {
             getRackDataByRackIdUseCase(input = rackId).fold(
                 ifErr = { error ->
-                    emit(
-                        _uiState.value.copy(
-                            isLoading = false,
-                            error = error.toErrorCause(),
-                        )
-                    )
+                    emit(_uiState.value.copy(isLoading = false, error = error.toErrorCause()))
                 }, ifOk = { rackData ->
                     emit(
                         _uiState.value.copy(
@@ -71,18 +75,10 @@ class RackDetailViewModel(
                     )
                 }
             )
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
-            initialValue = RackDetailUiState.getDefault().copy(isLoading = true),
-        )
-
-    private val _uiEvent = MutableSharedFlow<RackDetailUiEvent?>()
-    val uiEvent: SharedFlow<RackDetailUiEvent?> = _uiEvent.asSharedFlow()
-        .shareIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
-        )
+        }
+            .onEach { _uiState.value = it }
+            .launchIn(viewModelScope)
+    }
 
     @OptIn(ExperimentalUuidApi::class)
     fun onImageTap(xRel: Float, yRel: Float) {
@@ -112,7 +108,7 @@ class RackDetailViewModel(
         }
     }
 
-    fun onEditClick() {
+    fun onEditSelect() {
         val rack = _uiState.value.rack ?: return
         _uiState.update { state ->
             state.copy(
@@ -176,10 +172,6 @@ class RackDetailViewModel(
                 },
             )
         }
-    }
-
-    fun onClear() {
-        viewModelScope.cancel()
     }
 }
 

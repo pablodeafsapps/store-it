@@ -106,7 +106,7 @@ class RackDetailViewModelTest {
         }
 
     @Test
-    fun `GIVEN rack loaded WHEN onEditClick THEN uiState reflects load and dialog state unchanged`() =
+    fun `GIVEN rack loaded WHEN onEditSelect THEN edit dialog opens with rack data`() =
         runTest(testDispatcher) {
             fakeGetRackDataByRackId.invokeResult = RackData(
                 id = dummyRackId,
@@ -119,15 +119,15 @@ class RackDetailViewModelTest {
             val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
 
-            sut.onEditClick()
+            sut.onEditSelect()
             advanceUntilIdle()
 
             val state = collectedStates.last()
             assertEquals(dummyRack, state.rack)
-            assertFalse(state.showEditDialog)
-            assertEquals("", state.editName)
-            assertEquals("", state.editDescription)
-            assertEquals("", state.editLocation)
+            assertTrue(state.showEditDialog)
+            assertEquals(dummyRack.name, state.editName)
+            assertEquals(dummyRack.description, state.editDescription)
+            assertEquals(dummyRack.location, state.editLocation)
             collectJob.cancel()
         }
 
@@ -143,7 +143,7 @@ class RackDetailViewModelTest {
         val collectedStates = mutableListOf<RackDetailUiState>()
         val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
-        sut.onEditClick()
+        sut.onEditSelect()
         advanceUntilIdle()
 
         sut.onDismissEditDialog()
@@ -154,7 +154,7 @@ class RackDetailViewModelTest {
     }
 
     @Test
-    fun `GIVEN rack loaded WHEN saveRackEdits called THEN uiState unchanged`() =
+    fun `GIVEN rack loaded WHEN saveRackEdits called THEN uiState has updated rack and dialog closed`() =
         runTest(testDispatcher) {
             fakeGetRackDataByRackId.invokeResult = RackData(
                 id = dummyRackId,
@@ -166,22 +166,23 @@ class RackDetailViewModelTest {
             val collectedStates = mutableListOf<RackDetailUiState>()
             val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
-            sut.onEditClick()
+            sut.onEditSelect()
             advanceUntilIdle()
             sut.onUpdateEditName("New Name")
-            fakeSaveRack.invokeResult = dummyRack.copy(name = "New Name").ok()
+            val updatedRack = dummyRack.copy(name = "New Name")
+            fakeSaveRack.invokeResult = updatedRack.ok()
 
             sut.onSaveRackEdits()
             advanceUntilIdle()
 
             val state = collectedStates.last()
-            assertEquals(dummyRack, state.rack)
+            assertEquals(updatedRack, state.rack)
             assertFalse(state.showEditDialog)
             collectJob.cancel()
         }
 
     @Test
-    fun `GIVEN rack loaded WHEN onRemoveRackClick THEN uiState rack and slots unchanged`() = runTest(testDispatcher) {
+    fun `GIVEN rack loaded WHEN onRemoveRackSelect THEN uiState rack and slots unchanged`() = runTest(testDispatcher) {
         fakeGetRackDataByRackId.invokeResult = RackData(
             id = dummyRackId,
             rack = dummyRack,
@@ -247,7 +248,7 @@ class RackDetailViewModelTest {
         }
 
     @Test
-    fun `GIVEN rack loaded and saveSlot succeeds WHEN onImageTap THEN uiState slots unchanged`() =
+    fun `GIVEN rack loaded and saveSlot succeeds WHEN onImageTap THEN uiState has new slot and slot selected`() =
         runTest(testDispatcher) {
             fakeGetRackDataByRackId.invokeResult = RackData(
                 id = dummyRackId,
@@ -270,13 +271,16 @@ class RackDetailViewModelTest {
 
             val state = collectedStates.last()
             assertEquals(dummyRack, state.rack)
-            assertTrue(state.slots.isEmpty())
+            assertEquals(1, state.slots.size)
+            assertEquals(0.3f, state.slots.first().xRel)
+            assertEquals(0.4f, state.slots.first().yRel)
+            assertEquals("saved-1", state.selectedSlotId)
             stateCollectJob.cancel()
             eventCollectJob.cancel()
         }
 
     @Test
-    fun `GIVEN saveRackEdits would fail WHEN saveRackEdits THEN no ShowError emitted`() = runTest(testDispatcher) {
+    fun `GIVEN saveRackEdits would fail WHEN saveRackEdits THEN uiEvent ShowError emitted`() = runTest(testDispatcher) {
         fakeGetRackDataByRackId.invokeResult = RackData(
             id = dummyRackId,
             rack = dummyRack,
@@ -288,7 +292,7 @@ class RackDetailViewModelTest {
         val collectedStates = mutableListOf<RackDetailUiState>()
         val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
-        sut.onEditClick()
+        sut.onEditSelect()
         advanceUntilIdle()
         val collectedEvents = mutableListOf<RackDetailUiEvent?>()
         val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
@@ -298,7 +302,8 @@ class RackDetailViewModelTest {
         advanceUntilIdle()
 
         val showErrors = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.ShowError>()
-        assertTrue(showErrors.isEmpty())
+        assertTrue(showErrors.isNotEmpty())
+        assertTrue(showErrors.single().message.contains("Name too long"))
         stateCollectJob.cancel()
         eventCollectJob.cancel()
     }
@@ -333,7 +338,7 @@ class RackDetailViewModelTest {
     }
 
     @Test
-    fun `GIVEN saveSlot would fail WHEN onImageTap THEN no ShowError emitted`() = runTest(testDispatcher) {
+    fun `GIVEN saveSlot would fail WHEN onImageTap THEN uiEvent ShowError emitted`() = runTest(testDispatcher) {
         fakeGetRackDataByRackId.invokeResult = RackData(
             id = dummyRackId,
             rack = dummyRack,
@@ -354,7 +359,8 @@ class RackDetailViewModelTest {
 
         assertTrue(collectedStates.last().slots.isEmpty())
         val showErrors = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.ShowError>()
-        assertTrue(showErrors.isEmpty())
+        assertTrue(showErrors.isNotEmpty())
+        assertTrue(showErrors.single().message.contains("Invalid position"))
         stateCollectJob.cancel()
         eventCollectJob.cancel()
     }
