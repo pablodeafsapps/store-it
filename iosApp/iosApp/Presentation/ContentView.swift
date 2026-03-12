@@ -44,11 +44,11 @@ struct ContentView: View {
                 AddRackView(
                     uiState: state,
                     uiEvent: event,
-                    onUpdateName: addRackViewModel.sharedVm.updateName,
-                    onUpdateDescription: addRackViewModel.sharedVm.updateDescription,
-                    onUpdateLocation: addRackViewModel.sharedVm.updateLocation,
-                    onUpdatePhotoUri: addRackViewModel.sharedVm.updatePhotoUri,
-                    onSaveRack: addRackViewModel.sharedVm.saveRack,
+                    onUpdateName: addRackViewModel.sharedVm.onUpdateName,
+                    onUpdateDescription: addRackViewModel.sharedVm.onUpdateDescription,
+                    onUpdateLocation: addRackViewModel.sharedVm.onUpdateLocation,
+                    onUpdatePhotoUri: addRackViewModel.sharedVm.onUpdatePhotoUri,
+                    onSaveRack: addRackViewModel.sharedVm.onSaveRack,
                     onNavigateBack: { currentScreen = .rackList },
                 )
                 .onChange(of: onEnum(of: event)) { _, _ in

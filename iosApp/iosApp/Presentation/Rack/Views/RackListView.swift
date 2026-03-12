@@ -54,7 +54,7 @@ struct RackListView: View {
                 Text("Add Rack")
                     .frame(maxWidth: .infinity)
             }
-//            .accessibilityIdentifier("addRackButton")
+            .accessibilityIdentifier("addRackButton")
             .buttonStyle(.borderedProminent)
             .padding(.top, 8)
         }
@@ -98,6 +98,7 @@ private struct RackRowView: View {
             }
             .padding(.vertical, 4)
         }
+        .accessibilityIdentifier("rackRowViewButton")
         .buttonStyle(.plain)
     }
 

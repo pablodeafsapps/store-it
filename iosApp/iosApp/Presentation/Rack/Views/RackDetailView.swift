@@ -20,7 +20,7 @@ struct RackDetailView: View {
                         state: state,
                         event: event,
                         onImageTap: rackDetailViewModel.sharedVm.onImageTap,
-                        onEditClick: rackDetailViewModel.sharedVm.onEditClick,
+                        onEditSelect: rackDetailViewModel.sharedVm.onEditSelect,
                         onRemoveRackSelect: rackDetailViewModel.sharedVm.onRemoveRackSelect,
                         onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
                         onUpdateEditName: rackDetailViewModel.sharedVm.onUpdateEditName,
@@ -47,7 +47,7 @@ private struct RackDetailContent: View {
     let state: RackDetailUiState
     let event: RackDetailUiEvent?
     let onImageTap: (Float, Float) -> Void
-    let onEditClick: () -> Void
+    let onEditSelect: () -> Void
     let onRemoveRackSelect: () -> Void
     let onDismissEditDialog: () -> Void
     let onUpdateEditName: (String) -> Void
@@ -74,8 +74,8 @@ private struct RackDetailContent: View {
                                 onImageTap(xRel, yRel)
                             }
                         )
-                        if !rack.description.isEmpty {
-                            Text(rack.description)
+                        if !rack.description_.isEmpty {
+                            Text(rack.description_)
                                 .font(.body)
                         }
                         if !rack.location.isEmpty {
@@ -112,7 +112,7 @@ private struct RackDetailContent: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button("Edit") {
-                        onEditClick()
+                        onEditSelect()
                     }
                     .accessibilityIdentifier("editRackMenuItem")
                     Button("Remove rack", role: .destructive) {

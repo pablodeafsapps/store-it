@@ -30,7 +30,7 @@ final class UxTests: XCTestCase {
     
     @MainActor
     func testAddRackButtonExistsAndTaps() {
-        let addRackButton = app.buttons["addRackButton"]
+        let addRackButton = app.buttons["Add Rack"]
         XCTAssertTrue(addRackButton.waitForExistence(timeout: 5))
         addRackButton.tap()
         
@@ -40,14 +40,14 @@ final class UxTests: XCTestCase {
 
     @MainActor
     func testAddRackScreenCancelReturnsToList() {
-        let addRackButton = app.buttons["addRackButton"]
+        let addRackButton = app.buttons["Add Rack"]
         XCTAssertTrue(addRackButton.waitForExistence(timeout: 5))
         addRackButton.tap()
 
         let addRackTitle = app.staticTexts["Add Rack"]
         XCTAssertTrue(addRackTitle.waitForExistence(timeout: 5))
 
-        let cancelButton = app.buttons["cancelButton"]
+        let cancelButton = app.buttons["Cancel"]
         XCTAssertTrue(cancelButton.exists)
         cancelButton.tap()
 
@@ -57,7 +57,7 @@ final class UxTests: XCTestCase {
 
     @MainActor
     func testAddRackSaveCreatesRackAndShowsInList() {
-        let addRackButton = app.buttons["addRackButton"]
+        let addRackButton = app.buttons["Add Rack"]
         XCTAssertTrue(addRackButton.waitForExistence(timeout: 5))
         addRackButton.tap()
 
@@ -66,21 +66,21 @@ final class UxTests: XCTestCase {
         nameField.tap()
         nameField.typeText("Test Rack")
 
-        let saveButton = app.buttons["saveRackButton"]
+        let saveButton = app.buttons["Save Rack"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
         saveButton.tap()
 
         let racksTitle = app.navigationBars["Racks"]
         XCTAssertTrue(racksTitle.waitForExistence(timeout: 5))
 
-        let rackCell = app.staticTexts["Test Rack"]
+        let rackCell = app.buttons["rackRowViewButton"]
         XCTAssertTrue(rackCell.waitForExistence(timeout: 5))
     }
 
     @MainActor
     func testRackDetailBackNavigation() {
         // Ensure there is at least one rack by creating it via the Add Rack flow
-        let addRackButton = app.buttons["addRackButton"]
+        let addRackButton = app.buttons["Add Rack"]
         XCTAssertTrue(addRackButton.waitForExistence(timeout: 5))
         addRackButton.tap()
 
@@ -89,18 +89,18 @@ final class UxTests: XCTestCase {
         nameField.tap()
         nameField.typeText("Detail Rack")
 
-        let saveButton = app.buttons["saveRackButton"]
+        let saveButton = app.buttons["Save Rack"]
         XCTAssertTrue(saveButton.exists)
         saveButton.tap()
 
-        let rackCell = app.staticTexts["Detail Rack"]
+        let rackCell = app.buttons["rackRowViewButton"]
         XCTAssertTrue(rackCell.waitForExistence(timeout: 5))
         rackCell.tap()
 
         let detailTitle = app.navigationBars["Detail Rack"]
         XCTAssertTrue(detailTitle.waitForExistence(timeout: 5))
 
-        let backButton = app.buttons["rackDetailBackButton"]
+        let backButton = app.buttons["Back"]
         XCTAssertTrue(backButton.exists)
         backButton.tap()
 
@@ -111,7 +111,7 @@ final class UxTests: XCTestCase {
     @MainActor
     func testRackDetailEditSheetAndDeleteAlert() {
         // Create a rack to open its detail
-        let addRackButton = app.buttons["addRackButton"]
+        let addRackButton = app.buttons["Add Rack"]
         XCTAssertTrue(addRackButton.waitForExistence(timeout: 5))
         addRackButton.tap()
 
@@ -120,11 +120,11 @@ final class UxTests: XCTestCase {
         nameField.tap()
         nameField.typeText("Editable Rack")
 
-        let saveButton = app.buttons["saveRackButton"]
+        let saveButton = app.buttons["Save Rack"]
         XCTAssertTrue(saveButton.exists)
         saveButton.tap()
 
-        let rackCell = app.staticTexts["Editable Rack"]
+        let rackCell = app.buttons["rackRowViewButton"]
         XCTAssertTrue(rackCell.waitForExistence(timeout: 5))
         rackCell.tap()
 
@@ -136,10 +136,10 @@ final class UxTests: XCTestCase {
         XCTAssertTrue(editButton.waitForExistence(timeout: 5))
         editButton.tap()
 
-        let editSaveButton = app.buttons["editRackSaveButton"]
-        let editCancelButton = app.buttons["editRackCancelButton"]
+        let editSaveButton = app.buttons["Save"]
+        let editCancelButton = app.buttons["Cancel"]
         XCTAssertTrue(editSaveButton.waitForExistence(timeout: 5))
-        XCTAssertTrue(editCancelButton.exists)
+        XCTAssertTrue(editCancelButton.waitForExistence(timeout: 5))
 
         editCancelButton.tap()
 
