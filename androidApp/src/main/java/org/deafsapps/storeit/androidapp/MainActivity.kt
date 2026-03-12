@@ -12,14 +12,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.koin.core.parameter.parametersOf
 
 sealed interface NavScreen {
     data object RackList : NavScreen
@@ -40,21 +39,36 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     var currentScreen by remember { mutableStateOf<NavScreen>(NavScreen.RackList) }
                     when (val screen = currentScreen) {
-                        is NavScreen.RackList -> RackListScreen(
-                            viewModel = rackListViewModel,
-                            onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
-                            onNavigateToRackDetail = { id -> currentScreen = NavScreen.RackDetail(id) },
-                        )
-                        is NavScreen.AddRack -> AddRackScreen(
-                            viewModel = addRackViewModel,
-                            onNavigateBack = { currentScreen = NavScreen.RackList },
-                        )
-                        is NavScreen.RackDetail -> {
-                            val rackDetailViewModel: RackDetailViewModel by viewModel(
-                                parameters = { parametersOf(screen.rackId) },
+                        is NavScreen.RackList -> {
+                            val uiState by rackListViewModel.uiState.collectAsStateWithLifecycle()
+                            RackListScreen(
+                                uiState = uiState,
+                                uiEvent = { rackListViewModel.uiEvent },
+                                onAddRackSelect = rackListViewModel::onAddRackSelect,
+                                onRackSelect = rackListViewModel::onRackSelect,
+                                onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
+                                onNavigateToRackDetail = { id -> currentScreen = NavScreen.RackDetail(id) },
                             )
+                        }
+                        is NavScreen.AddRack -> {
+                            val uiState by addRackViewModel.uiState.collectAsStateWithLifecycle()
+                            AddRackScreen(
+                                uiState = uiState,
+                                uiEvent = { addRackViewModel.uiEvent },
+                                onUpdatePhotoUri = addRackViewModel::onUpdatePhotoUri,
+                                onUpdateName = addRackViewModel::onUpdateName,
+                                onUpdateDescription = addRackViewModel::onUpdateDescription,
+                                onUpdateLocation = addRackViewModel::onUpdateLocation,
+                                onSaveRack = addRackViewModel::onSaveRack,
+                                onNavigateBack = {
+                                    addRackViewModel.onNavigateBack()
+                                    currentScreen = NavScreen.RackList
+                                                 },
+                            )
+                        }
+                        is NavScreen.RackDetail -> {
                             RackDetailScreen(
-                                viewModel = rackDetailViewModel,
+                                rackId = screen.rackId,
                                 onNavigateBack = { currentScreen = NavScreen.RackList },
                             )
                         }

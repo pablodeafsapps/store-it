@@ -38,29 +38,34 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import org.deafsapps.storeit.androidapp.design.Dimens
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotView
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
+import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RackDetailScreen(
-    viewModel: RackDetailViewModel,
+    rackId: String,
     onNavigateBack: () -> Unit,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val rackDetailViewModel: RackDetailViewModel = koinViewModel<RackDetailViewModel>(
+        parameters = { parametersOf(rackId) },
+    )
+    val uiState by rackDetailViewModel.uiState.collectAsStateWithLifecycle()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.uiEvent.collect { event ->
+            rackDetailViewModel.uiEvent.collect { event ->
                 when (event) {
                     is RackDetailUiEvent.NavigateBack -> onNavigateBack()
                     is RackDetailUiEvent.ShowError -> { }
@@ -93,14 +98,14 @@ internal fun RackDetailScreen(
                             text = { Text("Edit") },
                             onClick = {
                                 showMenu = false
-                                viewModel.onEditClick()
+                                rackDetailViewModel.onEditSelect()
                             },
                         )
                         DropdownMenuItem(
                             text = { Text("Remove rack") },
                             onClick = {
                                 showMenu = false
-                                viewModel.onRemoveRackSelect()
+                                rackDetailViewModel.onRemoveRackSelect()
                             },
                         )
                     }
@@ -131,6 +136,7 @@ internal fun RackDetailScreen(
                     )
                 }
                 else -> {
+                    val rack = uiState.rack!!
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -138,21 +144,21 @@ internal fun RackDetailScreen(
                             .padding(Dimens.screenPadding),
                     ) {
                         RackImageWithSlots(
-                            photoUri = uiState.rack!!.photoUri,
+                            photoUri = rack.photoUri,
                             slots = uiState.slots,
                             selectedSlotId = uiState.selectedSlotId,
-                            onTap = { xRel, yRel -> viewModel.onImageTap(xRel, yRel) },
+                            onTap = { xRel, yRel -> rackDetailViewModel.onImageTap(xRel, yRel) },
                         )
-                        if (uiState.rack!!.description.isNotBlank()) {
+                        if (rack.description.isNotBlank()) {
                             Text(
-                                text = uiState.rack!!.description,
+                                text = rack.description,
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(top = Dimens.spacingDefault),
                             )
                         }
-                        if (uiState.rack!!.location.isNotBlank()) {
+                        if (rack.location.isNotBlank()) {
                             Text(
-                                text = "Location: ${uiState.rack!!.location}",
+                                text = "Location: ${rack.location}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = Dimens.spacingSmall),
@@ -178,26 +184,26 @@ internal fun RackDetailScreen(
             name = uiState.editName,
             description = uiState.editDescription,
             location = uiState.editLocation,
-            onNameChange = viewModel::onUpdateEditName,
-            onDescriptionChange = viewModel::onUpdateEditDescription,
-            onLocationChange = viewModel::onUpdateEditLocation,
-            onDismiss = viewModel::onDismissEditDialog,
-            onSave = viewModel::onSaveRackEdits,
+            onNameChange = rackDetailViewModel::onUpdateEditName,
+            onDescriptionChange = rackDetailViewModel::onUpdateEditDescription,
+            onLocationChange = rackDetailViewModel::onUpdateEditLocation,
+            onDismiss = rackDetailViewModel::onDismissEditDialog,
+            onSave = rackDetailViewModel::onSaveRackEdits,
         )
     }
 
     if (uiState.showDeleteConfirm) {
         AlertDialog(
-            onDismissRequest = viewModel::onDismissDeleteConfirm,
+            onDismissRequest = rackDetailViewModel::onDismissDeleteConfirm,
             title = { Text("Remove rack?") },
             text = { Text("This will delete the rack and all its slots and items. This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = viewModel::onConfirmDeleteRack) {
+                TextButton(onClick = rackDetailViewModel::onConfirmDeleteRack) {
                     Text("Remove", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::onDismissDeleteConfirm) {
+                TextButton(onClick = rackDetailViewModel::onDismissDeleteConfirm) {
                     Text("Cancel")
                 }
             },

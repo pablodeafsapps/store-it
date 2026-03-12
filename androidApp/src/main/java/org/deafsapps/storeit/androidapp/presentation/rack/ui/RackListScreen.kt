@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,26 +33,27 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.Lifecycle
 import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
+import kotlinx.coroutines.flow.Flow
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
+import org.deafsapps.storeit.presentation.rack.model.RackListUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RackListScreen(
-    viewModel: RackListViewModel,
+    uiState: RackListUiState,
+    uiEvent: () -> Flow<RackListUiEvent?>,
+    onAddRackSelect: () -> Unit,
+    onRackSelect: (Rack) -> Unit,
     onNavigateToAddRack: () -> Unit,
     onNavigateToRackDetail: (String) -> Unit,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.uiEvent.collect { event ->
+            uiEvent().collect { event ->
                 when (event) {
                     is RackListUiEvent.NavigateToAddRack -> onNavigateToAddRack()
                     is RackListUiEvent.NavigateToRackDetail -> onNavigateToRackDetail(event.rackId)
@@ -71,7 +72,7 @@ internal fun RackListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.onAddRackSelect() },
+                onClick = onAddRackSelect,
                 shape = RoundedCornerShape(Dimens.fabCornerRadius),
             ) {
                 Text("+")
@@ -96,7 +97,7 @@ internal fun RackListScreen(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(Dimens.screenPaddingLarge),
-//                        onAddRackSelect = { viewModel.onAddRackSelect() },
+                        onAddRackSelect = onAddRackSelect,
                     )
                 }
                 else -> {
@@ -107,7 +108,7 @@ internal fun RackListScreen(
                         items(uiState.racks, key = { it.id }) { rack ->
                             RackListItem(
                                 rack = rack,
-                                onClick = { viewModel.onRackSelect(rack) },
+                                onClick = { onRackSelect(rack) },
                             )
                         }
                     }
@@ -129,7 +130,7 @@ internal fun RackListScreen(
 @Composable
 private fun EmptyState(
     modifier: Modifier = Modifier,
-//    onAddRackSelect: () -> Unit,
+    onAddRackSelect: () -> Unit,
 ) {
     Column(
         modifier = modifier,
@@ -146,6 +147,12 @@ private fun EmptyState(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Button(
+            onClick = onAddRackSelect,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Add Rack")
+        }
     }
 }
 
