@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,7 +46,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotView
+import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -56,16 +57,19 @@ import org.koin.core.parameter.parametersOf
 internal fun RackDetailScreen(
     rackId: String,
     onNavigateBack: () -> Unit,
+    forItemPlacement: Boolean = false,
+    onSlotSelectedForItem: (rackId: String, slotId: String) -> Unit = { _, _ -> },
+    onAddItemHere: ((rackId: String, slotId: String) -> Unit)? = null,
 ) {
-    val rackDetailViewModel: RackDetailViewModel = koinViewModel<RackDetailViewModel>(
+    val viewModel: RackDetailViewModel = koinViewModel<RackDetailViewModel>(
         parameters = { parametersOf(rackId) },
     )
-    val uiState by rackDetailViewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            rackDetailViewModel.uiEvent.collect { event ->
+            viewModel.uiEvent.collect { event ->
                 when (event) {
                     is RackDetailUiEvent.NavigateBack -> onNavigateBack()
                     is RackDetailUiEvent.ShowError -> { }
@@ -86,31 +90,51 @@ internal fun RackDetailScreen(
                     }
                 },
                 actions = {
-                    var showMenu by remember { mutableStateOf(false) }
-                    IconButton(onClick = { showMenu = true }) {
-                        Text("⋮", style = MaterialTheme.typography.titleLarge)
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false },
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Edit") },
-                            onClick = {
-                                showMenu = false
-                                rackDetailViewModel.onEditSelect()
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Remove rack") },
-                            onClick = {
-                                showMenu = false
-                                rackDetailViewModel.onRemoveRackSelect()
-                            },
-                        )
+                    if (!forItemPlacement) {
+                        var showMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showMenu = true }) {
+                            Text("⋮", style = MaterialTheme.typography.titleLarge)
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.onEditSelect()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Remove rack") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.onRemoveRackSelect()
+                                },
+                            )
+                            if (onAddItemHere != null && uiState.selectedSlotId != null) {
+                                DropdownMenuItem(
+                                    text = { Text("Add item here") },
+                                    onClick = {
+                                        showMenu = false
+                                        onAddItemHere(rackId, uiState.selectedSlotId!!)
+                                    },
+                                )
+                            }
+                        }
                     }
                 },
             )
+        },
+        floatingActionButton = {
+            uiState.selectedSlotId?.let { slotId ->
+                if (forItemPlacement) {
+                    Button(onClick = { onSlotSelectedForItem(rackId, slotId) }) {
+                        Text("Use this slot")
+                    }
+                }
+            }
         },
     ) { paddingValues ->
         Box(
@@ -147,7 +171,7 @@ internal fun RackDetailScreen(
                             photoUri = rack.photoUri,
                             slots = uiState.slots,
                             selectedSlotId = uiState.selectedSlotId,
-                            onTap = { xRel, yRel -> rackDetailViewModel.onImageTap(xRel, yRel) },
+                            onTap = { xRel, yRel -> viewModel.onImageTap(xRel, yRel) },
                         )
                         if (rack.description.isNotBlank()) {
                             Text(
@@ -184,26 +208,26 @@ internal fun RackDetailScreen(
             name = uiState.editName,
             description = uiState.editDescription,
             location = uiState.editLocation,
-            onNameChange = rackDetailViewModel::onUpdateEditName,
-            onDescriptionChange = rackDetailViewModel::onUpdateEditDescription,
-            onLocationChange = rackDetailViewModel::onUpdateEditLocation,
-            onDismiss = rackDetailViewModel::onDismissEditDialog,
-            onSave = rackDetailViewModel::onSaveRackEdits,
+            onNameChange = viewModel::onUpdateEditName,
+            onDescriptionChange = viewModel::onUpdateEditDescription,
+            onLocationChange = viewModel::onUpdateEditLocation,
+            onDismiss = viewModel::onDismissEditDialog,
+            onSave = viewModel::onSaveRackEdits,
         )
     }
 
     if (uiState.showDeleteConfirm) {
         AlertDialog(
-            onDismissRequest = rackDetailViewModel::onDismissDeleteConfirm,
+            onDismissRequest = viewModel::onDismissDeleteConfirm,
             title = { Text("Remove rack?") },
             text = { Text("This will delete the rack and all its slots and items. This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = rackDetailViewModel::onConfirmDeleteRack) {
+                TextButton(onClick = viewModel::onConfirmDeleteRack) {
                     Text("Remove", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = rackDetailViewModel::onDismissDeleteConfirm) {
+                TextButton(onClick = viewModel::onDismissDeleteConfirm) {
                     Text("Cancel")
                 }
             },
@@ -214,7 +238,7 @@ internal fun RackDetailScreen(
 @Composable
 private fun RackImageWithSlots(
     photoUri: String?,
-    slots: List<RackDetailSlotView>,
+    slots: List<RackDetailSlotVo>,
     selectedSlotId: String?,
     onTap: (xRel: Float, yRel: Float) -> Unit,
 ) {

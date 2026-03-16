@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.di
 
+import org.deafsapps.storeit.presentation.item.viewmodel.AddItemViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
@@ -15,4 +16,7 @@ object IosKoinHelper : KoinComponent {
 
     fun getRackDetailViewModel(rackId: String): RackDetailViewModel =
         get(parameters = { parametersOf(rackId) })
+
+    fun getAddItemViewModel(initialRackId: String?, initialSlotId: String?): AddItemViewModel =
+        get(parameters = { parametersOf(initialRackId, initialSlotId) })
 }

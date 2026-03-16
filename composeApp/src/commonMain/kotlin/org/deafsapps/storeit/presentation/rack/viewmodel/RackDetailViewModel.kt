@@ -8,9 +8,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -23,7 +20,8 @@ import org.deafsapps.storeit.domain.usecase.GetRackDataByRackIdUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
 import org.deafsapps.storeit.presentation.StoreItViewModel
-import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotView
+import org.deafsapps.storeit.presentation.rack.mapper.toRackDetailSlotsVo
+import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
 import org.koin.core.annotation.Factory
@@ -54,30 +52,7 @@ class RackDetailViewModel(
         )
 
     init {
-        flow {
-            getRackDataByRackIdUseCase(input = rackId).fold(
-                ifErr = { error ->
-                    emit(_uiState.value.copy(isLoading = false, error = error.toErrorCause()))
-                }, ifOk = { rackData ->
-                    emit(
-                        _uiState.value.copy(
-                            rack = rackData.rack,
-                            slots = rackData.shelfSlots.map { slot ->
-                                RackDetailSlotView(
-                                    id = slot.id,
-                                    xRel = slot.position.xRel,
-                                    yRel = slot.position.yRel,
-                                )
-                            },
-                            isLoading = false,
-                            error = null,
-                        )
-                    )
-                }
-            )
-        }
-            .onEach { _uiState.value = it }
-            .launchIn(viewModelScope)
+        loadRackDataById(rackId = rackId)
     }
 
     @OptIn(ExperimentalUuidApi::class)
@@ -94,7 +69,7 @@ class RackDetailViewModel(
                 ifOk = { saved ->
                     _uiState.update { state ->
                         state.copy(
-                            slots = state.slots + RackDetailSlotView(
+                            slots = state.slots + RackDetailSlotVo(
                                 id = saved.id,
                                 xRel = saved.position.xRel,
                                 yRel = saved.position.yRel,
@@ -170,6 +145,30 @@ class RackDetailViewModel(
                     _uiState.update { state -> state.copy(showDeleteConfirm = false) }
                     _uiEvent.emit(RackDetailUiEvent.NavigateBack)
                 },
+            )
+        }
+    }
+
+    private fun loadRackDataById(rackId: String) {
+        viewModelScope.launch {
+            getRackDataByRackIdUseCase(input = rackId).fold(
+                ifErr = { error ->
+                    _uiState.update { state ->
+                        state.copy(
+                            isLoading = false,
+                            error = error.toErrorCause(),
+                        )
+                    }
+                }, ifOk = { rackData ->
+                    _uiState.update { state ->
+                        state.copy(
+                            rack = rackData.rack,
+                            slots = rackData.shelfSlots.toRackDetailSlotsVo(),
+                            isLoading = false,
+                            error = null,
+                        )
+                    }
+                }
             )
         }
     }

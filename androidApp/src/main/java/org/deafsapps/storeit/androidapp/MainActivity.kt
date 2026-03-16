@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
@@ -24,6 +25,7 @@ sealed interface NavScreen {
     data object RackList : NavScreen
     data object AddRack : NavScreen
     data class RackDetail(val rackId: String) : NavScreen
+    data class AddItem(val rackId: String? = null, val slotId: String? = null) : NavScreen
 }
 
 class MainActivity : ComponentActivity() {
@@ -48,6 +50,7 @@ class MainActivity : ComponentActivity() {
                                 onRackSelect = rackListViewModel::onRackSelect,
                                 onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
                                 onNavigateToRackDetail = { id -> currentScreen = NavScreen.RackDetail(id) },
+                                onNavigateToAddItem = { currentScreen = NavScreen.AddItem() },
                             )
                         }
                         is NavScreen.AddRack -> {
@@ -69,6 +72,16 @@ class MainActivity : ComponentActivity() {
                         is NavScreen.RackDetail -> {
                             RackDetailScreen(
                                 rackId = screen.rackId,
+                                onNavigateBack = { currentScreen = NavScreen.RackList },
+                                onAddItemHere = { rackId, slotId ->
+                                    currentScreen = NavScreen.AddItem(rackId = rackId, slotId = slotId)
+                                },
+                            )
+                        }
+                        is NavScreen.AddItem -> {
+                            AddItemScreen(
+                                initialRackId = screen.rackId,
+                                initialSlotId = screen.slotId,
                                 onNavigateBack = { currentScreen = NavScreen.RackList },
                             )
                         }

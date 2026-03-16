@@ -6,7 +6,7 @@ import org.deafsapps.storeit.domain.model.Rack
 @Immutable
 data class RackDetailUiState(
     val rack: Rack?,
-    val slots: List<RackDetailSlotView>,
+    val slots: List<RackDetailSlotVo>,
     val selectedSlotId: String?,
     val isLoading: Boolean,
     val error: String?,

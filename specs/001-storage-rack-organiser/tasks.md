@@ -74,7 +74,7 @@
 
 - [X] T015 [P] [US2] Implement AddItemUseCase and GetItemsBySlotUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/` (depend on ItemRepository, RackRepository if needed)
 - [X] T016 [P] [US2] Unit tests for AddItemUseCase and GetItemsBySlotUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
-- [ ] T017 [US2] Add item flow (Android): screen for photo (camera/gallery), name, description, quantity, owner, tags in `composeApp/.../ui/item/AddItemScreen.kt`; then select rack and tap slot to place (or reverse: select rack + slot first then add item); wire to AddItemUseCase (FR-004, FR-005)
+- [X] T017 [US2] Add item flow (Android): screen for photo (camera/gallery), name, description, quantity, owner, tags in `composeApp/.../ui/item/AddItemScreen.kt`; then select rack and tap slot to place (or reverse: select rack + slot first then add item); wire to AddItemUseCase (FR-004, FR-005)
 - [ ] T030 [US2] Add item flow (iOS): screen for photo, name, description, quantity, owner, tags in iosApp; select rack and tap slot to place; wire to AddItemUseCase (FR-004, FR-005)
 - [ ] T018 [US2] When user has no racks, guide to create one or disable add-item until at least one rack exists (edge case spec); handle empty slot as valid placement target in `composeApp/.../ui/` (Android)
 - [ ] T031 [US2] No racks / empty slot (iOS): when user has no racks, guide to create one or disable add-item; handle empty slot as valid placement target in iosApp
