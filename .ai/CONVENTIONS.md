@@ -257,11 +257,23 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 - Prefer fakes (in-memory or stub implementations with configurable return values) for speed and stability; use mocks when you need to assert interactions (e.g. “save was called once”).
 
-### 7.5 Shared vs Platform Tests
+### 7.4 UI tests (screens and views)
+
+- **Requirement**: Every new screen or significant view must have UI tests on **both** platforms.
+- **Android**: Add UI tests for each new Jetpack Compose screen (e.g. in `:androidApp` with Compose testing or instrumented tests). Cover main user flows and key states (e.g. empty, loading, success, error). Use semantics or accessibility identifiers for stable selectors.
+- **iOS**: Add UI tests for each new SwiftUI screen (e.g. in the app’s UI test target such as `StoreItUITests`). Cover main user flows and key states. Use `accessibilityIdentifier` (or equivalent) so tests are stable across layout changes.
+- Add or update UI tests whenever a screen is introduced or its behaviour is meaningfully changed.
+
+### 7.5 Android Compose previews
+
+- **Requirement**: Every Android (Jetpack Compose) screen must provide **previews that cover all possible scenarios**.
+- Add `@Preview` composables for: loading state, empty state, error state, success state with data, and any other distinct UI states the screen can show (e.g. different steps in a flow, with/without optional content). This allows design and behaviour review without running the app and catches missing state handling.
+
+### 7.6 Shared vs Platform Tests
 
 - **commonTest**: Use case and repository tests with shared fakes; no Android/iOS APIs. No AndroidX types.
 - **androidApp/src/test**: Unit tests for **pure Kotlin ViewModels** in `commonMain`. Test the pure ViewModel directly: use fakes for use cases and inject a `CoroutineScope` (e.g. `TestScope(testDispatcher)` from `runTest`) for deterministic execution. Use `runTest(testDispatcher)` and `advanceUntilIdle()`; collect `uiState`/`uiEvent` in a list and assert on the latest value so `stateIn`/`shareIn` updates are observed.
-- **androidTest / iOS**: Integration or UI tests as needed.
+- **androidTest / iOS**: Integration or UI tests as needed (see §7.4 for mandatory UI tests per screen).
 
 ---
 

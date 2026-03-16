@@ -305,6 +305,7 @@ This section describes how an engineer (or automation agent) should add or modif
 - On Android:
   - Bind Compose UI to the **pure ViewModel** held by the wrapper (e.g. `androidRackListViewModel.rackListViewModel`).
   - Maintain unidirectional data flow: UI → events → ViewModel → state → UI.
+  - **Previews**: Every Compose screen must have `@Preview` composables that cover **all meaningful UI scenarios** (e.g. loading, empty state, error, success with data, different content sizes) so the screen can be reviewed in isolation without running the app.
 - On iOS:
   - Bind SwiftUI views to the Swift wrapper; the wrapper holds and observes the pure Kotlin ViewModel.
   - Use Skie, `Observing`, or equivalent to observe KMP state/events consistently.
@@ -326,6 +327,10 @@ This section describes how an engineer (or automation agent) should add or modif
   - **Test body structure**: Structure each test in three sections (setup → action → assertions) separated by **blank lines only**; do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup (e.g. “empty repository” or “any state”), leave a single blank line after the test opening, then the WHEN and THEN blocks.
 - **Android ViewModel tests** (pure Kotlin ViewModels in `commonMain`):
   - Place unit tests in **`androidApp/src/test`** so JUnit and coroutines-test are available. Test the **pure ViewModel** directly: use **fakes** for use cases (e.g. `FakeGetRacksUseCase`) and inject a **`CoroutineScope`** (e.g. `TestScope(testDispatcher)` from `runTest`) so execution is deterministic. Use `runTest(testDispatcher)` and `advanceUntilIdle()`; collect `uiState`/`uiEvent` in a list and assert on the latest value so `stateIn`/`shareIn` updates are observed. Add `kotlinx-coroutines-test` to the Android module’s `testImplementation` dependencies.
+- **UI tests (mandatory for every new screen/view)**:
+  - **Android**: Every new Jetpack Compose screen or meaningful view must have UI tests (e.g. Compose UI tests or instrumented tests in `:androidApp`) that cover the screen’s main flows and states.
+  - **iOS**: Every new SwiftUI screen or meaningful view must have UI tests (XCTest UI tests in the iOS app’s UI test target, e.g. `StoreItUITests`) that cover the screen’s main flows and states.
+  - Add tests when introducing or significantly changing a screen; use accessibility identifiers so tests are stable and resilient to layout changes.
 - **Android/iOS integration tests**:
   - Verify integration with platform-specific services, navigation, and lifecycle.
 
