@@ -157,4 +157,43 @@ final class UxTests: XCTestCase {
         XCTAssertTrue(cancelDeleteButton.exists)
         cancelDeleteButton.tap()
     }
+
+    @MainActor
+    func testRackDetailUsesAccessibilityIdentifiersForMenuAndEditSheet() {
+        // Create a rack to open its detail
+        let addRackButton = app.buttons["Add Rack"]
+        XCTAssertTrue(addRackButton.waitForExistence(timeout: 5))
+        addRackButton.tap()
+
+        let nameField = app.textFields["Name *"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText("A11y Rack")
+
+        let saveButton = app.buttons["Save Rack"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
+        saveButton.tap()
+
+        let rackCell = app.buttons["rackRowViewButton"]
+        XCTAssertTrue(rackCell.waitForExistence(timeout: 5))
+        rackCell.tap()
+
+        let menuButton = app.buttons["rackDetailMenuButton"]
+        XCTAssertTrue(menuButton.waitForExistence(timeout: 5))
+        menuButton.tap()
+
+        let editMenuItem = app.buttons["editRackMenuItem"]
+        let removeMenuItem = app.buttons["removeRackMenuItem"]
+        XCTAssertTrue(editMenuItem.waitForExistence(timeout: 5))
+        XCTAssertTrue(removeMenuItem.waitForExistence(timeout: 5))
+
+        editMenuItem.tap()
+
+        let editRackCancel = app.buttons["editRackCancelButton"]
+        let editRackSave = app.buttons["editRackSaveButton"]
+        XCTAssertTrue(editRackCancel.waitForExistence(timeout: 5))
+        XCTAssertTrue(editRackSave.waitForExistence(timeout: 5))
+
+        editRackCancel.tap()
+    }
 }

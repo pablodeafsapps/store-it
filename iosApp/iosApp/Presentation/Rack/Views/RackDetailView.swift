@@ -4,41 +4,52 @@ import ComposeApp
 struct RackDetailView: View {
     @StateObject private var rackDetailViewModel: ViewModelHolder<RackDetailViewModel>
     let onNavigateBack: () -> Void
+    let forItemPlacement: Bool
+    let onSlotSelectedForItem: ((String, String) -> Void)?
 
-
-    init(rackId: String, onNavigateBack: @escaping () -> Void) {
-        _rackDetailViewModel = StateObject(wrappedValue: ViewModelHolder(IosKoinHelper().getRackDetailViewModel(rackId: rackId)))
+    init(
+        rackId: String,
+        onNavigateBack: @escaping () -> Void,
+        forItemPlacement: Bool = false,
+        onSlotSelectedForItem: ((String, String) -> Void)? = nil
+    ) {
+        _rackDetailViewModel = StateObject(
+            wrappedValue: ViewModelHolder(IosKoinHelper().getRackDetailViewModel(rackId: rackId))
+        )
         self.onNavigateBack = onNavigateBack
+        self.forItemPlacement = forItemPlacement
+        self.onSlotSelectedForItem = onSlotSelectedForItem
     }
 
     var body: some View {
         NavigationView {
             Observing(
                 rackDetailViewModel.sharedVm.uiState,
-                rackDetailViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
-                    RackDetailContent(
-                        state: state,
-                        event: event,
-                        onImageTap: rackDetailViewModel.sharedVm.onImageTap,
-                        onEditSelect: rackDetailViewModel.sharedVm.onEditSelect,
-                        onRemoveRackSelect: rackDetailViewModel.sharedVm.onRemoveRackSelect,
-                        onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
-                        onUpdateEditName: rackDetailViewModel.sharedVm.onUpdateEditName,
-                        onUpdateEditDescription: rackDetailViewModel.sharedVm.onUpdateEditDescription,
-                        onUpdateEditLocation: rackDetailViewModel.sharedVm.onUpdateEditLocation,
-                        onSaveRackEdits: rackDetailViewModel.sharedVm.onSaveRackEdits,
-                        onDismissDeleteConfirm: rackDetailViewModel.sharedVm.onDismissDeleteConfirm,
-                        onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack,
-                        onNavigateBack: onNavigateBack,
-                    )
-                }
-        }
-    }
-
-    private func handleEvent(_ event: RackDetailUiEvent?, _ onNavigateBack: () -> Void) {
-        guard let event = event else { return }
-        if event is RackDetailUiEventNavigateBack {
-            onNavigateBack()
+                rackDetailViewModel.sharedVm.uiEvent.withInitialValue(nil)
+            ) { state, event in
+                RackDetailContent(
+                    state: state,
+                    event: event,
+                    onImageTap: rackDetailViewModel.sharedVm.onImageTap,
+                    onEditSelect: rackDetailViewModel.sharedVm.onEditSelect,
+                    onRemoveRackSelect: rackDetailViewModel.sharedVm.onRemoveRackSelect,
+                    onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
+                    onUpdateEditName: rackDetailViewModel.sharedVm.onUpdateEditName,
+                    onUpdateEditDescription: rackDetailViewModel.sharedVm.onUpdateEditDescription,
+                    onUpdateEditLocation: rackDetailViewModel.sharedVm.onUpdateEditLocation,
+                    onSaveRackEdits: rackDetailViewModel.sharedVm.onSaveRackEdits,
+                    onDismissDeleteConfirm: rackDetailViewModel.sharedVm.onDismissDeleteConfirm,
+                    onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack,
+                    onNavigateBack: onNavigateBack,
+                    forItemPlacement: forItemPlacement,
+                    onUseSelectedSlot: {
+                        if let rack = state.rack,
+                           let slotId = state.selectedSlotId {
+                            onSlotSelectedForItem?(rack.id, slotId)
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -57,6 +68,8 @@ private struct RackDetailContent: View {
     let onDismissDeleteConfirm: () -> Void
     let onConfirmDeleteRack: () -> Void
     let onNavigateBack: () -> Void
+    let forItemPlacement: Bool
+    let onUseSelectedSlot: () -> Void
 
     var body: some View {
         ZStack {
@@ -97,6 +110,18 @@ private struct RackDetailContent: View {
                         .foregroundColor(.red)
                         .padding()
                     Spacer()
+                }
+            }
+
+            if forItemPlacement, state.selectedSlotId != nil {
+                VStack {
+                    Spacer()
+                    Button(action: { onUseSelectedSlot() }) {
+                        Text("Use this slot")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding()
                 }
             }
         }
@@ -158,7 +183,7 @@ private struct RackDetailContent: View {
 
 private struct RackImageView: View {
     let photoUri: String?
-    let slots: [RackDetailSlotView]
+    let slots: [RackDetailSlotVo]
     let selectedSlotId: String?
     let onTap: (Float, Float) -> Void
 
