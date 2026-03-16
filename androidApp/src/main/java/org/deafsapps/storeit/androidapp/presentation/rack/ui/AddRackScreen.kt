@@ -36,8 +36,10 @@ import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import org.deafsapps.storeit.presentation.rack.model.AddRackUiEvent
 import org.deafsapps.storeit.presentation.rack.model.AddRackUiState
 
@@ -192,6 +194,50 @@ private fun PhotoPickerSection(
                 onPhotoSelected(uri)
                 showImagePicker = false
             },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AddRackScreenPreview() {
+    MaterialTheme {
+        AddRackScreen(
+            uiState = AddRackUiState(
+                name = "Main Garage Rack",
+                description = "Primary storage for tools and equipment",
+                location = "Garage - East Wall",
+                photoUri = null,
+                isLoading = false,
+                error = null,
+                isSuccess = false,
+            ),
+            uiEvent = { flowOf(null) },
+            onUpdatePhotoUri = {},
+            onUpdateName = {},
+            onUpdateDescription = {},
+            onUpdateLocation = {},
+            onSaveRack = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AddRackScreenLoadingPreview() {
+    MaterialTheme {
+        AddRackScreen(
+            uiState = AddRackUiState.getDefault().copy(
+                isLoading = true
+            ),
+            uiEvent = { flowOf(null) },
+            onUpdatePhotoUri = {},
+            onUpdateName = {},
+            onUpdateDescription = {},
+            onUpdateLocation = {},
+            onSaveRack = {},
+            onNavigateBack = {},
         )
     }
 }

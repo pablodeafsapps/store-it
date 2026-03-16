@@ -45,14 +45,16 @@ import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
+import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RackDetailScreen(
     rackId: String,
@@ -80,6 +82,44 @@ internal fun RackDetailScreen(
         }
     }
 
+    RackDetailContent(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        forItemPlacement = forItemPlacement,
+        onSlotSelectedForItem = { slotId -> onSlotSelectedForItem(rackId, slotId) },
+        onAddItemHere = onAddItemHere?.let { { slotId -> it(rackId, slotId) } },
+        onEditSelect = viewModel::onEditSelect,
+        onRemoveRackSelect = viewModel::onRemoveRackSelect,
+        onImageTap = viewModel::onImageTap,
+        onUpdateEditName = viewModel::onUpdateEditName,
+        onUpdateEditDescription = viewModel::onUpdateEditDescription,
+        onUpdateEditLocation = viewModel::onUpdateEditLocation,
+        onDismissEditDialog = viewModel::onDismissEditDialog,
+        onSaveRackEdits = viewModel::onSaveRackEdits,
+        onDismissDeleteConfirm = viewModel::onDismissDeleteConfirm,
+        onConfirmDeleteRack = viewModel::onConfirmDeleteRack,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RackDetailContent(
+    uiState: RackDetailUiState,
+    onNavigateBack: () -> Unit,
+    forItemPlacement: Boolean = false,
+    onSlotSelectedForItem: (slotId: String) -> Unit = {},
+    onAddItemHere: ((slotId: String) -> Unit)? = null,
+    onEditSelect: () -> Unit = {},
+    onRemoveRackSelect: () -> Unit = {},
+    onImageTap: (Float, Float) -> Unit = { _, _ -> },
+    onUpdateEditName: (String) -> Unit = {},
+    onUpdateEditDescription: (String) -> Unit = {},
+    onUpdateEditLocation: (String) -> Unit = {},
+    onDismissEditDialog: () -> Unit = {},
+    onSaveRackEdits: () -> Unit = {},
+    onDismissDeleteConfirm: () -> Unit = {},
+    onConfirmDeleteRack: () -> Unit = {},
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -103,14 +143,14 @@ internal fun RackDetailScreen(
                                 text = { Text("Edit") },
                                 onClick = {
                                     showMenu = false
-                                    viewModel.onEditSelect()
+                                    onEditSelect()
                                 },
                             )
                             DropdownMenuItem(
                                 text = { Text("Remove rack") },
                                 onClick = {
                                     showMenu = false
-                                    viewModel.onRemoveRackSelect()
+                                    onRemoveRackSelect()
                                 },
                             )
                             if (onAddItemHere != null && uiState.selectedSlotId != null) {
@@ -118,7 +158,7 @@ internal fun RackDetailScreen(
                                     text = { Text("Add item here") },
                                     onClick = {
                                         showMenu = false
-                                        onAddItemHere(rackId, uiState.selectedSlotId!!)
+                                        onAddItemHere(uiState.selectedSlotId!!)
                                     },
                                 )
                             }
@@ -130,7 +170,7 @@ internal fun RackDetailScreen(
         floatingActionButton = {
             uiState.selectedSlotId?.let { slotId ->
                 if (forItemPlacement) {
-                    Button(onClick = { onSlotSelectedForItem(rackId, slotId) }) {
+                    Button(onClick = { onSlotSelectedForItem(slotId) }) {
                         Text("Use this slot")
                     }
                 }
@@ -171,7 +211,7 @@ internal fun RackDetailScreen(
                             photoUri = rack.photoUri,
                             slots = uiState.slots,
                             selectedSlotId = uiState.selectedSlotId,
-                            onTap = { xRel, yRel -> viewModel.onImageTap(xRel, yRel) },
+                            onTap = onImageTap,
                         )
                         if (rack.description.isNotBlank()) {
                             Text(
@@ -208,26 +248,26 @@ internal fun RackDetailScreen(
             name = uiState.editName,
             description = uiState.editDescription,
             location = uiState.editLocation,
-            onNameChange = viewModel::onUpdateEditName,
-            onDescriptionChange = viewModel::onUpdateEditDescription,
-            onLocationChange = viewModel::onUpdateEditLocation,
-            onDismiss = viewModel::onDismissEditDialog,
-            onSave = viewModel::onSaveRackEdits,
+            onNameChange = onUpdateEditName,
+            onDescriptionChange = onUpdateEditDescription,
+            onLocationChange = onUpdateEditLocation,
+            onDismiss = onDismissEditDialog,
+            onSave = onSaveRackEdits,
         )
     }
 
     if (uiState.showDeleteConfirm) {
         AlertDialog(
-            onDismissRequest = viewModel::onDismissDeleteConfirm,
+            onDismissRequest = onDismissDeleteConfirm,
             title = { Text("Remove rack?") },
             text = { Text("This will delete the rack and all its slots and items. This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = viewModel::onConfirmDeleteRack) {
+                TextButton(onClick = onConfirmDeleteRack) {
                     Text("Remove", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::onDismissDeleteConfirm) {
+                TextButton(onClick = onDismissDeleteConfirm) {
                     Text("Cancel")
                 }
             },
@@ -359,4 +399,46 @@ private fun EditRackDialog(
             }
         },
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackDetailScreenPreview() {
+    MaterialTheme {
+        RackDetailContent(
+            uiState = RackDetailUiState(
+                rack = Rack(
+                    id = "1",
+                    name = "Garage Rack",
+                    description = "Rack for tools and equipment",
+                    location = "Garage - East Wall",
+                    photoUri = null
+                ),
+                slots = listOf(
+                    RackDetailSlotVo(id = "s1", xRel = 0.2f, yRel = 0.3f),
+                    RackDetailSlotVo(id = "s2", xRel = 0.5f, yRel = 0.6f)
+                ),
+                selectedSlotId = "s1",
+                isLoading = false,
+                error = null,
+                showEditDialog = false,
+                editName = "",
+                editDescription = "",
+                editLocation = "",
+                showDeleteConfirm = false
+            ),
+            onNavigateBack = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackDetailScreenLoadingPreview() {
+    MaterialTheme {
+        RackDetailContent(
+            uiState = RackDetailUiState.getDefault().copy(isLoading = true),
+            onNavigateBack = {}
+        )
+    }
 }

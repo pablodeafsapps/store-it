@@ -37,12 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
@@ -219,5 +221,81 @@ private fun RackListItem(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackListScreenPreview() {
+    val sampleRacks = listOf(
+        Rack(
+            id = "1",
+            name = "Garage shelf",
+            description = "Main storage shelf in garage",
+            location = "Garage",
+            photoUri = null,
+        ),
+        Rack(
+            id = "2",
+            name = "Kitchen pantry",
+            description = "Pantry in the kitchen",
+            location = "Kitchen",
+            photoUri = null,
+        )
+    )
+    MaterialTheme {
+        RackListScreen(
+            uiState = RackListUiState(
+                racks = sampleRacks,
+                isLoading = false,
+                error = null
+            ),
+            uiEvent = { emptyFlow() },
+            onAddRackSelect = {},
+            onRackSelect = {},
+            onNavigateToAddRack = {},
+            onNavigateToRackDetail = {},
+            onNavigateToAddItem = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackListScreenEmptyPreview() {
+    MaterialTheme {
+        RackListScreen(
+            uiState = RackListUiState(
+                racks = emptyList(),
+                isLoading = false,
+                error = null
+            ),
+            uiEvent = { emptyFlow() },
+            onAddRackSelect = {},
+            onRackSelect = {},
+            onNavigateToAddRack = {},
+            onNavigateToRackDetail = {},
+            onNavigateToAddItem = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackListScreenLoadingPreview() {
+    MaterialTheme {
+        RackListScreen(
+            uiState = RackListUiState(
+                racks = emptyList(),
+                isLoading = true,
+                error = null
+            ),
+            uiEvent = { emptyFlow() },
+            onAddRackSelect = {},
+            onRackSelect = {},
+            onNavigateToAddRack = {},
+            onNavigateToRackDetail = {},
+            onNavigateToAddItem = {}
+        )
     }
 }

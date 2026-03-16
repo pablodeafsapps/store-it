@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -79,24 +80,72 @@ internal fun AddItemScreen(
         }
     }
 
+    AddItemScreenContent(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        onUpdateName = viewModel::onUpdateName,
+        onUpdateDescription = viewModel::onUpdateDescription,
+        onUpdateQuantity = viewModel::onUpdateQuantity,
+        onUpdateOwner = viewModel::onUpdateOwner,
+        onUpdateTagInput = viewModel::onUpdateTagInput,
+        onAddTag = viewModel::onAddTag,
+        onRemoveTag = viewModel::onRemoveTag,
+        onUpdatePhotoUri = viewModel::onUpdatePhotoUri,
+        onSelectRackAndSlotClick = viewModel::onSelectRackAndSlotClick,
+        onSaveItem = viewModel::onSaveItem,
+        onRackSelected = viewModel::onRackSelected,
+        onBackFromSelectRack = viewModel::onBackFromSelectRack,
+        onBackFromSelectSlot = viewModel::onBackFromSelectSlot,
+        onSlotSelectedForItem = viewModel::onSlotSelectedForItem,
+    )
+}
+
+@Composable
+private fun AddItemScreenContent(
+    uiState: AddItemUiState,
+    onNavigateBack: () -> Unit,
+    onUpdateName: (String) -> Unit,
+    onUpdateDescription: (String) -> Unit,
+    onUpdateQuantity: (Int?) -> Unit,
+    onUpdateOwner: (String) -> Unit,
+    onUpdateTagInput: (String) -> Unit,
+    onAddTag: () -> Unit,
+    onRemoveTag: (String) -> Unit,
+    onUpdatePhotoUri: (String?) -> Unit,
+    onSelectRackAndSlotClick: () -> Unit,
+    onSaveItem: () -> Unit,
+    onRackSelected: (Rack) -> Unit,
+    onBackFromSelectRack: () -> Unit,
+    onBackFromSelectSlot: () -> Unit,
+    onSlotSelectedForItem: (rackId: String, slotId: String) -> Unit,
+) {
     when (uiState.step) {
-        AddItemStep.FORM -> AddItemFormContent(
+        AddItemStep.FORM -> AddItemForm(
             uiState = uiState,
-            viewModel = viewModel,
             onNavigateBack = onNavigateBack,
+            onUpdateName = onUpdateName,
+            onUpdateDescription = onUpdateDescription,
+            onUpdateQuantity = onUpdateQuantity,
+            onUpdateOwner = onUpdateOwner,
+            onUpdateTagInput = onUpdateTagInput,
+            onAddTag = onAddTag,
+            onRemoveTag = onRemoveTag,
+            onUpdatePhotoUri = onUpdatePhotoUri,
+            onSelectRackAndSlotClick = onSelectRackAndSlotClick,
+            onSaveItem = onSaveItem,
         )
         AddItemStep.SELECT_RACK -> SelectRackContent(
             uiState = uiState,
-            onRackSelected = viewModel::onRackSelected,
-            onBack = viewModel::onBackFromSelectRack,
+            onRackSelected = onRackSelected,
+            onBack = onBackFromSelectRack,
         )
         AddItemStep.SELECT_SLOT -> {
             val rackId = uiState.selectedRackId ?: return
             RackDetailScreen(
                 rackId = rackId,
-                onNavigateBack = viewModel::onBackFromSelectSlot,
+                onNavigateBack = onBackFromSelectSlot,
                 forItemPlacement = true,
-                onSlotSelectedForItem = viewModel::onSlotSelectedForItem,
+                onSlotSelectedForItem = onSlotSelectedForItem,
             )
         }
     }
@@ -104,10 +153,19 @@ internal fun AddItemScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddItemFormContent(
+private fun AddItemForm(
     uiState: AddItemUiState,
-    viewModel: AddItemViewModel,
     onNavigateBack: () -> Unit,
+    onUpdateName: (String) -> Unit,
+    onUpdateDescription: (String) -> Unit,
+    onUpdateQuantity: (Int?) -> Unit,
+    onUpdateOwner: (String) -> Unit,
+    onUpdateTagInput: (String) -> Unit,
+    onAddTag: () -> Unit,
+    onRemoveTag: (String) -> Unit,
+    onUpdatePhotoUri: (String?) -> Unit,
+    onSelectRackAndSlotClick: () -> Unit,
+    onSaveItem: () -> Unit,
 ) {
     var showImagePicker by remember { mutableStateOf(false) }
 
@@ -138,7 +196,7 @@ private fun AddItemFormContent(
 
             OutlinedTextField(
                 value = uiState.name,
-                onValueChange = viewModel::onUpdateName,
+                onValueChange = onUpdateName,
                 label = { Text("Name") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -146,7 +204,7 @@ private fun AddItemFormContent(
 
             OutlinedTextField(
                 value = uiState.description,
-                onValueChange = viewModel::onUpdateDescription,
+                onValueChange = onUpdateDescription,
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3,
@@ -154,7 +212,7 @@ private fun AddItemFormContent(
 
             OutlinedTextField(
                 value = uiState.quantity?.toString() ?: "",
-                onValueChange = { viewModel.onUpdateQuantity(it.toIntOrNull()) },
+                onValueChange = { onUpdateQuantity(it.toIntOrNull()) },
                 label = { Text("Quantity") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -162,7 +220,7 @@ private fun AddItemFormContent(
 
             OutlinedTextField(
                 value = uiState.owner,
-                onValueChange = viewModel::onUpdateOwner,
+                onValueChange = onUpdateOwner,
                 label = { Text("Owner") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -175,12 +233,12 @@ private fun AddItemFormContent(
             ) {
                 OutlinedTextField(
                     value = uiState.tagInput,
-                    onValueChange = viewModel::onUpdateTagInput,
+                    onValueChange = onUpdateTagInput,
                     label = { Text("Tags") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                 )
-                Button(onClick = viewModel::onAddTag) {
+                Button(onClick = onAddTag) {
                     Text("Add")
                 }
             }
@@ -191,7 +249,7 @@ private fun AddItemFormContent(
                 ) {
                     uiState.tags.forEach { tag ->
                         Card(
-                            onClick = { viewModel.onRemoveTag(tag) },
+                            onClick = { onRemoveTag(tag) },
                             shape = RoundedCornerShape(Dimens.cardCornerRadiusSmall),
                         ) {
                             Text(
@@ -208,7 +266,7 @@ private fun AddItemFormContent(
             }
 
             Button(
-                onClick = viewModel::onSelectRackAndSlotClick,
+                onClick = onSelectRackAndSlotClick,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
@@ -228,7 +286,7 @@ private fun AddItemFormContent(
             }
 
             Button(
-                onClick = viewModel::onSaveItem,
+                onClick = onSaveItem,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading,
             ) {
@@ -248,7 +306,7 @@ private fun AddItemFormContent(
         ImagePickerDialog(
             onDismiss = { showImagePicker = false },
             onImageSelected = {
-                viewModel.onUpdatePhotoUri(it)
+                onUpdatePhotoUri(it)
                 showImagePicker = false
             },
         )
@@ -369,5 +427,76 @@ private fun SelectRackContent(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AddItemScreenPreview() {
+    MaterialTheme {
+        AddItemScreenContent(
+            uiState = AddItemUiState(
+                name = "Drill",
+                description = "Cordless power drill",
+                quantity = 1,
+                owner = "Me",
+                tags = listOf("Tools", "Power"),
+                tagInput = "",
+                photoUri = null,
+                selectedRackId = "1",
+                selectedSlotId = "A1",
+                racks = emptyList(),
+                step = AddItemStep.FORM,
+                isLoading = false,
+                error = null,
+                isSuccess = false,
+            ),
+            onNavigateBack = {},
+            onUpdateName = {},
+            onUpdateDescription = {},
+            onUpdateQuantity = {},
+            onUpdateOwner = {},
+            onUpdateTagInput = {},
+            onAddTag = {},
+            onRemoveTag = {},
+            onUpdatePhotoUri = {},
+            onSelectRackAndSlotClick = {},
+            onSaveItem = {},
+            onRackSelected = {},
+            onBackFromSelectRack = {},
+            onBackFromSelectSlot = {},
+            onSlotSelectedForItem = { _, _ -> },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AddItemScreenSelectRackPreview() {
+    MaterialTheme {
+        AddItemScreenContent(
+            uiState = AddItemUiState.getDefault().copy(
+                step = AddItemStep.SELECT_RACK,
+                racks = listOf(
+                    Rack(id = "1", name = "Garage Rack", location = "Garage"),
+                    Rack(id = "2", name = "Kitchen Shelf", location = "Kitchen"),
+                )
+            ),
+            onNavigateBack = {},
+            onUpdateName = {},
+            onUpdateDescription = {},
+            onUpdateQuantity = {},
+            onUpdateOwner = {},
+            onUpdateTagInput = {},
+            onAddTag = {},
+            onRemoveTag = {},
+            onUpdatePhotoUri = {},
+            onSelectRackAndSlotClick = {},
+            onSaveItem = {},
+            onRackSelected = {},
+            onBackFromSelectRack = {},
+            onBackFromSelectSlot = {},
+            onSlotSelectedForItem = { _, _ -> },
+        )
     }
 }

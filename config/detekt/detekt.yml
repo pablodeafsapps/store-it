@@ -134,7 +134,7 @@ style:
     active: true
   UnusedPrivateMember:
     active: true
-    ignoreAnnotated: ['Suppress', 'VisibleForTesting']
+    ignoreAnnotated: ['Suppress', 'VisibleForTesting', 'Preview']
   UseCheckOrError:
     active: true
   UseRequire:
