@@ -83,6 +83,7 @@ class MainActivity : ComponentActivity() {
                                 initialRackId = screen.rackId,
                                 initialSlotId = screen.slotId,
                                 onNavigateBack = { currentScreen = NavScreen.RackList },
+                                onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
                             )
                         }
                     }

@@ -61,6 +61,7 @@ internal fun AddItemScreen(
     initialRackId: String?,
     initialSlotId: String?,
     onNavigateBack: () -> Unit,
+    onNavigateToAddRack: () -> Unit = {},
 ) {
     val viewModel: AddItemViewModel = koinViewModel(
         parameters = { parametersOf(initialRackId, initialSlotId) },
@@ -83,6 +84,7 @@ internal fun AddItemScreen(
     AddItemScreenContent(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
+        onNavigateToAddRack = onNavigateToAddRack,
         onUpdateName = viewModel::onUpdateName,
         onUpdateDescription = viewModel::onUpdateDescription,
         onUpdateQuantity = viewModel::onUpdateQuantity,
@@ -104,6 +106,7 @@ internal fun AddItemScreen(
 private fun AddItemScreenContent(
     uiState: AddItemUiState,
     onNavigateBack: () -> Unit,
+    onNavigateToAddRack: () -> Unit = {},
     onUpdateName: (String) -> Unit,
     onUpdateDescription: (String) -> Unit,
     onUpdateQuantity: (Int?) -> Unit,
@@ -138,6 +141,7 @@ private fun AddItemScreenContent(
             uiState = uiState,
             onRackSelected = onRackSelected,
             onBack = onBackFromSelectRack,
+            onNavigateToAddRack = onNavigateToAddRack,
         )
         AddItemStep.SELECT_SLOT -> {
             val rackId = uiState.selectedRackId ?: return
@@ -360,6 +364,7 @@ private fun SelectRackContent(
     uiState: AddItemUiState,
     onRackSelected: (Rack) -> Unit,
     onBack: () -> Unit,
+    onNavigateToAddRack: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -374,13 +379,30 @@ private fun SelectRackContent(
         },
     ) { paddingValues ->
         if (uiState.racks.isEmpty()) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center,
+                    .padding(paddingValues)
+                    .padding(Dimens.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(Dimens.spacingDefault),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("No racks. Add a rack first.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "You need at least one rack to place an item. Create one first.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                Button(
+                    onClick = onNavigateToAddRack,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Add rack")
+                }
             }
         } else {
             LazyColumn(
@@ -452,6 +474,7 @@ private fun AddItemScreenPreview() {
                 isSuccess = false,
             ),
             onNavigateBack = {},
+            onNavigateToAddRack = {},
             onUpdateName = {},
             onUpdateDescription = {},
             onUpdateQuantity = {},
@@ -483,6 +506,7 @@ private fun AddItemScreenSelectRackPreview() {
                 )
             ),
             onNavigateBack = {},
+            onNavigateToAddRack = {},
             onUpdateName = {},
             onUpdateDescription = {},
             onUpdateQuantity = {},
