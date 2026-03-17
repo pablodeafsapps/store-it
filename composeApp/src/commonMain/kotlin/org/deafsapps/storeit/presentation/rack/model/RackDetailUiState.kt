@@ -35,5 +35,5 @@ data class RackDetailUiState(
 sealed interface RackDetailUiEvent {
     data object NavigateBack : RackDetailUiEvent
     data class ShowError(val message: String) : RackDetailUiEvent
-    data class SlotSelected(val slotId: String) : RackDetailUiEvent
+    data class SlotSelected(val rackId: String, val slotId: String) : RackDetailUiEvent
 }

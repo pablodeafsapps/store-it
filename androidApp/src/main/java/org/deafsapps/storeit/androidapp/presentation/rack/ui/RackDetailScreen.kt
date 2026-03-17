@@ -75,7 +75,9 @@ internal fun RackDetailScreen(
                 when (event) {
                     is RackDetailUiEvent.NavigateBack -> onNavigateBack()
                     is RackDetailUiEvent.ShowError -> { }
-                    is RackDetailUiEvent.SlotSelected -> { }
+                    is RackDetailUiEvent.SlotSelected -> {
+                        onAddItemHere?.invoke(event.rackId, event.slotId)
+                    }
                     null -> { }
                 }
             }

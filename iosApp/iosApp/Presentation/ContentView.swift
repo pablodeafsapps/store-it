@@ -4,7 +4,7 @@ import ComposeApp
 enum NavScreen {
     case rackList
     case addRack
-    case addItem
+    case addItem(initialRackId: String?, initialSlotId: String?)
     case rackDetail(rackId: String)
 }
 
@@ -24,7 +24,6 @@ enum RackListNavigation {
 struct ContentView: View {
     @StateObject private var rackListViewModel: ViewModelHolder<RackListViewModel> = ViewModelHolder(IosKoinHelper().getRackListViewModel())
     @StateObject private var addRackViewModel: ViewModelHolder<AddRackViewModel> = ViewModelHolder(IosKoinHelper().getAddRackViewModel())
-    @StateObject private var addItemViewModel: ViewModelHolder<AddItemViewModel> = ViewModelHolder(IosKoinHelper().getAddItemViewModel(initialRackId: nil, initialSlotId: nil))
     @State private var currentScreen: NavScreen = .rackList
 
     var body: some View {
@@ -46,7 +45,7 @@ struct ContentView: View {
                         Spacer()
                         HStack {
                             Spacer()
-                            Button(action: { currentScreen = .addItem }) {
+                            Button(action: { currentScreen = .addItem(initialRackId: nil, initialSlotId: nil) }) {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.system(size: 28))
                             }
@@ -77,35 +76,13 @@ struct ContentView: View {
                     }
                 }
             }
-        case .addItem:
-            Observing(addItemViewModel.sharedVm.uiState, addItemViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
-                AddItemView(
-                    uiState: state,
-                    uiEvent: event,
-                    onUpdateName: addItemViewModel.sharedVm.onUpdateName,
-                    onUpdateDescription: addItemViewModel.sharedVm.onUpdateDescription,
-                    onUpdateQuantity: { quantity in
-                        if let quantity {
-                            addItemViewModel.sharedVm.onUpdateQuantity(quantity: KotlinInt(int: Int32(quantity)))
-                        } else {
-                            addItemViewModel.sharedVm.onUpdateQuantity(quantity: nil)
-                        }
-                    },
-                    onUpdateOwner: addItemViewModel.sharedVm.onUpdateOwner,
-                    onUpdateTagInput: addItemViewModel.sharedVm.onUpdateTagInput,
-                    onAddTag: addItemViewModel.sharedVm.onAddTag,
-                    onRemoveTag: addItemViewModel.sharedVm.onRemoveTag,
-                    onUpdatePhotoUri: addItemViewModel.sharedVm.onUpdatePhotoUri,
-                    onSelectRackAndSlotClick: addItemViewModel.sharedVm.onSelectRackAndSlotClick,
-                    onSaveItem: addItemViewModel.sharedVm.onSaveItem,
-                    onRackSelected: addItemViewModel.sharedVm.onRackSelected,
-                    onBackFromSelectRack: addItemViewModel.sharedVm.onBackFromSelectRack,
-                    onBackFromSelectSlot: addItemViewModel.sharedVm.onBackFromSelectSlot,
-                    onSlotSelectedForItem: addItemViewModel.sharedVm.onSlotSelectedForItem,
-                    onNavigateToAddRack: { currentScreen = .addRack },
-                    onNavigateBack: { currentScreen = .rackList }
-                )
-            }
+        case .addItem(let initialRackId, let initialSlotId):
+            AddItemScreen(
+                initialRackId: initialRackId,
+                initialSlotId: initialSlotId,
+                onNavigateToAddRack: { currentScreen = .addRack },
+                onNavigateBack: { currentScreen = .rackList }
+            )
         case .rackDetail(let rackId):
             RackDetailView(
                 rackId: rackId,
@@ -116,6 +93,56 @@ struct ContentView: View {
 
     private func handleRackListEvent(_ event: RackListUiEvent?) {
         currentScreen = RackListNavigation.nextScreen(current: currentScreen, event: event)
+    }
+}
+
+private struct AddItemScreen: View {
+    @StateObject private var addItemViewModel: ViewModelHolder<AddItemViewModel>
+    let onNavigateToAddRack: () -> Void
+    let onNavigateBack: () -> Void
+
+    init(
+        initialRackId: String?,
+        initialSlotId: String?,
+        onNavigateToAddRack: @escaping () -> Void,
+        onNavigateBack: @escaping () -> Void
+    ) {
+        _addItemViewModel = StateObject(
+            wrappedValue: ViewModelHolder(IosKoinHelper().getAddItemViewModel(initialRackId: initialRackId, initialSlotId: initialSlotId))
+        )
+        self.onNavigateToAddRack = onNavigateToAddRack
+        self.onNavigateBack = onNavigateBack
+    }
+
+    var body: some View {
+        Observing(addItemViewModel.sharedVm.uiState, addItemViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
+            AddItemView(
+                uiState: state,
+                uiEvent: event,
+                onUpdateName: addItemViewModel.sharedVm.onUpdateName,
+                onUpdateDescription: addItemViewModel.sharedVm.onUpdateDescription,
+                onUpdateQuantity: { quantity in
+                    if let quantity {
+                        addItemViewModel.sharedVm.onUpdateQuantity(quantity: KotlinInt(int: Int32(quantity)))
+                    } else {
+                        addItemViewModel.sharedVm.onUpdateQuantity(quantity: nil)
+                    }
+                },
+                onUpdateOwner: addItemViewModel.sharedVm.onUpdateOwner,
+                onUpdateTagInput: addItemViewModel.sharedVm.onUpdateTagInput,
+                onAddTag: addItemViewModel.sharedVm.onAddTag,
+                onRemoveTag: addItemViewModel.sharedVm.onRemoveTag,
+                onUpdatePhotoUri: addItemViewModel.sharedVm.onUpdatePhotoUri,
+                onSelectRackAndSlotClick: addItemViewModel.sharedVm.onSelectRackAndSlotClick,
+                onSaveItem: addItemViewModel.sharedVm.onSaveItem,
+                onRackSelected: addItemViewModel.sharedVm.onRackSelected,
+                onBackFromSelectRack: addItemViewModel.sharedVm.onBackFromSelectRack,
+                onBackFromSelectSlot: addItemViewModel.sharedVm.onBackFromSelectSlot,
+                onSlotSelectedForItem: addItemViewModel.sharedVm.onSlotSelectedForItem,
+                onNavigateToAddRack: onNavigateToAddRack,
+                onNavigateBack: onNavigateBack
+            )
+        }
     }
 }
 

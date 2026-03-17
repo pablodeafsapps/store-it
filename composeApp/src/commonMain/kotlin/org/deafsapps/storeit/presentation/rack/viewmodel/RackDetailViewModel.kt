@@ -77,7 +77,7 @@ class RackDetailViewModel(
                             selectedSlotId = saved.id,
                         )
                     }
-                    _uiEvent.emit(RackDetailUiEvent.SlotSelected(slotId = saved.id))
+                    _uiEvent.emit(RackDetailUiEvent.SlotSelected(rackId = saved.rackId, slotId = saved.id))
                 },
             )
         }

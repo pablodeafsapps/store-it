@@ -58,7 +58,7 @@ class AddItemViewModel(
         )
 
     init {
-        if (initialRackId != null && initialSlotId != null) {
+        if (initialRackId != null) {
             _uiState.update { it.copy(selectedRackId = initialRackId, selectedSlotId = initialSlotId) }
         }
         startRacksFlowWhenSelectingRack()
@@ -74,10 +74,8 @@ class AddItemViewModel(
                         _uiState.value.copy(racks = racks, error = null)
                     })
             }.onEach { newState ->
-                if (_uiState.isSelectingRackOrSlot()) {
-                    _uiState.update { state ->
-                        state.copy(racks = newState.racks, error = newState.error ?: state.error)
-                    }
+                _uiState.update { state ->
+                    state.copy(racks = newState.racks, error = newState.error ?: state.error)
                 }
             }.launchIn(viewModelScope)
     }
@@ -120,7 +118,9 @@ class AddItemViewModel(
     }
 
     fun onSelectRackAndSlotClick() {
-        _uiState.update { state -> state.copy(step = AddItemStep.SELECT_RACK) }
+        _uiState.update { state ->
+            state.copy(step = if (state.selectedRackId != null) AddItemStep.SELECT_SLOT else AddItemStep.SELECT_RACK)
+        }
     }
 
     fun onRackSelected(rack: Rack) {
@@ -192,9 +192,6 @@ class AddItemViewModel(
     fun onNavigateBack() {
         _uiState.update { AddItemUiState.getDefault(initialRackId, initialSlotId) }
     }
-
-    private fun MutableStateFlow<AddItemUiState>.isSelectingRackOrSlot(): Boolean =
-        value.step == AddItemStep.SELECT_RACK || value.step == AddItemStep.SELECT_SLOT
 }
 
 private fun DomainError.toErrorCause(): String = when (this) {

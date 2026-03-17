@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.failureOrNull
@@ -26,7 +27,7 @@ class InMemoryRackRepositoryTest {
     @Test
     fun `GIVEN empty repository WHEN getAllRacks THEN returns empty list`() = runTest {
 
-        sut.getAllRacksFlow().collect { allRacks -> result = allRacks }
+        result = sut.getAllRacksFlow().first()
 
         assertTrue(actual = result.isOk)
         val racks: List<Rack> = result.getOrNull() ?: emptyList()
@@ -40,7 +41,7 @@ class InMemoryRackRepositoryTest {
         sut.saveRack(rack = rack1)
         sut.saveRack(rack = rack2)
 
-        sut.getAllRacksFlow().collect { allRacks -> result = allRacks }
+        result = sut.getAllRacksFlow().first()
 
         assertTrue(actual = result.isOk)
         val racks: List<Rack> = result.getOrNull() ?: emptyList()
@@ -167,7 +168,7 @@ class InMemoryRackRepositoryTest {
         sut.saveRack(rack =Rack(id = "2", name = "Rack 2"))
 
         sut.clear()
-        sut.getAllRacksFlow().collect { allRacks -> result = allRacks }
+        result = sut.getAllRacksFlow().first()
 
         assertTrue(actual = result.isOk)
         val racks: List<Rack> = result.getOrNull() ?: emptyList()
@@ -184,7 +185,7 @@ class InMemoryRackRepositoryTest {
             async { sut.saveRack(rack = rack) }
         }.awaitAll()
 
-        sut.getAllRacksFlow().collect { allRacks -> result = allRacks }
+        result = sut.getAllRacksFlow().first()
         assertTrue(actual = result.isOk)
         val savedRacks: List<Rack> = result.getOrNull() ?: emptyList()
         assertEquals(expected = 100, actual = savedRacks.size)
@@ -235,7 +236,7 @@ class InMemoryRackRepositoryTest {
             readResults.forEach { result ->
                 assertTrue(actual = result.isOk)
             }
-            sut.getAllRacksFlow().collect { allRacks -> result = allRacks }
+            result = sut.getAllRacksFlow().first()
             assertTrue(actual = result.isOk)
             val allRacks: List<Rack> = result.getOrNull() ?: emptyList()
             assertEquals(expected = 40, actual = allRacks.size)
@@ -256,7 +257,7 @@ class InMemoryRackRepositoryTest {
         deleteJobs.forEach { result ->
             assertTrue(actual = result.isOk)
         }
-        sut.getAllRacksFlow().collect { allRacks -> result = allRacks }
+        result = sut.getAllRacksFlow().first()
         assertTrue(actual = result.isOk)
         val remainingRacks: List<Rack> = result.getOrNull() ?: emptyList()
         assertEquals(expected = 0, actual = remainingRacks.size)
@@ -289,7 +290,7 @@ class InMemoryRackRepositoryTest {
         deleteJobs.awaitAll()
         getAllJobs.awaitAll()
 
-        sut.getAllRacksFlow().collect { allRacks -> result = allRacks }
+        result = sut.getAllRacksFlow().first()
         assertTrue(actual = result.isOk)
         val allRacks: List<Rack> = result.getOrNull() ?: emptyList()
         assertEquals(expected = 40, actual = allRacks.size)
