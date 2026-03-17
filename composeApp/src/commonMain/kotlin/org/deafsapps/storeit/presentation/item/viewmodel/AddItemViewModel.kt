@@ -66,20 +66,20 @@ class AddItemViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun startRacksFlowWhenSelectingRack() {
-            getRacksFlowUseCase(input = Unit).mapLatest { result ->
-                result.fold(
-                    ifErr = { _uiState.value.copy(racks = emptyList(), error = it.toErrorCause()) },
-                    ifOk = { racks -> _uiState.value.copy(racks = racks, error = null) },
-                )
-            }
-                .onEach { newState ->
-                    if (_uiState.isSelectingRackOrSlot()) {
-                        _uiState.update { state ->
-                            state.copy(racks = newState.racks, error = newState.error ?: state.error)
-                        }
+            getRacksFlowUseCase(input = Unit)
+                .mapLatest { result ->
+                    result.fold(ifErr = { error ->
+                        _uiState.value.copy(racks = emptyList(), error = error.toErrorCause())
+                    }, ifOk = { racks ->
+                        _uiState.value.copy(racks = racks, error = null)
+                    })
+            }.onEach { newState ->
+                if (_uiState.isSelectingRackOrSlot()) {
+                    _uiState.update { state ->
+                        state.copy(racks = newState.racks, error = newState.error ?: state.error)
                     }
                 }
-                .launchIn(viewModelScope)
+            }.launchIn(viewModelScope)
     }
 
     fun onUpdateName(name: String) {

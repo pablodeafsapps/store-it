@@ -13,5 +13,5 @@ interface SaveRackUseCaseType : UseCase<Rack, Result<DomainError, Rack>>
 internal class SaveRackUseCase(
     private val rackRepository: RackRepository,
 ) : SaveRackUseCaseType {
-    override suspend fun invoke(input: Rack): Result<DomainError, Rack> = rackRepository.saveRack(input)
+    override suspend fun invoke(input: Rack): Result<DomainError, Rack> = rackRepository.saveRack(rack = input)
 }

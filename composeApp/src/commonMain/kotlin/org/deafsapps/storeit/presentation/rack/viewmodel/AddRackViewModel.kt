@@ -67,12 +67,12 @@ class AddRackViewModel(
     fun onSaveRack() {
         val currentState = _uiState.value
         if (currentState.name.isBlank()) {
-            _uiState.update { currentState.copy(error = "Name is required") }
+            _uiState.update { state -> state.copy(error = "Name is required") }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { currentState.copy(isLoading = true, error = null) }
+            _uiState.update { state -> state.copy(isLoading = true, error = null) }
 
             val rack = Rack(
                 id = Uuid.random().toString(),
@@ -82,21 +82,20 @@ class AddRackViewModel(
                 photoUri = currentState.photoUri,
             )
 
-            val result = saveRackUseCase(rack)
-            result.fold(
-                ifErr = { error: DomainError ->
+            saveRackUseCase(rack).fold(
+                ifErr = { error ->
                     val errorMessage = when (error) {
                         is DomainError.ValidationError -> error.reason
                         is DomainError.NotFound -> "Rack not found"
                         is DomainError.Unknown -> "An unknown error occurred"
                     }
-                    _uiState.update {
-                        currentState.copy(isLoading = false, error = errorMessage)
+                    _uiState.update { state ->
+                        state.copy(isLoading = false, error = errorMessage)
                     }
                 },
                 ifOk = { _ ->
-                    _uiState.update {
-                        AddRackUiState.getDefault().copy(isLoading = false, isSuccess = true)
+                    _uiState.update { state ->
+                        state.copy(isLoading = false, isSuccess = true)
                     }
                     _uiEvent.emit(AddRackUiEvent.NavigateBack)
                 },
