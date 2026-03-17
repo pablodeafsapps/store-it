@@ -20,6 +20,7 @@ struct AddItemView: View {
     let onBackFromSelectRack: () -> Void
     let onBackFromSelectSlot: () -> Void
     let onSlotSelectedForItem: (String, String) -> Void
+    let onNavigateToAddRack: () -> Void
     let onNavigateBack: () -> Void
 
     @State private var showPhotoPicker = false
@@ -212,8 +213,16 @@ struct AddItemView: View {
         NavigationView {
             List {
                 if uiState.racks.isEmpty {
-                    Text("No racks. Add a rack first.")
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("No racks. Add a rack first to place items.")
+                            .foregroundColor(.secondary)
+                        Button(action: onNavigateToAddRack) {
+                            Text("Add Rack")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
                 } else {
                     ForEach(uiState.racks, id: \.id) { rack in
                         Button(action: { onRackSelected(rack) }) {

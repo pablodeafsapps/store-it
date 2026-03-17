@@ -50,8 +50,11 @@ struct ContentView: View {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.system(size: 28))
                             }
+                            .disabled(state.racks.isEmpty)
+                            .opacity(state.racks.isEmpty ? 0.5 : 1)
                             .padding()
                             .accessibilityIdentifier("addItemFloatingButton")
+                            .accessibilityHint(state.racks.isEmpty ? "Add a rack first to place items" : "Add item")
                         }
                     }
                 }
@@ -99,6 +102,7 @@ struct ContentView: View {
                     onBackFromSelectRack: addItemViewModel.sharedVm.onBackFromSelectRack,
                     onBackFromSelectSlot: addItemViewModel.sharedVm.onBackFromSelectSlot,
                     onSlotSelectedForItem: addItemViewModel.sharedVm.onSlotSelectedForItem,
+                    onNavigateToAddRack: { currentScreen = .addRack },
                     onNavigateBack: { currentScreen = .rackList }
                 )
             }
