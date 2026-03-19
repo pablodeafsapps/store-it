@@ -33,7 +33,10 @@ struct RackDetailView: View {
                 RackDetailContent(
                     state: state,
                     event: event,
-                    onImageTap: rackDetailViewModel.sharedVm.onImageTap,
+                    onImageTap: { xRel, yRel in
+                        rackDetailViewModel.sharedVm.onImageTap(xRel: xRel, yRel: yRel, forItemPlacement: forItemPlacement)
+                    },
+                    onDismissSlotItemsSheet: rackDetailViewModel.sharedVm.onDismissSlotItemsSheet,
                     onEditSelect: rackDetailViewModel.sharedVm.onEditSelect,
                     onRemoveRackSelect: rackDetailViewModel.sharedVm.onRemoveRackSelect,
                     onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
@@ -84,6 +87,7 @@ private struct RackDetailContent: View {
     let state: RackDetailUiState
     let event: RackDetailUiEvent?
     let onImageTap: (Float, Float) -> Void
+    let onDismissSlotItemsSheet: () -> Void
     let onEditSelect: () -> Void
     let onRemoveRackSelect: () -> Void
     let onDismissEditDialog: () -> Void
@@ -109,9 +113,7 @@ private struct RackDetailContent: View {
                             photoUri: rack.photoUri,
                             slots: state.slots,
                             selectedSlotId: state.selectedSlot?.id,
-                            onTap: { xRel, yRel in
-                                onImageTap(xRel, yRel)
-                            }
+                            onTap: onImageTap
                         )
                         if !rack.description_.isEmpty {
                             Text(rack.description_)
@@ -206,6 +208,36 @@ private struct RackDetailContent: View {
         } message: {
             Text("This will delete the rack and all its slots and items. This cannot be undone.")
         }
+        .sheet(isPresented: Binding(
+            get: { state.slotItemsSheet != nil },
+            set: { if !$0 { onDismissSlotItemsSheet() } }
+        )) {
+            if let sheet = state.slotItemsSheet {
+                NavigationView {
+                    Group {
+                        if sheet.items.isEmpty {
+                            Text("No items stored here.")
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .accessibilityIdentifier("slotItemsSheetEmpty")
+                        } else {
+                            List(sheet.items, id: \.id) { item in
+                                Text(item.name)
+                                    .accessibilityIdentifier("slotItemRow_\(item.id)")
+                            }
+                        }
+                    }
+                    .navigationTitle("Items in this slot")
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Close") { onDismissSlotItemsSheet() }
+                                .accessibilityIdentifier("slotItemsSheetCloseButton")
+                        }
+                    }
+                }
+                .accessibilityIdentifier("slotItemsSheet")
+            }
+        }
     }
 }
 
@@ -245,6 +277,7 @@ private struct RackImageView: View {
                             }
                         }
                     }
+                    .accessibilityIdentifier("rackDetailImageArea")
             } else {
                 Rectangle()
                     .fill(Color.gray.opacity(0.2))
@@ -276,6 +309,7 @@ private struct RackImageView: View {
                             }
                         }
                     }
+                    .accessibilityIdentifier("rackDetailImageArea")
             }
         }
     }

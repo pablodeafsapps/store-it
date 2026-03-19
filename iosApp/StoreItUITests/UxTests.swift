@@ -199,4 +199,50 @@ final class UxTests: XCTestCase {
 
         editRackCancel.tap()
     }
+
+    @MainActor
+    func testRackDetailTapExistingSlotShowsItemsSheet() {
+        let addRackButton = app.buttons["Add Rack"]
+        XCTAssertTrue(addRackButton.waitForExistence(timeout: 5))
+        addRackButton.tap()
+
+        let nameField = app.textFields["Name *"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText("Slot Tap Rack")
+
+        let saveButton = app.buttons["Save Rack"]
+        XCTAssertTrue(saveButton.exists)
+        saveButton.tap()
+
+        let rackCell = app.buttons["rackRowViewButton"]
+        XCTAssertTrue(rackCell.waitForExistence(timeout: 5))
+        rackCell.tap()
+
+        let imageArea = app.otherElements["rackDetailImageArea"]
+        XCTAssertTrue(imageArea.waitForExistence(timeout: 5))
+        imageArea.tap()
+
+        let cancelAddItem = app.buttons["Cancel"]
+        XCTAssertTrue(cancelAddItem.waitForExistence(timeout: 5))
+        cancelAddItem.tap()
+
+        XCTAssertTrue(app.navigationBars["Racks"].waitForExistence(timeout: 5))
+
+        let rackCellAgain = app.buttons["rackRowViewButton"]
+        XCTAssertTrue(rackCellAgain.waitForExistence(timeout: 5))
+        rackCellAgain.tap()
+
+        let imageAreaAgain = app.otherElements["rackDetailImageArea"]
+        XCTAssertTrue(imageAreaAgain.waitForExistence(timeout: 5))
+        imageAreaAgain.tap()
+
+        let sheetTitle = app.staticTexts["Items in this slot"]
+        XCTAssertTrue(sheetTitle.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["No items stored here."].exists)
+
+        let closeButton = app.buttons["Close"]
+        XCTAssertTrue(closeButton.exists)
+        closeButton.tap()
+    }
 }
