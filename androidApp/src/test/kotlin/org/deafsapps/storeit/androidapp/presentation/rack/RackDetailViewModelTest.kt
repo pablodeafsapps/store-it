@@ -14,6 +14,7 @@ import org.deafsapps.storeit.androidapp.fake.FakeSaveSlotUseCase
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
+import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.model.RackData
 import org.deafsapps.storeit.domain.model.ShelfSlot
@@ -336,6 +337,71 @@ internal class RackDetailViewModelTest {
         stateCollectJob.cancel()
         eventCollectJob.cancel()
     }
+
+    @Test
+    fun `GIVEN existing slot WHEN onImageTap nearby and not placement THEN saveSlot not called and sheet lists items`() =
+        runTest(testDispatcher) {
+            val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = listOf(slot),
+                items = listOf(Item(id = "i1", rackId = dummyRackId, slotId = "s1", name = "Hammer")),
+            ).ok()
+            sut = getDummyRackDetailViewModel()
+            advanceUntilIdle()
+
+            sut.onImageTap(xRel = 0.52f, yRel = 0.52f, forItemPlacement = false)
+            advanceUntilIdle()
+
+            assertEquals(0, fakeSaveSlot.invokeCount)
+            val state = sut.uiState.value
+            assertEquals("s1", state.slotItemsSheet?.slotId)
+            assertEquals("Hammer", state.slotItemsSheet?.items?.single()?.name)
+        }
+
+    @Test
+    fun `GIVEN existing slot WHEN onImageTap nearby and forItemPlacement THEN slot selected without save`() =
+        runTest(testDispatcher) {
+            val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.3f, 0.4f))
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = listOf(slot),
+                items = emptyList(),
+            ).ok()
+            sut = getDummyRackDetailViewModel()
+            advanceUntilIdle()
+
+            sut.onImageTap(xRel = 0.31f, yRel = 0.41f, forItemPlacement = true)
+            advanceUntilIdle()
+
+            assertEquals(0, fakeSaveSlot.invokeCount)
+            assertEquals("s1", sut.uiState.value.selectedSlot?.id)
+            assertNull(sut.uiState.value.slotItemsSheet)
+        }
+
+    @Test
+    fun `GIVEN slot items sheet open WHEN onDismissSlotItemsSheet THEN sheet and selection cleared`() =
+        runTest(testDispatcher) {
+            val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = listOf(slot),
+                items = emptyList(),
+            ).ok()
+            sut = getDummyRackDetailViewModel()
+            advanceUntilIdle()
+            sut.onImageTap(xRel = 0.5f, yRel = 0.5f, forItemPlacement = false)
+            advanceUntilIdle()
+
+            sut.onDismissSlotItemsSheet()
+            advanceUntilIdle()
+
+            assertNull(sut.uiState.value.slotItemsSheet)
+            assertNull(sut.uiState.value.selectedSlot)
+        }
 
     @Test
     fun `GIVEN saveSlot would fail WHEN onImageTap THEN uiEvent ShowError emitted`() = runTest(testDispatcher) {

@@ -6,6 +6,7 @@ import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.RackData
+import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.koin.core.annotation.Factory
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -16,17 +17,20 @@ interface GetRackDataByRackIdUseCaseType : UseCase<String, Result<DomainError, R
 internal class GetRackDataByRackIdUseCase(
     private val getRackByIdUseCase: GetRackByIdUseCaseType,
     private val getSlotsByRackIdUseCase: GetSlotsByRackIdUseCaseType,
+    private val itemRepository: ItemRepository,
 ) : GetRackDataByRackIdUseCaseType {
     @OptIn(ExperimentalUuidApi::class)
     override suspend fun invoke(input: String): Result<DomainError, RackData> =
         getRackByIdUseCase(input = input).flatMap { rack ->
-            getSlotsByRackIdUseCase(input = rack.id).map { slots ->
-                RackData(
-                    id = Uuid.random().toString(),
-                    rack = rack,
-                    shelfSlots = slots,
-                    items = emptyList(),
-                )
+            getSlotsByRackIdUseCase(input = rack.id).flatMap { slots ->
+                itemRepository.getItemsByRack(rackId = rack.id).map { items ->
+                    RackData(
+                        id = Uuid.random().toString(),
+                        rack = rack,
+                        shelfSlots = slots,
+                        items = items,
+                    )
+                }
             }
         }
 }

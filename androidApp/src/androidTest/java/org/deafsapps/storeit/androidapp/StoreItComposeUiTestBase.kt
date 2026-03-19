@@ -21,7 +21,11 @@ import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
+import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.domain.model.ShelfSlot
+import org.deafsapps.storeit.domain.model.SlotPosition
+import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.deafsapps.storeit.domain.repository.SlotRepository
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
@@ -41,12 +45,14 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
 
     private val rackRepository: RackRepository by inject()
     private val slotRepository: SlotRepository by inject()
+    private val itemRepository: ItemRepository by inject()
 
     @BeforeEach
     fun baseSetUp() {
         runTest {
             rackRepository.clear()
             slotRepository.clear()
+            itemRepository.clear()
         }
     }
 
@@ -156,6 +162,41 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
             rackRepository.saveRack(
                 rack = Rack(
                     id = id,
+                    name = name,
+                ),
+            )
+        }
+    }
+
+    protected fun seedSlot(
+        rackId: String,
+        slotId: String,
+        xRel: Float = 0.5f,
+        yRel: Float = 0.5f,
+    ) {
+        runTest {
+            slotRepository.saveSlot(
+                slot = ShelfSlot(
+                    id = slotId,
+                    rackId = rackId,
+                    position = SlotPosition(x = 0f, y = 0f, xRel = xRel, yRel = yRel),
+                ),
+            )
+        }
+    }
+
+    protected fun seedItem(
+        id: String,
+        rackId: String,
+        slotId: String,
+        name: String,
+    ) {
+        runTest {
+            itemRepository.saveItem(
+                item = Item(
+                    id = id,
+                    rackId = rackId,
+                    slotId = slotId,
                     name = name,
                 ),
             )
