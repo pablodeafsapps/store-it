@@ -86,7 +86,10 @@ struct ContentView: View {
         case .rackDetail(let rackId):
             RackDetailView(
                 rackId: rackId,
-                onNavigateBack: { currentScreen = .rackList }
+                onNavigateBack: { currentScreen = .rackList },
+                onAddItemHere: { initialRackId, initialSlotId in
+                    currentScreen = .addItem(initialRackId: initialRackId, initialSlotId: initialSlotId)
+                }
             )
         }
     }
@@ -133,7 +136,7 @@ private struct AddItemScreen: View {
                 onAddTag: addItemViewModel.sharedVm.onAddTag,
                 onRemoveTag: addItemViewModel.sharedVm.onRemoveTag,
                 onUpdatePhotoUri: addItemViewModel.sharedVm.onUpdatePhotoUri,
-                onSelectRackAndSlotClick: addItemViewModel.sharedVm.onSelectRackAndSlotClick,
+                onSelectRackAndSlotClick: addItemViewModel.sharedVm.onSelectRackAndSlotSelect,
                 onSaveItem: addItemViewModel.sharedVm.onSaveItem,
                 onRackSelected: addItemViewModel.sharedVm.onRackSelected,
                 onBackFromSelectRack: addItemViewModel.sharedVm.onBackFromSelectRack,

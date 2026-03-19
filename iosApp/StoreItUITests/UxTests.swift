@@ -11,9 +11,12 @@ final class UxTests: XCTestCase {
         continueAfterFailure = false
 
         // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-        app = XCUIApplication()
-        app.launchArguments = ["isRunningUITests"] // Optional: enable test mode
-        app.launch()
+        // For the launch-performance test, avoid launching the app here (it is launched inside the `measure` block).
+        if self.name.contains("testLaunchPerformance") == false {
+            app = XCUIApplication()
+            app.launchArguments = ["isRunningUITests"] // Optional: enable test mode
+            app.launch()
+        }
     }
 
     override func tearDownWithError() throws {
@@ -48,7 +51,7 @@ final class UxTests: XCTestCase {
         XCTAssertTrue(addRackTitle.waitForExistence(timeout: 5))
 
         let cancelButton = app.buttons["Cancel"]
-        XCTAssertTrue(cancelButton.exists)
+        XCTAssertTrue(cancelButton.waitForExistence(timeout: 5))
         cancelButton.tap()
 
         let racksTitle = app.navigationBars["Racks"]

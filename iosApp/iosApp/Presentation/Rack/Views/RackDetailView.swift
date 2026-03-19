@@ -6,12 +6,14 @@ struct RackDetailView: View {
     let onNavigateBack: () -> Void
     let forItemPlacement: Bool
     let onSlotSelectedForItem: ((String, String) -> Void)?
+    let onAddItemHere: ((String, String) -> Void)?
 
     init(
         rackId: String,
         onNavigateBack: @escaping () -> Void,
         forItemPlacement: Bool = false,
-        onSlotSelectedForItem: ((String, String) -> Void)? = nil
+        onSlotSelectedForItem: ((String, String) -> Void)? = nil,
+        onAddItemHere: ((String, String) -> Void)? = nil
     ) {
         _rackDetailViewModel = StateObject(
             wrappedValue: ViewModelHolder(IosKoinHelper().getRackDetailViewModel(rackId: rackId))
@@ -19,6 +21,7 @@ struct RackDetailView: View {
         self.onNavigateBack = onNavigateBack
         self.forItemPlacement = forItemPlacement
         self.onSlotSelectedForItem = onSlotSelectedForItem
+        self.onAddItemHere = onAddItemHere
     }
 
     var body: some View {
@@ -44,14 +47,37 @@ struct RackDetailView: View {
                     forItemPlacement: forItemPlacement,
                     onUseSelectedSlot: {
                         if let rack = state.rack,
-                           let slotId = state.selectedSlotId {
+                           let slotId = state.selectedSlot?.id {
                             onSlotSelectedForItem?(rack.id, slotId)
                         }
                     }
                 )
+                .onChange(of: eventKey(event)) { _, _ in
+                    guard let event else { return }
+
+                    if event is RackDetailUiEventNavigateBack {
+                        onNavigateBack()
+                    } else if !forItemPlacement,
+                              let slotSelected = event as? RackDetailUiEventSlotSelected,
+                              let onAddItemHere {
+                        onAddItemHere(slotSelected.rackId, slotSelected.slotId)
+                    }
+                }
             }
         }
     }
+}
+
+private func eventKey(_ event: RackDetailUiEvent?) -> String {
+    guard let event else { return "nil" }
+    if event is RackDetailUiEventNavigateBack {
+        return "nav-back"
+    }
+    if let slotSelected = event as? RackDetailUiEventSlotSelected {
+        return "slot-selected-\(slotSelected.rackId)-\(slotSelected.slotId)"
+    }
+    // Fallback: keep the key stable per event type.
+    return String(describing: type(of: event))
 }
 
 private struct RackDetailContent: View {
@@ -82,7 +108,7 @@ private struct RackDetailContent: View {
                         RackImageView(
                             photoUri: rack.photoUri,
                             slots: state.slots,
-                            selectedSlotId: state.selectedSlotId,
+                            selectedSlotId: state.selectedSlot?.id,
                             onTap: { xRel, yRel in
                                 onImageTap(xRel, yRel)
                             }
@@ -113,7 +139,7 @@ private struct RackDetailContent: View {
                 }
             }
 
-            if forItemPlacement, state.selectedSlotId != nil {
+            if forItemPlacement, state.selectedSlot != nil {
                 VStack {
                     Spacer()
                     Button(action: { onUseSelectedSlot() }) {
@@ -134,20 +160,22 @@ private struct RackDetailContent: View {
                 }
                 .accessibilityIdentifier("rackDetailBackButton")
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button("Edit") {
-                        onEditSelect()
+            if !forItemPlacement {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("Edit") {
+                            onEditSelect()
+                        }
+                        .accessibilityIdentifier("editRackMenuItem")
+                        Button("Remove rack", role: .destructive) {
+                            onRemoveRackSelect()
+                        }
+                        .accessibilityIdentifier("removeRackMenuItem")
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
-                    .accessibilityIdentifier("editRackMenuItem")
-                    Button("Remove rack", role: .destructive) {
-                        onRemoveRackSelect()
-                    }
-                    .accessibilityIdentifier("removeRackMenuItem")
-                } label: {
-                    Image(systemName: "ellipsis.circle")
+                    .accessibilityIdentifier("rackDetailMenuButton")
                 }
-                .accessibilityIdentifier("rackDetailMenuButton")
             }
         }
         .sheet(isPresented: Binding(
@@ -221,7 +249,33 @@ private struct RackImageView: View {
                 Rectangle()
                     .fill(Color.gray.opacity(0.2))
                     .frame(height: 200)
-                    .overlay(Text("No photo").foregroundColor(.secondary))
+                    .overlay(alignment: .center) {
+                        Text("No photo")
+                            .foregroundColor(.secondary)
+                    }
+                    .overlay(alignment: .topLeading) {
+                        GeometryReader { geo in
+                            let w = max(geo.size.width, 1)
+                            let h = max(geo.size.height, 1)
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture(coordinateSpace: .local) { location in
+                                    let xRel = Float((location.x / w).clamped(to: 0...1))
+                                    let yRel = Float((location.y / h).clamped(to: 0...1))
+                                    onTap(xRel, yRel)
+                                }
+                            ForEach(slots, id: \.id) { slot in
+                                Circle()
+                                    .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
+                                    .frame(width: 24, height: 24)
+                                    .position(
+                                        x: CGFloat(slot.xRel) * geo.size.width,
+                                        y: CGFloat(slot.yRel) * geo.size.height
+                                    )
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    }
             }
         }
     }

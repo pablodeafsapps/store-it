@@ -45,7 +45,11 @@ import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
@@ -63,7 +67,14 @@ internal fun RackDetailScreen(
     onSlotSelectedForItem: (rackId: String, slotId: String) -> Unit = { _, _ -> },
     onAddItemHere: ((rackId: String, slotId: String) -> Unit)? = null,
 ) {
+    val viewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore =
+                ViewModelStore()
+        }
+    }
     val viewModel: RackDetailViewModel = koinViewModel<RackDetailViewModel>(
+        viewModelStoreOwner = viewModelStoreOwner,
         parameters = { parametersOf(rackId) },
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -84,12 +95,17 @@ internal fun RackDetailScreen(
         }
     }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModelStoreOwner.viewModelStore.clear()
+        }
+    }
+
     RackDetailContent(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         forItemPlacement = forItemPlacement,
         onSlotSelectedForItem = { slotId -> onSlotSelectedForItem(rackId, slotId) },
-        onAddItemHere = onAddItemHere?.let { { slotId -> it(rackId, slotId) } },
         onEditSelect = viewModel::onEditSelect,
         onRemoveRackSelect = viewModel::onRemoveRackSelect,
         onImageTap = viewModel::onImageTap,
@@ -110,7 +126,6 @@ private fun RackDetailContent(
     onNavigateBack: () -> Unit,
     forItemPlacement: Boolean = false,
     onSlotSelectedForItem: (slotId: String) -> Unit = {},
-    onAddItemHere: ((slotId: String) -> Unit)? = null,
     onEditSelect: () -> Unit = {},
     onRemoveRackSelect: () -> Unit = {},
     onImageTap: (Float, Float) -> Unit = { _, _ -> },
@@ -124,8 +139,9 @@ private fun RackDetailContent(
 ) {
     Scaffold(
         topBar = {
+            val title = (uiState.rack?.name ?: "Rack") + if (forItemPlacement) " - select slot" else ""
             TopAppBar(
-                title = { Text(uiState.rack?.name ?: "Rack") },
+                title = { Text(title) },
                 navigationIcon = {
                     TextButton(onClick = onNavigateBack) {
                         Text("Back")
@@ -155,24 +171,15 @@ private fun RackDetailContent(
                                     onRemoveRackSelect()
                                 },
                             )
-                            if (onAddItemHere != null && uiState.selectedSlotId != null) {
-                                DropdownMenuItem(
-                                    text = { Text("Add item here") },
-                                    onClick = {
-                                        showMenu = false
-                                        onAddItemHere(uiState.selectedSlotId!!)
-                                    },
-                                )
-                            }
                         }
                     }
                 },
             )
         },
         floatingActionButton = {
-            uiState.selectedSlotId?.let { slotId ->
+            uiState.selectedSlot?.let { slot ->
                 if (forItemPlacement) {
-                    Button(onClick = { onSlotSelectedForItem(slotId) }) {
+                    Button(onClick = { onSlotSelectedForItem(slot.id) }) {
                         Text("Use this slot")
                     }
                 }
@@ -212,7 +219,8 @@ private fun RackDetailContent(
                         RackImageWithSlots(
                             photoUri = rack.photoUri,
                             slots = uiState.slots,
-                            selectedSlotId = uiState.selectedSlotId,
+                            selectedSlot = uiState.selectedSlot,
+//                            selectedSlotId = uiState.selectedSlotId,
                             onTap = onImageTap,
                         )
                         if (rack.description.isNotBlank()) {
@@ -281,7 +289,8 @@ private fun RackDetailContent(
 private fun RackImageWithSlots(
     photoUri: String?,
     slots: List<RackDetailSlotVo>,
-    selectedSlotId: String?,
+    selectedSlot: RackDetailSlotVo?,
+//    selectedSlotId: String?,
     onTap: (xRel: Float, yRel: Float) -> Unit,
 ) {
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
@@ -327,6 +336,8 @@ private fun RackImageWithSlots(
                         }
                     },
             )
+            val slots = if (selectedSlot != null) listOf(selectedSlot) else slots
+            val color = slots.getColorByNumberOfItems()
             slots.forEach { slot ->
                 with(density) {
                     val halfPx = Dimens.rackDetailSlotMarkerHalfSize.toPx()
@@ -337,19 +348,21 @@ private fun RackImageWithSlots(
                             .align(Alignment.TopStart)
                             .offset { IntOffset(xPx, yPx) }
                             .size(Dimens.rackDetailSlotMarkerSize)
-                            .background(
-                                color = if (slot.id == selectedSlotId)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.primaryContainer,
-                                shape = CircleShape,
-                            ),
+                            .background(color = color, shape = CircleShape),
                     )
                 }
             }
         }
     }
 }
+
+@Composable
+private fun List<RackDetailSlotVo>.getColorByNumberOfItems(): Color =
+    if (size == 1) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.primaryContainer
+    }
 
 @Composable
 private fun EditRackDialog(
@@ -407,6 +420,7 @@ private fun EditRackDialog(
 @Composable
 private fun RackDetailScreenPreview() {
     MaterialTheme {
+        val selectedSlot = RackDetailSlotVo(id = "s1", xRel = 0.2f, yRel = 0.3f)
         RackDetailContent(
             uiState = RackDetailUiState(
                 rack = Rack(
@@ -420,7 +434,7 @@ private fun RackDetailScreenPreview() {
                     RackDetailSlotVo(id = "s1", xRel = 0.2f, yRel = 0.3f),
                     RackDetailSlotVo(id = "s2", xRel = 0.5f, yRel = 0.6f)
                 ),
-                selectedSlotId = "s1",
+                selectedSlot = selectedSlot,
                 isLoading = false,
                 error = null,
                 showEditDialog = false,
