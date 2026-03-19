@@ -39,4 +39,6 @@ data object Dimens {
     val rackDetailPlaceholderHeight: Dp = 200.dp
     val rackDetailSlotMarkerSize: Dp = 24.dp
     val rackDetailSlotMarkerHalfSize: Dp = 12.dp
+
+    val slotItemsSheetMaxHeight: Dp = 240.dp
 }

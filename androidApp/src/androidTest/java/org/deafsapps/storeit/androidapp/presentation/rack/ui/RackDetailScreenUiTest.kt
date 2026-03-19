@@ -2,9 +2,11 @@ package org.deafsapps.storeit.androidapp.presentation.rack.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import org.deafsapps.storeit.androidapp.NavScreen
 import org.deafsapps.storeit.androidapp.StoreItComposeUiTestBase
 import org.junit.jupiter.api.Test
@@ -47,6 +49,23 @@ internal class RackDetailScreenUiTest : StoreItComposeUiTestBase() {
             onNodeWithTag("removeRackCancelButton").performClick()
 
             onNodeWithText("Remove rack?").assertIsNotDisplayed()
+        }
+    }
+
+    @Test
+    fun rackDetail_tapExistingSlot_showsStoredItemsSheet() {
+        seedRack(id = "r1", name = "Garage Rack")
+        seedSlot(rackId = "r1", slotId = "s1", xRel = 0.5f, yRel = 0.5f)
+        seedItem(id = "i1", rackId = "r1", slotId = "s1", name = "Drill")
+        composeUiTest(initialScreen = NavScreen.RackList) {
+            onNodeWithText("Garage Rack").performClick()
+
+            onNodeWithTag("rackDetailImageOverlay").performTouchInput { click() }
+
+            onNodeWithTag("slotItemsSheetTitle").assertIsDisplayed()
+            onNodeWithText("Drill").assertIsDisplayed()
+            onNodeWithTag("slotItemsSheetCloseButton").performClick()
+            onNodeWithTag("slotItemsSheetTitle").assertDoesNotExist()
         }
     }
 
