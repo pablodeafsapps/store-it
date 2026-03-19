@@ -239,6 +239,7 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
   - `compileSdk`, `minSdk`, `targetSdk` according to product requirements.
   - Jetpack Compose compiler and BOM (if used).
   - The `:composeApp` module is the single KMP module (no separate shared library artifact).
+- **Instrumented UI tests (`:androidApp`)**: Apply the **`de.mannodermaus.android-junit`** plugin alongside the Android application plugin so **JUnit 5** runs on device/emulator. `androidTestImplementation` dependencies include **`org.junit.jupiter:junit-jupiter-api`**, **`junit-jupiter-engine`** (runtime), **`de.mannodermaus.junit5:android-test-compose`** (Compose **`createAndroidComposeExtension`**, **`ComposeContext`**), and **`androidx.compose.ui:ui-test-junit4`**. Align transitive Compose UI versions with the project if needed (see `androidApp/build.gradle.kts`).
 
 ### 5.4 iOS Integration
 
@@ -328,9 +329,12 @@ This section describes how an engineer (or automation agent) should add or modif
 - **Android ViewModel tests** (pure Kotlin ViewModels in `commonMain`):
   - Place unit tests in **`androidApp/src/test`** so JUnit and coroutines-test are available. Test the **pure ViewModel** directly: use **fakes** for use cases (e.g. `FakeGetRacksUseCase`) and inject a **`CoroutineScope`** (e.g. `TestScope(testDispatcher)` from `runTest`) so execution is deterministic. Use `runTest(testDispatcher)` and `advanceUntilIdle()`; collect `uiState`/`uiEvent` in a list and assert on the latest value so `stateIn`/`shareIn` updates are observed. Add `kotlinx-coroutines-test` to the Android module’s `testImplementation` dependencies.
 - **UI tests (mandatory for every new screen/view)**:
-  - **Android**: Every new Jetpack Compose screen or meaningful view must have UI tests (e.g. Compose UI tests or instrumented tests in `:androidApp`) that cover the screen’s main flows and states.
+  - **Android**: Every new Jetpack Compose screen or meaningful view must have **instrumented** UI tests under **`androidApp/src/androidTest`**, using **JUnit 5** (`@Test`, `@BeforeEach` from `org.junit.jupiter.api`) and **`StoreItComposeUiTestBase`**:
+    - Subclass **`StoreItComposeUiTestBase`**; implement scenarios inside **`composeUiTest(initialScreen = ..., testBody = { ... })`** and use **`ComposeContext`** APIs (`onNodeWithTag`, `performClick`, `assertIsDisplayed`, etc.).
+    - The base registers the Mannodermaus **`createAndroidComposeExtension<ComponentActivity>()`** extension, wires a minimal **`NavScreen`** graph with **`koinViewModel`** and real screens, clears repositories in **`@BeforeEach`**, and offers **`seedRack`** / **`seedSlot`** / **`seedItem`** for data setup.
+    - Prefer **`testTag`** on composables for selectors; keep **`kotlinx-coroutines-test`** available for **`runTest`** in setup helpers. Follow existing test class naming: descriptive **`camelCase`** test method names (often with **`_`** between logical parts), not necessarily GIVEN–WHEN–THEN.
   - **iOS**: Every new SwiftUI screen or meaningful view must have UI tests (XCTest UI tests in the iOS app’s UI test target, e.g. `StoreItUITests`) that cover the screen’s main flows and states.
-  - Add tests when introducing or significantly changing a screen; use accessibility identifiers so tests are stable and resilient to layout changes.
+  - Add tests when introducing or significantly changing a screen; use accessibility identifiers (iOS) or **`testTag`** (Android) so tests stay stable when layout changes.
 - **Android/iOS integration tests**:
   - Verify integration with platform-specific services, navigation, and lifecycle.
 
