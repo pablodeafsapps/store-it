@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
@@ -194,7 +195,10 @@ private fun AddItemForm(
             TopAppBar(
                 title = { Text("Add Item") },
                 navigationIcon = {
-                    TextButton(onClick = onNavigateBack) {
+                    TextButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.testTag("addItemCancelButton"),
+                    ) {
                         Text("Cancel")
                     }
                 },
@@ -218,7 +222,9 @@ private fun AddItemForm(
                 value = uiState.name,
                 onValueChange = onUpdateName,
                 label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("addItemNameField"),
                 singleLine = true,
             )
 
@@ -226,7 +232,9 @@ private fun AddItemForm(
                 value = uiState.description,
                 onValueChange = onUpdateDescription,
                 label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("addItemDescriptionField"),
                 maxLines = 3,
             )
 
@@ -234,7 +242,9 @@ private fun AddItemForm(
                 value = uiState.quantity?.toString() ?: "",
                 onValueChange = { onUpdateQuantity(it.toIntOrNull()) },
                 label = { Text("Quantity") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("addItemQuantityField"),
                 singleLine = true,
             )
 
@@ -242,7 +252,9 @@ private fun AddItemForm(
                 value = uiState.owner,
                 onValueChange = onUpdateOwner,
                 label = { Text("Owner") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("addItemOwnerField"),
                 singleLine = true,
             )
 
@@ -255,10 +267,15 @@ private fun AddItemForm(
                     value = uiState.tagInput,
                     onValueChange = onUpdateTagInput,
                     label = { Text("Tags") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("addItemTagsInputField"),
                     singleLine = true,
                 )
-                Button(onClick = onAddTag) {
+                Button(
+                    onClick = onAddTag,
+                    modifier = Modifier.testTag("addTagButton"),
+                ) {
                     Text("Add")
                 }
             }
@@ -270,6 +287,7 @@ private fun AddItemForm(
                     uiState.tags.forEach { tag ->
                         Card(
                             onClick = { onRemoveTag(tag) },
+                            modifier = Modifier.testTag("addItemTagChip"),
                             shape = RoundedCornerShape(Dimens.cardCornerRadiusSmall),
                         ) {
                             Text(
@@ -287,7 +305,9 @@ private fun AddItemForm(
 
             Button(
                 onClick = onSelectRackAndSlotSelect,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("selectRackAndSlotButton"),
             ) {
                 Text(
                     if (uiState.selectedRackId != null && uiState.selectedSlotId != null)
@@ -301,18 +321,24 @@ private fun AddItemForm(
                 Text(
                     text = error,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = Dimens.screenPadding),
+                    modifier = Modifier
+                        .padding(horizontal = Dimens.screenPadding)
+                        .testTag("addItemErrorText"),
                 )
             }
 
             Button(
                 onClick = onSaveItem,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("saveItemButton"),
                 enabled = !uiState.isLoading,
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(Dimens.progressIndicatorSizeSmall),
+                        modifier = Modifier
+                            .size(Dimens.progressIndicatorSizeSmall)
+                            .testTag("saveItemProgress"),
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
@@ -367,7 +393,9 @@ private fun PhotoPickerSection(
         Spacer(modifier = Modifier.height(Dimens.photoPickerSectionSpacing))
         Button(
             onClick = onShowPicker,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("addItemPhotoPickerButton"),
         ) {
             Text(if (photoUri != null) "Change Photo" else "Select Photo")
         }
@@ -387,7 +415,10 @@ private fun SelectRackContent(
             TopAppBar(
                 title = { Text("Select Rack") },
                 navigationIcon = {
-                    TextButton(onClick = onBack) {
+                    TextButton(
+                        onClick = onBack,
+                        modifier = Modifier.testTag("selectRackBackButton"),
+                    ) {
                         Text("Back")
                     }
                 },
@@ -415,7 +446,9 @@ private fun SelectRackContent(
                 }
                 Button(
                     onClick = onNavigateToAddRack,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("addRackEmptyStateButton"),
                 ) {
                     Text("Add rack")
                 }
@@ -432,6 +465,7 @@ private fun SelectRackContent(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .testTag("addItemRackCardButton")
                             .clickable(onClick = { onRackSelected(rack) }),
                         shape = RoundedCornerShape(Dimens.cardCornerRadiusMedium),
                         elevation = CardDefaults.cardElevation(defaultElevation = Dimens.cardElevation),

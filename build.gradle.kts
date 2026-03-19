@@ -9,4 +9,5 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.skie) apply false
+    alias(libs.plugins.android.junit) apply false
 }

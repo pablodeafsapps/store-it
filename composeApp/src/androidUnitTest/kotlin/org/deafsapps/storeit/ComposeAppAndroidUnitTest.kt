@@ -3,7 +3,7 @@ package org.deafsapps.storeit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ComposeAppAndroidUnitTest {
+internal class ComposeAppAndroidUnitTest {
 
     @Test
     fun example() {

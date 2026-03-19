@@ -15,21 +15,21 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class RackListViewModelTest {
+internal class RackListViewModelTest {
 
   private lateinit var sut: RackListViewModel
   private lateinit var fakeGetRacksUseCase: FakeGetRacksFlowUseCase
   private val testDispatcher = StandardTestDispatcher()
   private val testScope = TestScope(testDispatcher)
 
-  @Before
+  @BeforeEach
   fun setUp() {
     fakeGetRacksUseCase = FakeGetRacksFlowUseCase()
   }

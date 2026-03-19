@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.ExperimentalMaterial3Api
 import org.deafsapps.storeit.androidapp.design.Dimens
@@ -73,7 +74,10 @@ internal fun AddRackScreen(
             TopAppBar(
                 title = { Text("Add Rack") },
                 navigationIcon = {
-                    TextButton(onClick = onNavigateBack) {
+                    TextButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.testTag("addRackCancelButton"),
+                    ) {
                         Text("Cancel")
                     }
                 },
@@ -97,7 +101,9 @@ internal fun AddRackScreen(
                 value = uiState.name,
                 onValueChange = { name -> onUpdateName(name) },
                 label = { Text("Name *") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("addRackNameField"),
                 singleLine = true,
             )
 
@@ -105,7 +111,9 @@ internal fun AddRackScreen(
                 value = uiState.description,
                 onValueChange = { descr -> onUpdateDescription(descr) },
                 label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("addRackDescriptionField"),
                 maxLines = 3,
             )
 
@@ -113,7 +121,9 @@ internal fun AddRackScreen(
                 value = uiState.location,
                 onValueChange = { loc -> onUpdateLocation(loc) },
                 label = { Text("Location") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("addRackLocationField"),
                 singleLine = true,
             )
 
@@ -127,12 +137,16 @@ internal fun AddRackScreen(
 
             Button(
                 onClick = onSaveRack,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("saveRackButton"),
                 enabled = !uiState.isLoading,
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(Dimens.progressIndicatorSizeSmall),
+                        modifier = Modifier
+                            .size(Dimens.progressIndicatorSizeSmall)
+                            .testTag("saveRackProgress"),
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
@@ -181,7 +195,9 @@ private fun PhotoPickerSection(
 
         Button(
             onClick = { showImagePicker = true },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("addRackPhotoPickerButton"),
         ) {
             Text(if (photoUri != null) "Change Photo" else "Select Photo")
         }

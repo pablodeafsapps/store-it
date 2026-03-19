@@ -21,15 +21,15 @@ import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class RackDetailViewModelTest {
+internal class RackDetailViewModelTest {
 
     private lateinit var sut: RackDetailViewModel
     private lateinit var fakeGetRackDataByRackId: FakeGetRackDataByRackIdUseCase
@@ -41,7 +41,7 @@ class RackDetailViewModelTest {
     private val dummyRackId = "rack-1"
     private val dummyRack = Rack(id = dummyRackId, name = "Rack 1")
 
-    @Before
+    @BeforeEach
     fun setUp() {
         fakeGetRackDataByRackId = FakeGetRackDataByRackIdUseCase()
         fakeSaveSlot = FakeSaveSlotUseCase()

@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.core.content.FileProvider
@@ -82,7 +83,9 @@ internal fun ImagePickerDialog(
                     onClick = {
                         permissionLauncher.launch(Manifest.permission.CAMERA)
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("imagePickerDialogTakePhotoButton"),
                 ) {
                     Text("Take Photo")
                 }
@@ -90,14 +93,19 @@ internal fun ImagePickerDialog(
                     onClick = {
                         galleryLauncher.launch(pickMediaRequest)
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("imagePickerDialogChooseGalleryButton"),
                 ) {
                     Text("Choose from Gallery")
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("imagePickerDialogCancelButton"),
+            ) {
                 Text("Cancel")
             }
         },

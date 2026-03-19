@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
@@ -80,7 +81,10 @@ internal fun RackListScreen(
                 title = { Text("Racks") },
                 actions = {
                     var showMenu by remember { mutableStateOf(false) }
-                    IconButton(onClick = { showMenu = true }) {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.testTag("rackListOverflowMenuButton"),
+                    ) {
                         Text("⋮", style = MaterialTheme.typography.titleLarge)
                     }
                     DropdownMenu(
@@ -88,6 +92,7 @@ internal fun RackListScreen(
                         onDismissRequest = { showMenu = false },
                     ) {
                         DropdownMenuItem(
+                            modifier = Modifier.testTag("rackListAddItemMenuItem"),
                             text = { Text("Add item") },
                             onClick = {
                                 showMenu = false
@@ -101,6 +106,7 @@ internal fun RackListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddRackSelect,
+                modifier = Modifier.testTag("rackListAddRackFab"),
                 shape = RoundedCornerShape(Dimens.fabCornerRadius),
             ) {
                 Text("+")
@@ -177,7 +183,9 @@ private fun EmptyState(
         )
         Button(
             onClick = onAddRackSelect,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("rackListEmptyStateAddRackButton"),
         ) {
             Text("Add Rack")
         }
@@ -192,6 +200,7 @@ private fun RackListItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag("rackRowViewButton")
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(Dimens.cardCornerRadiusMedium),
         elevation = CardDefaults.cardElevation(defaultElevation = Dimens.cardElevation),

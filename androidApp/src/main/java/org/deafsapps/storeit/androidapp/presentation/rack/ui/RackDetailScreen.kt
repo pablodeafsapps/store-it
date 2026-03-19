@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.Lifecycle
@@ -143,14 +144,20 @@ private fun RackDetailContent(
             TopAppBar(
                 title = { Text(title) },
                 navigationIcon = {
-                    TextButton(onClick = onNavigateBack) {
+                    TextButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.testTag("rackDetailBackButton"),
+                    ) {
                         Text("Back")
                     }
                 },
                 actions = {
                     if (!forItemPlacement) {
                         var showMenu by remember { mutableStateOf(false) }
-                        IconButton(onClick = { showMenu = true }) {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.testTag("rackDetailOverflowMenuButton"),
+                        ) {
                             Text("⋮", style = MaterialTheme.typography.titleLarge)
                         }
                         DropdownMenu(
@@ -158,6 +165,7 @@ private fun RackDetailContent(
                             onDismissRequest = { showMenu = false },
                         ) {
                             DropdownMenuItem(
+                                modifier = Modifier.testTag("editRackMenuItem"),
                                 text = { Text("Edit") },
                                 onClick = {
                                     showMenu = false
@@ -165,6 +173,7 @@ private fun RackDetailContent(
                                 },
                             )
                             DropdownMenuItem(
+                                modifier = Modifier.testTag("removeRackMenuItem"),
                                 text = { Text("Remove rack") },
                                 onClick = {
                                     showMenu = false
@@ -179,7 +188,10 @@ private fun RackDetailContent(
         floatingActionButton = {
             uiState.selectedSlot?.let { slot ->
                 if (forItemPlacement) {
-                    Button(onClick = { onSlotSelectedForItem(slot.id) }) {
+                    Button(
+                        onClick = { onSlotSelectedForItem(slot.id) },
+                        modifier = Modifier.testTag("useThisSlotButton"),
+                    ) {
                         Text("Use this slot")
                     }
                 }
@@ -272,12 +284,18 @@ private fun RackDetailContent(
             title = { Text("Remove rack?") },
             text = { Text("This will delete the rack and all its slots and items. This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = onConfirmDeleteRack) {
+                TextButton(
+                    onClick = onConfirmDeleteRack,
+                    modifier = Modifier.testTag("removeRackConfirmButton"),
+                ) {
                     Text("Remove", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = onDismissDeleteConfirm) {
+                TextButton(
+                    onClick = onDismissDeleteConfirm,
+                    modifier = Modifier.testTag("removeRackCancelButton"),
+                ) {
                     Text("Cancel")
                 }
             },
@@ -328,6 +346,7 @@ private fun RackImageWithSlots(
             Box(
                 modifier = Modifier
                     .matchParentSize()
+                    .testTag("rackDetailImageOverlay")
                     .pointerInput(Unit) {
                         detectTapGestures { offset ->
                             val w = imageSize.width.toFloat().coerceAtLeast(1f)
@@ -384,32 +403,44 @@ private fun EditRackDialog(
                     value = name,
                     onValueChange = onNameChange,
                     label = { Text("Name") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("editRackNameField"),
                     singleLine = true,
                 )
                 OutlinedTextField(
                     value = description,
                     onValueChange = onDescriptionChange,
                     label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("editRackDescriptionField"),
                     maxLines = 3,
                 )
                 OutlinedTextField(
                     value = location,
                     onValueChange = onLocationChange,
                     label = { Text("Location") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("editRackLocationField"),
                     singleLine = true,
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = onSave) {
+            TextButton(
+                onClick = onSave,
+                modifier = Modifier.testTag("editRackSaveButton"),
+            ) {
                 Text("Save")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("editRackCancelButton"),
+            ) {
                 Text("Cancel")
             }
         },
