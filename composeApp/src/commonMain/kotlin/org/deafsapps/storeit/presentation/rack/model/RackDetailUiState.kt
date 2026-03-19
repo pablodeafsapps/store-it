@@ -7,7 +7,7 @@ import org.deafsapps.storeit.domain.model.Rack
 data class RackDetailUiState(
     val rack: Rack?,
     val slots: List<RackDetailSlotVo>,
-    val selectedSlotId: String?,
+    val selectedSlot: RackDetailSlotVo?,
     val isLoading: Boolean,
     val error: String?,
     val showEditDialog: Boolean,
@@ -20,7 +20,7 @@ data class RackDetailUiState(
         fun getDefault(): RackDetailUiState = RackDetailUiState(
             rack = null,
             slots = emptyList(),
-            selectedSlotId = null,
+            selectedSlot = null,
             isLoading = false,
             error = null,
             showEditDialog = false,

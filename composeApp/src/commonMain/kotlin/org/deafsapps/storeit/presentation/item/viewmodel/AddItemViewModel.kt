@@ -36,19 +36,21 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 
 @Factory
 class AddItemViewModel(
-    @InjectedParam private val initialRackId: String? = null,
-    @InjectedParam private val initialSlotId: String? = null,
-    coroutineScope: CoroutineScope? = null,
+    @InjectedParam private val initialRackId: String?,
+    @InjectedParam private val initialSlotId: String?,
+    coroutineScope: CoroutineScope?,
     private val addItemUseCase: AddItemUseCaseType,
     private val getRacksFlowUseCase: GetRacksFlowUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 
-    private val _uiState = MutableStateFlow(AddItemUiState.getDefault(initialRackId, initialSlotId))
+    private val _uiState = MutableStateFlow(
+        AddItemUiState.getDefault(initialRackId = initialRackId, initialSlotId = initialSlotId)
+    )
     val uiState: StateFlow<AddItemUiState> = _uiState.asStateFlow()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
-            initialValue = AddItemUiState.getDefault(initialRackId, initialSlotId),
+            initialValue = AddItemUiState.getDefault(initialRackId = initialRackId, initialSlotId = initialSlotId),
         )
     private val _uiEvent = MutableSharedFlow<AddItemUiEvent?>()
     val uiEvent: SharedFlow<AddItemUiEvent?> = _uiEvent.asSharedFlow()
@@ -58,9 +60,6 @@ class AddItemViewModel(
         )
 
     init {
-        if (initialRackId != null) {
-            _uiState.update { it.copy(selectedRackId = initialRackId, selectedSlotId = initialSlotId) }
-        }
         startRacksFlowWhenSelectingRack()
     }
 
@@ -117,7 +116,7 @@ class AddItemViewModel(
         _uiState.update { state -> state.copy(photoUri = uri, error = null) }
     }
 
-    fun onSelectRackAndSlotClick() {
+    fun onSelectRackAndSlotSelect() {
         _uiState.update { state ->
             state.copy(step = if (state.selectedRackId != null) AddItemStep.SELECT_SLOT else AddItemStep.SELECT_RACK)
         }
@@ -180,17 +179,13 @@ class AddItemViewModel(
                     _uiState.update { state -> state.copy(isLoading = false, error = message) }
                 },
                 ifOk = {
-                    _uiState.update {
-                        AddItemUiState.getDefault().copy(isLoading = false, isSuccess = true)
+                    _uiState.update { state ->
+                        state.copy(isLoading = false, isSuccess = true)
                     }
                     _uiEvent.emit(AddItemUiEvent.NavigateBack)
                 },
             )
         }
-    }
-
-    fun onNavigateBack() {
-        _uiState.update { AddItemUiState.getDefault(initialRackId, initialSlotId) }
     }
 }
 

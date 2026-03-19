@@ -28,7 +28,7 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 
 @Factory
 class AddRackViewModel(
-    coroutineScope: CoroutineScope? = null,
+    coroutineScope: CoroutineScope?,
     private val saveRackUseCase: SaveRackUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 

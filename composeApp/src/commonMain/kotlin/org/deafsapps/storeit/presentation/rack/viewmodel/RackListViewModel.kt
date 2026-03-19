@@ -25,7 +25,7 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 
 @Factory
 class RackListViewModel(
-    coroutineScope: CoroutineScope? = null,
+    coroutineScope: CoroutineScope?,
     getRacksFlowUseCase: GetRacksFlowUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 

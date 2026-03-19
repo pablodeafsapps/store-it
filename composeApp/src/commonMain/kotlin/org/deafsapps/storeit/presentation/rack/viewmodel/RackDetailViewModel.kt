@@ -20,6 +20,7 @@ import org.deafsapps.storeit.domain.usecase.GetRackDataByRackIdUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
 import org.deafsapps.storeit.presentation.StoreItViewModel
+import org.deafsapps.storeit.presentation.rack.mapper.toRackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.mapper.toRackDetailSlotsVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
@@ -34,7 +35,7 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 @Factory
 class RackDetailViewModel(
     @InjectedParam private val rackId: String,
-    coroutineScope: CoroutineScope? = null,
+    coroutineScope: CoroutineScope?,
     private val getRackDataByRackIdUseCase: GetRackDataByRackIdUseCaseType,
     private val saveSlotUseCase: SaveSlotUseCaseType,
     private val saveRackUseCase: SaveRackUseCaseType,
@@ -67,6 +68,7 @@ class RackDetailViewModel(
             saveSlotUseCase(input = slot).fold(
                 ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
                 ifOk = { saved ->
+                    _uiState.update { state -> state.copy(selectedSlot = slot.toRackDetailSlotVo()) }
                     _uiState.update { state ->
                         state.copy(
                             slots = state.slots + RackDetailSlotVo(
@@ -74,7 +76,7 @@ class RackDetailViewModel(
                                 xRel = saved.position.xRel,
                                 yRel = saved.position.yRel,
                             ),
-                            selectedSlotId = saved.id,
+                            selectedSlot = saved.toRackDetailSlotVo(),
                         )
                     }
                     _uiEvent.emit(RackDetailUiEvent.SlotSelected(rackId = saved.rackId, slotId = saved.id))
@@ -121,7 +123,7 @@ class RackDetailViewModel(
                 location = state.editLocation.trim(),
             )
             saveRackUseCase(input = updated).fold(
-                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
+                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(message = error.toErrorCause())) },
                 ifOk = {
                     _uiState.update { state -> state.copy(rack = updated, showEditDialog = false) }
                 },
@@ -140,7 +142,7 @@ class RackDetailViewModel(
     fun onConfirmDeleteRack() {
         viewModelScope.launch {
             deleteRackUseCase(input = rackId).fold(
-                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
+                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(message = error.toErrorCause())) },
                 ifOk = {
                     _uiState.update { state -> state.copy(showDeleteConfirm = false) }
                     _uiEvent.emit(RackDetailUiEvent.NavigateBack)

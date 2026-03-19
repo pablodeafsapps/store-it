@@ -6,7 +6,7 @@ import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 internal fun List<ShelfSlot>.toRackDetailSlotsVo(): List<RackDetailSlotVo> =
     map { slot -> slot.toRackDetailSlotVo() }
 
-private fun ShelfSlot.toRackDetailSlotVo(): RackDetailSlotVo =
+internal fun ShelfSlot.toRackDetailSlotVo(): RackDetailSlotVo =
     RackDetailSlotVo(
         id = id,
         xRel = position.xRel,

@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +41,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -63,7 +66,14 @@ internal fun AddItemScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAddRack: () -> Unit = {},
 ) {
+    val viewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore =
+                ViewModelStore()
+        }
+    }
     val viewModel: AddItemViewModel = koinViewModel(
+        viewModelStoreOwner = viewModelStoreOwner,
         parameters = { parametersOf(initialRackId, initialSlotId) },
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,6 +91,12 @@ internal fun AddItemScreen(
         }
     }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModelStoreOwner.viewModelStore.clear()
+        }
+    }
+
     AddItemScreenContent(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
@@ -93,7 +109,7 @@ internal fun AddItemScreen(
         onAddTag = viewModel::onAddTag,
         onRemoveTag = viewModel::onRemoveTag,
         onUpdatePhotoUri = viewModel::onUpdatePhotoUri,
-        onSelectRackAndSlotClick = viewModel::onSelectRackAndSlotClick,
+        onSelectRackAndSlotSelect = viewModel::onSelectRackAndSlotSelect,
         onSaveItem = viewModel::onSaveItem,
         onRackSelected = viewModel::onRackSelected,
         onBackFromSelectRack = viewModel::onBackFromSelectRack,
@@ -115,7 +131,7 @@ private fun AddItemScreenContent(
     onAddTag: () -> Unit,
     onRemoveTag: (String) -> Unit,
     onUpdatePhotoUri: (String?) -> Unit,
-    onSelectRackAndSlotClick: () -> Unit,
+    onSelectRackAndSlotSelect: () -> Unit,
     onSaveItem: () -> Unit,
     onRackSelected: (Rack) -> Unit,
     onBackFromSelectRack: () -> Unit,
@@ -134,7 +150,7 @@ private fun AddItemScreenContent(
             onAddTag = onAddTag,
             onRemoveTag = onRemoveTag,
             onUpdatePhotoUri = onUpdatePhotoUri,
-            onSelectRackAndSlotClick = onSelectRackAndSlotClick,
+            onSelectRackAndSlotSelect = onSelectRackAndSlotSelect,
             onSaveItem = onSaveItem,
         )
         AddItemStep.SELECT_RACK -> SelectRackContent(
@@ -168,7 +184,7 @@ private fun AddItemForm(
     onAddTag: () -> Unit,
     onRemoveTag: (String) -> Unit,
     onUpdatePhotoUri: (String?) -> Unit,
-    onSelectRackAndSlotClick: () -> Unit,
+    onSelectRackAndSlotSelect: () -> Unit,
     onSaveItem: () -> Unit,
 ) {
     var showImagePicker by remember { mutableStateOf(false) }
@@ -270,7 +286,7 @@ private fun AddItemForm(
             }
 
             Button(
-                onClick = onSelectRackAndSlotClick,
+                onClick = onSelectRackAndSlotSelect,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
@@ -483,7 +499,7 @@ private fun AddItemScreenPreview() {
             onAddTag = {},
             onRemoveTag = {},
             onUpdatePhotoUri = {},
-            onSelectRackAndSlotClick = {},
+            onSelectRackAndSlotSelect = {},
             onSaveItem = {},
             onRackSelected = {},
             onBackFromSelectRack = {},
@@ -515,7 +531,7 @@ private fun AddItemScreenSelectRackPreview() {
             onAddTag = {},
             onRemoveTag = {},
             onUpdatePhotoUri = {},
-            onSelectRackAndSlotClick = {},
+            onSelectRackAndSlotSelect = {},
             onSaveItem = {},
             onRackSelected = {},
             onBackFromSelectRack = {},

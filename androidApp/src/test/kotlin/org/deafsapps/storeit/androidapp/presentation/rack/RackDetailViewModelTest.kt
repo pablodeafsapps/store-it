@@ -274,7 +274,7 @@ class RackDetailViewModelTest {
             assertEquals(1, state.slots.size)
             assertEquals(0.3f, state.slots.first().xRel)
             assertEquals(0.4f, state.slots.first().yRel)
-            assertEquals("saved-1", state.selectedSlotId)
+            assertEquals("saved-1", state.selectedSlot?.id)
             stateCollectJob.cancel()
             eventCollectJob.cancel()
         }
