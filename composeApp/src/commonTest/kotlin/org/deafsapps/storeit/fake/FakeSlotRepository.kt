@@ -9,8 +9,10 @@ import org.deafsapps.storeit.domain.repository.SlotRepository
 internal class FakeSlotRepository : SlotRepository {
     private val slots = mutableMapOf<String, ShelfSlot>()
 
+    var getSlotsByRackResult: Result<DomainError, List<ShelfSlot>>? = null
+
     override suspend fun getSlotsByRack(rackId: String): Result<DomainError, List<ShelfSlot>> =
-        slots.values.filter { it.rackId == rackId }.ok()
+        getSlotsByRackResult ?: slots.values.filter { it.rackId == rackId }.ok()
 
     override suspend fun saveSlot(slot: ShelfSlot): Result<DomainError, ShelfSlot> = run {
         slot.ok().also { slots[slot.id] = slot }

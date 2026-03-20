@@ -90,7 +90,7 @@
 **Independent Test**: Open rack → tap slot with items → see list → tap item → view/edit. Use search box → get results → tap result → navigate to item.
 
 - [X] T019 [P] [US3] Implement SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/` (search by name and description; return items with rack/slot info per FR-008)
-- [ ] T020 [P] [US3] Unit tests for SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
+- [X] T020 [P] [US3] Unit tests for SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
 - [ ] T021 [US3] Slot items list (Android): from rack detail, tap slot → show list of items in that slot in `composeApp/.../ui/item/SlotItemsScreen.kt`; empty state and option to add item (FR-006)
 - [ ] T032 [US3] Slot items list (iOS): from rack detail tap slot → show list of items in that slot in iosApp; empty state and option to add item (FR-006)
 - [ ] T022 [US3] Item detail and edit (Android): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in `composeApp/.../ui/item/ItemDetailScreen.kt` (FR-007)
