@@ -52,21 +52,36 @@ fun <E, V> Result<E, V>.leftOrNull(): E? = (this as? Err<E>)?.error
 
 fun <E, V> Result<E, V>.getOrDefault(default: V): V = getOrNull() ?: default
 
-inline fun <E, V, B> Result<E, V>.map(f: (V) -> B): Result<E, B> =
-    (this as? Ok)?.run { Ok(value = f(value)) } ?: this as Err
+inline fun <E, V, B> Result<E, V>.map(onSuccess: (V) -> B): Result<E, B> =
+    (this as? Ok)?.run { Ok(value = onSuccess(value)) } ?: this as Err
 
-inline fun <E, V, EE> Result<E, V>.mapLeft(f: (E) -> EE): Result<EE, V> =
-    (this as? Err)?.run { Err(error = f(error)) } ?: this as Ok
+inline fun <E, V, EE> Result<E, V>.mapLeft(onFailure: (E) -> EE): Result<EE, V> =
+    (this as? Err)?.run { Err(error = onFailure(error)) } ?: this as Ok
 
-inline fun <E, V, B> Result<E, V>.flatMap(f: (V) -> Result<E, B>): Result<E, B> =
+inline fun <E, V, B> Result<E, V>.flatMap(onSuccess: (V) -> Result<E, B>): Result<E, B> =
     if (this is Ok) {
-        f(value)
+        onSuccess(value)
     } else {
         this as Err
     }
 
-inline fun <E, V, EE> Result<E, V>.flatFailure(
-    onFailure: (value: E) -> Result<EE, Nothing>
+suspend inline fun <E, V, B> Result<E, V>.suspendFlatMap(
+    onSuccess: suspend (V) -> Result<E, B>
+): Result<E, B> = if (this is Ok) {
+    onSuccess(value)
+} else {
+    this as Err
+}
+
+inline fun <E, V, EE> Result<E, V>.flatFailure(onFailure: (E) -> Result<EE, V>): Result<EE, V> =
+    if (this is Err) {
+        onFailure(error)
+    } else {
+        this as Ok
+    }
+
+suspend inline fun <E, V, EE> Result<E, V>.suspendFlatFailure(
+    onFailure: suspend (E) -> Result<EE, Nothing>
 ): Result<EE, V> = if (this is Err) {
     onFailure(error)
 } else {
@@ -87,7 +102,7 @@ inline infix fun <E, V> Result<E, V>.onOk(action: (V) -> Unit): Result<E, V> =
 inline infix fun <E, V> Result<E, V>.onErr(action: (E) -> Unit): Result<E, V> =
     also { if (this is Err) action(error) }
 
-inline fun <E, V, EE : V> Result<E, V>.getOrElse(onFailure: (err: Err<E>) -> EE): V =
+inline fun <E, V, EE : V> Result<E, V>.getOrElse(onFailure: (Err<E>) -> EE): V =
     (this as? Ok)?.value ?: onFailure(this as Err)
 
 inline fun <E, V> Result<E, V>.getOrThrow(mapLeftToThrowable: (E) -> Throwable): V =
@@ -99,7 +114,6 @@ fun <E, V> Result<E, V>.swap(): Result<V, E> = when (this) {
     is Ok -> Err(error = value)
     is Err -> Ok(value = error)
 }
-
 
 // Syntax helpers
 fun <V> V.ok(): Result<Nothing, V> = Ok(value = this)

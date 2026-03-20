@@ -339,7 +339,7 @@ internal class RackDetailViewModelTest {
     }
 
     @Test
-    fun `GIVEN existing slot WHEN onImageTap nearby and not placement THEN saveSlot not called and sheet lists items`() =
+    fun `GIVEN existing slot WHEN onImageTap nearby and not placement THEN saveSlot not called`() =
         runTest(testDispatcher) {
             val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
             fakeGetRackDataByRackId.invokeResult = RackData(
