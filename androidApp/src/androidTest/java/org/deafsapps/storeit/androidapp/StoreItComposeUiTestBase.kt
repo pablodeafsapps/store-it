@@ -18,6 +18,7 @@ import de.mannodermaus.junit5.compose.ComposeContext
 import de.mannodermaus.junit5.compose.createAndroidComposeExtension
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
+import org.deafsapps.storeit.androidapp.presentation.item.ui.SlotItemsScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
@@ -135,6 +136,20 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                                 rackId = screen.rackId,
                                 onNavigateBack = { currentScreen = NavScreen.RackList },
                                 onAddItemHere = { rackId, slotId ->
+                                    currentScreen = NavScreen.AddItem(rackId = rackId, slotId = slotId)
+                                },
+                                onNavigateToSlotItems = { rackId, slotId ->
+                                    currentScreen = NavScreen.SlotItems(rackId = rackId, slotId = slotId)
+                                },
+                            )
+                        }
+
+                        is NavScreen.SlotItems -> {
+                            SlotItemsScreen(
+                                rackId = screen.rackId,
+                                slotId = screen.slotId,
+                                onNavigateBack = { currentScreen = NavScreen.RackDetail(screen.rackId) },
+                                onAddItem = { rackId, slotId ->
                                     currentScreen = NavScreen.AddItem(rackId = rackId, slotId = slotId)
                                 },
                             )

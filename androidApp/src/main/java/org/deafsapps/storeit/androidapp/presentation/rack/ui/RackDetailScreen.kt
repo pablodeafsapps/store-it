@@ -53,7 +53,6 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.deafsapps.storeit.domain.model.Rack
-import androidx.compose.foundation.layout.heightIn
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
@@ -67,7 +66,8 @@ internal fun RackDetailScreen(
     onNavigateBack: () -> Unit,
     forItemPlacement: Boolean = false,
     onSlotSelectedForItem: (rackId: String, slotId: String) -> Unit = { _, _ -> },
-    onAddItemHere: ((rackId: String, slotId: String) -> Unit)? = null,
+    onAddItemHere: (rackId: String, slotId: String) -> Unit = { _, _ -> },
+    onNavigateToSlotItems: (rackId: String, slotId: String) -> Unit = { _, _ -> },
 ) {
     val viewModelStoreOwner = remember {
         object : ViewModelStoreOwner {
@@ -89,7 +89,10 @@ internal fun RackDetailScreen(
                     is RackDetailUiEvent.NavigateBack -> onNavigateBack()
                     is RackDetailUiEvent.ShowError -> { }
                     is RackDetailUiEvent.SlotSelected -> {
-                        onAddItemHere?.invoke(event.rackId, event.slotId)
+                        onAddItemHere(event.rackId, event.slotId)
+                    }
+                    is RackDetailUiEvent.NavigateToSlotItems -> {
+                        onNavigateToSlotItems(event.rackId, event.slotId)
                     }
                     null -> { }
                 }
@@ -111,7 +114,6 @@ internal fun RackDetailScreen(
         onEditSelect = viewModel::onEditSelect,
         onRemoveRackSelect = viewModel::onRemoveRackSelect,
         onImageTap = { x, y -> viewModel.onImageTap(x, y, forItemPlacement) },
-        onDismissSlotItemsSheet = viewModel::onDismissSlotItemsSheet,
         onUpdateEditName = viewModel::onUpdateEditName,
         onUpdateEditDescription = viewModel::onUpdateEditDescription,
         onUpdateEditLocation = viewModel::onUpdateEditLocation,
@@ -132,7 +134,6 @@ private fun RackDetailContent(
     onEditSelect: () -> Unit = {},
     onRemoveRackSelect: () -> Unit = {},
     onImageTap: (Float, Float) -> Unit = { _, _ -> },
-    onDismissSlotItemsSheet: () -> Unit = {},
     onUpdateEditName: (String) -> Unit = {},
     onUpdateEditDescription: (String) -> Unit = {},
     onUpdateEditLocation: (String) -> Unit = {},
@@ -305,49 +306,6 @@ private fun RackDetailContent(
         )
     }
 
-    uiState.slotItemsSheet?.let { sheet ->
-        val slotItemsScroll = rememberScrollState()
-        AlertDialog(
-            onDismissRequest = onDismissSlotItemsSheet,
-            title = {
-                Text(
-                    "Items in this slot",
-                    modifier = Modifier.testTag("slotItemsSheetTitle"),
-                )
-            },
-            text = {
-                if (sheet.items.isEmpty()) {
-                    Text(
-                        "No items stored here.",
-                        modifier = Modifier.testTag("slotItemsSheetEmpty"),
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .heightIn(max = Dimens.slotItemsSheetMaxHeight)
-                            .verticalScroll(slotItemsScroll),
-                    ) {
-                        sheet.items.forEach { item ->
-                            Text(
-                                text = item.name,
-                                modifier = Modifier
-                                    .padding(vertical = Dimens.spacingSmall)
-                                    .testTag("slotItemRow_${item.id}"),
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = onDismissSlotItemsSheet,
-                    modifier = Modifier.testTag("slotItemsSheetCloseButton"),
-                ) {
-                    Text("Close")
-                }
-            },
-        )
-    }
 }
 
 @Composable

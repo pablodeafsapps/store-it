@@ -53,7 +53,7 @@ internal class RackDetailScreenUiTest : StoreItComposeUiTestBase() {
     }
 
     @Test
-    fun rackDetail_tapExistingSlot_showsStoredItemsSheet() {
+    fun rackDetail_tapExistingSlot_navigatesToSlotItemsScreen() {
         seedRack(id = "r1", name = "Garage Rack")
         seedSlot(rackId = "r1", slotId = "s1", xRel = 0.5f, yRel = 0.5f)
         seedItem(id = "i1", rackId = "r1", slotId = "s1", name = "Drill")
@@ -62,10 +62,11 @@ internal class RackDetailScreenUiTest : StoreItComposeUiTestBase() {
 
             onNodeWithTag("rackDetailImageOverlay").performTouchInput { click() }
 
-            onNodeWithTag("slotItemsSheetTitle").assertIsDisplayed()
+            onNodeWithTag("slotItemsScreenTitle").assertIsDisplayed()
             onNodeWithText("Drill").assertIsDisplayed()
-            onNodeWithTag("slotItemsSheetCloseButton").performClick()
-            onNodeWithTag("slotItemsSheetTitle").assertDoesNotExist()
+            onNodeWithTag("slotItemsScreenBackButton").performClick()
+            onNodeWithTag("slotItemsScreenTitle").assertDoesNotExist()
+            onNodeWithTag("rackDetailBackButton").assertIsDisplayed()
         }
     }
 
