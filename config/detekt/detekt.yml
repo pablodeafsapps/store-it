@@ -99,6 +99,7 @@ style:
     excludePackageStatements: false
     excludeImportStatements: false
     excludeCommentStatements: false
+    ignoreAnnotated: ['Test']
   NewLineAtEndOfFile:
     active: true
   TrailingWhitespace:
