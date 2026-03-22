@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
-import org.deafsapps.storeit.domain.model.Item
+import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.domain.usecase.DeleteRackUseCaseType
@@ -23,8 +23,6 @@ import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.mapper.toRackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.mapper.toRackDetailSlotsVo
-import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotItemVo
-import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotItemsSheet
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
@@ -46,8 +44,6 @@ class RackDetailViewModel(
     private val deleteRackUseCase: DeleteRackUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 
-    private var loadedItems: List<Item> = emptyList()
-
     private val _uiState = MutableStateFlow(RackDetailUiState.getDefault())
     val uiState: StateFlow<RackDetailUiState> = _uiState.asStateFlow()
 
@@ -62,60 +58,23 @@ class RackDetailViewModel(
         loadRackDataById(rackId = rackId)
     }
 
-    @OptIn(ExperimentalUuidApi::class)
     fun onImageTap(xRel: Float, yRel: Float, forItemPlacement: Boolean = false) {
         viewModelScope.launch {
             val rack = _uiState.value.rack ?: return@launch
-            val nearest = findNearestSlotWithin(
+            val slots = _uiState.value.slots
+            slots.findNearestSlotWithin(
                 xRel = xRel,
                 yRel = yRel,
-                slots = _uiState.value.slots,
                 radiusRel = SLOT_TAP_HIT_RADIUS_REL,
             )
-            if (nearest != null) {
-                if (forItemPlacement) {
-                    _uiState.update { it.copy(selectedSlot = nearest, slotItemsSheet = null) }
-                } else {
-                    val rows = loadedItems
-                        .filter { it.slotId == nearest.id }
-                        .map { RackDetailSlotItemVo(id = it.id, name = it.name) }
-                    _uiState.update {
-                        it.copy(
-                            selectedSlot = nearest,
-                            slotItemsSheet = RackDetailSlotItemsSheet(slotId = nearest.id, items = rows),
-                        )
-                    }
+                ?.selectSlotAndNavigateToDetailsIfApply(
+                    rack = rack,
+                    forItemPlacement = forItemPlacement
+                )
+                ?: run {
+                    selectAndSaveNewSlot(rack = rack, xRel = xRel, yRel = yRel)
                 }
-                return@launch
-            }
-            val slot = ShelfSlot(
-                id = Uuid.random().toString(),
-                rackId = rack.id,
-                position = SlotPosition(x = 0f, y = 0f, xRel = xRel, yRel = yRel),
-            )
-            saveSlotUseCase(input = slot).fold(
-                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
-                ifOk = { saved ->
-                    _uiState.update { state -> state.copy(selectedSlot = slot.toRackDetailSlotVo()) }
-                    _uiState.update { state ->
-                        state.copy(
-                            slots = state.slots + RackDetailSlotVo(
-                                id = saved.id,
-                                xRel = saved.position.xRel,
-                                yRel = saved.position.yRel,
-                            ),
-                            selectedSlot = saved.toRackDetailSlotVo(),
-                            slotItemsSheet = null,
-                        )
-                    }
-                    _uiEvent.emit(RackDetailUiEvent.SlotSelected(rackId = saved.rackId, slotId = saved.id))
-                },
-            )
         }
-    }
-
-    fun onDismissSlotItemsSheet() {
-        _uiState.update { it.copy(slotItemsSheet = null, selectedSlot = null) }
     }
 
     fun onEditSelect() {
@@ -195,7 +154,6 @@ class RackDetailViewModel(
                         )
                     }
                 }, ifOk = { rackData ->
-                    loadedItems = rackData.items
                     _uiState.update { state ->
                         state.copy(
                             rack = rackData.rack,
@@ -208,22 +166,68 @@ class RackDetailViewModel(
             )
         }
     }
+
+    private suspend fun RackDetailSlotVo.selectSlotAndNavigateToDetailsIfApply(
+        rack: Rack,
+        forItemPlacement: Boolean,
+    ) {
+        _uiState.update { state -> state.copy(selectedSlot = this) }
+        if (!forItemPlacement) {
+            _uiEvent.emit(
+                RackDetailUiEvent.NavigateToSlotItems(
+                    rackId = rack.id,
+                    slotId = id
+                ),
+            )
+        }
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    private suspend fun selectAndSaveNewSlot(rack: Rack, xRel: Float, yRel: Float) {
+        val slot = ShelfSlot(
+            id = Uuid.random().toString(),
+            rackId = rack.id,
+            position = SlotPosition(x = 0f, y = 0f, xRel = xRel, yRel = yRel),
+        )
+        saveSlotUseCase(input = slot).fold(
+            ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(error.toErrorCause())) },
+            ifOk = { saved ->
+                _uiState.update { state -> state.copy(selectedSlot = slot.toRackDetailSlotVo()) }
+                _uiState.update { state ->
+                    state.copy(
+                        slots = state.slots + RackDetailSlotVo(
+                            id = saved.id,
+                            xRel = saved.position.xRel,
+                            yRel = saved.position.yRel,
+                        ),
+                        selectedSlot = saved.toRackDetailSlotVo(),
+                    )
+                }
+                _uiEvent.emit(
+                    RackDetailUiEvent.SlotSelected(
+                        rackId = saved.rackId,
+                        slotId = saved.id
+                    )
+                )
+            },
+        )
+    }
+
 }
 
-internal fun findNearestSlotWithin(
+internal fun List<RackDetailSlotVo>.findNearestSlotWithin(
     xRel: Float,
     yRel: Float,
-    slots: List<RackDetailSlotVo>,
     radiusRel: Float,
-): RackDetailSlotVo? {
-    if (slots.isEmpty()) return null
-    val r2 = radiusRel * radiusRel
-    return slots
-        .map { slot -> slot to slotDistanceSquared(xRel, yRel, slot) }
-        .filter { it.second <= r2 }
-        .minByOrNull { it.second }
-        ?.first
-}
+): RackDetailSlotVo? =
+    takeIf { it.isNotEmpty() }?.let { slots ->
+        val r2 = radiusRel * radiusRel
+        slots
+            .map { slot -> slot to slotDistanceSquared(xRel, yRel, slot) }
+            .filter { it.second <= r2 }
+            .minByOrNull { it.second }
+            ?.first
+    }
 
 private fun slotDistanceSquared(xRel: Float, yRel: Float, slot: RackDetailSlotVo): Float {
     val dx = slot.xRel - xRel

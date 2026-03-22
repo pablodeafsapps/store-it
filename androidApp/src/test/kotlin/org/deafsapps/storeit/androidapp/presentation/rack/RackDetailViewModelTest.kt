@@ -339,7 +339,7 @@ internal class RackDetailViewModelTest {
     }
 
     @Test
-    fun `GIVEN existing slot WHEN onImageTap nearby and not placement THEN saveSlot not called`() =
+    fun `GIVEN existing slot WHEN onImageTap nearby and not placement THEN NavigateToSlotItems emitted and saveSlot not called`() =
         runTest(testDispatcher) {
             val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
             fakeGetRackDataByRackId.invokeResult = RackData(
@@ -350,14 +350,19 @@ internal class RackDetailViewModelTest {
             ).ok()
             sut = getDummyRackDetailViewModel()
             advanceUntilIdle()
+            val collectedEvents = mutableListOf<RackDetailUiEvent?>()
+            val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
+            advanceUntilIdle()
 
             sut.onImageTap(xRel = 0.52f, yRel = 0.52f, forItemPlacement = false)
             advanceUntilIdle()
 
             assertEquals(0, fakeSaveSlot.invokeCount)
-            val state = sut.uiState.value
-            assertEquals("s1", state.slotItemsSheet?.slotId)
-            assertEquals("Hammer", state.slotItemsSheet?.items?.single()?.name)
+            val nav = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.NavigateToSlotItems>().single()
+            assertEquals(dummyRackId, nav.rackId)
+            assertEquals("s1", nav.slotId)
+            assertEquals("s1", sut.uiState.value.selectedSlot?.id)
+            eventCollectJob.cancel()
         }
 
     @Test
@@ -378,29 +383,6 @@ internal class RackDetailViewModelTest {
 
             assertEquals(0, fakeSaveSlot.invokeCount)
             assertEquals("s1", sut.uiState.value.selectedSlot?.id)
-            assertNull(sut.uiState.value.slotItemsSheet)
-        }
-
-    @Test
-    fun `GIVEN slot items sheet open WHEN onDismissSlotItemsSheet THEN sheet and selection cleared`() =
-        runTest(testDispatcher) {
-            val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
-            fakeGetRackDataByRackId.invokeResult = RackData(
-                id = dummyRackId,
-                rack = dummyRack,
-                shelfSlots = listOf(slot),
-                items = emptyList(),
-            ).ok()
-            sut = getDummyRackDetailViewModel()
-            advanceUntilIdle()
-            sut.onImageTap(xRel = 0.5f, yRel = 0.5f, forItemPlacement = false)
-            advanceUntilIdle()
-
-            sut.onDismissSlotItemsSheet()
-            advanceUntilIdle()
-
-            assertNull(sut.uiState.value.slotItemsSheet)
-            assertNull(sut.uiState.value.selectedSlot)
         }
 
     @Test
