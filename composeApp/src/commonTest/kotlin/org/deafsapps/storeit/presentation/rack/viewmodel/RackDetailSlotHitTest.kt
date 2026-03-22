@@ -13,7 +13,7 @@ internal class RackDetailSlotHitTest {
         val b = RackDetailSlotVo(id = "b", xRel = 0.1f, yRel = 0.1f)
         assertEquals(
             a,
-            findNearestSlotWithin(xRel = 0.52f, yRel = 0.52f, slots = listOf(a, b), radiusRel = 0.08f),
+            listOf(a, b).findNearestSlotWithin(xRel = 0.52f, yRel = 0.52f, radiusRel = 0.08f),
         )
     }
 
@@ -21,7 +21,7 @@ internal class RackDetailSlotHitTest {
     fun `returns null when no slot close enough`() {
         val a = RackDetailSlotVo(id = "a", xRel = 0.1f, yRel = 0.1f)
         assertNull(
-            findNearestSlotWithin(xRel = 0.9f, yRel = 0.9f, slots = listOf(a), radiusRel = 0.08f),
+            listOf(a).findNearestSlotWithin(xRel = 0.9f, yRel = 0.9f, radiusRel = 0.08f),
         )
     }
 
@@ -31,7 +31,7 @@ internal class RackDetailSlotHitTest {
         val farther = RackDetailSlotVo(id = "f", xRel = 0.55f, yRel = 0.5f)
         assertEquals(
             closer,
-            findNearestSlotWithin(xRel = 0.51f, yRel = 0.5f, slots = listOf(farther, closer), radiusRel = 0.15f),
+            listOf(farther, closer).findNearestSlotWithin(xRel = 0.51f, yRel = 0.5f, radiusRel = 0.15f),
         )
     }
 }
