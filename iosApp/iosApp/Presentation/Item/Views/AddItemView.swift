@@ -5,7 +5,6 @@ import ComposeApp
 struct AddItemView: View {
     let uiState: AddItemUiState
     let uiEvent: AddItemUiEvent?
-
     let onUpdateName: (String) -> Void
     let onUpdateDescription: (String) -> Void
     let onUpdateQuantity: (Int?) -> Void
@@ -14,7 +13,7 @@ struct AddItemView: View {
     let onAddTag: () -> Void
     let onRemoveTag: (String) -> Void
     let onUpdatePhotoUri: (String?) -> Void
-    let onSelectRackAndSlotClick: () -> Void
+    let onSelectRackAndSlotSelected: () -> Void
     let onSaveItem: () -> Void
     let onRackSelected: (Rack) -> Void
     let onBackFromSelectRack: () -> Void
@@ -107,7 +106,7 @@ struct AddItemView: View {
                 }
 
                 Section {
-                    Button(action: { onSelectRackAndSlotClick() }) {
+                    Button(action: { onSelectRackAndSlotSelected() }) {
                         Text(
                             uiState.selectedRackId != nil && uiState.selectedSlotId != nil
                             ? "Rack & slot selected"
@@ -275,6 +274,5 @@ struct AddItemView: View {
             )
         )
     }
-
 }
 

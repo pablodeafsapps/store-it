@@ -77,7 +77,7 @@ class RackDetailViewModel(
         }
     }
 
-    fun onEditSelect() {
+    fun onEditSelected() {
         val rack = _uiState.value.rack ?: return
         _uiState.update { state ->
             state.copy(
@@ -123,7 +123,7 @@ class RackDetailViewModel(
         }
     }
 
-    fun onRemoveRackSelect() {
+    fun onRemoveRackSelected() {
         _uiState.update { state -> state.copy(showDeleteConfirm = true) }
     }
 

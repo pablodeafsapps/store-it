@@ -111,8 +111,8 @@ internal fun RackDetailScreen(
         onNavigateBack = onNavigateBack,
         forItemPlacement = forItemPlacement,
         onSlotSelectedForItem = { slotId -> onSlotSelectedForItem(rackId, slotId) },
-        onEditSelect = viewModel::onEditSelect,
-        onRemoveRackSelect = viewModel::onRemoveRackSelect,
+        onEditSelected = viewModel::onEditSelected,
+        onRemoveRackSelected = viewModel::onRemoveRackSelected,
         onImageTap = { x, y -> viewModel.onImageTap(x, y, forItemPlacement) },
         onUpdateEditName = viewModel::onUpdateEditName,
         onUpdateEditDescription = viewModel::onUpdateEditDescription,
@@ -131,8 +131,8 @@ private fun RackDetailContent(
     onNavigateBack: () -> Unit,
     forItemPlacement: Boolean = false,
     onSlotSelectedForItem: (slotId: String) -> Unit = {},
-    onEditSelect: () -> Unit = {},
-    onRemoveRackSelect: () -> Unit = {},
+    onEditSelected: () -> Unit = {},
+    onRemoveRackSelected: () -> Unit = {},
     onImageTap: (Float, Float) -> Unit = { _, _ -> },
     onUpdateEditName: (String) -> Unit = {},
     onUpdateEditDescription: (String) -> Unit = {},
@@ -173,7 +173,7 @@ private fun RackDetailContent(
                                 text = { Text("Edit") },
                                 onClick = {
                                     showMenu = false
-                                    onEditSelect()
+                                    onEditSelected()
                                 },
                             )
                             DropdownMenuItem(
@@ -181,7 +181,7 @@ private fun RackDetailContent(
                                 text = { Text("Remove rack") },
                                 onClick = {
                                     showMenu = false
-                                    onRemoveRackSelect()
+                                    onRemoveRackSelected()
                                 },
                             )
                         }

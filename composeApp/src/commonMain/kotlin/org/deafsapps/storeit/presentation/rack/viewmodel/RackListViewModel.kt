@@ -51,13 +51,13 @@ class RackListViewModel(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
         )
 
-    fun onAddRackSelect() {
+    fun onAddRackSelected() {
         viewModelScope.launch {
             _uiEvent.emit(RackListUiEvent.NavigateToAddRack)
         }
     }
 
-    fun onRackSelect(rack: Rack) {
+    fun onRackSelected(rack: Rack) {
         viewModelScope.launch {
             _uiEvent.emit(RackListUiEvent.NavigateToRackDetail(rackId = rack.id))
         }

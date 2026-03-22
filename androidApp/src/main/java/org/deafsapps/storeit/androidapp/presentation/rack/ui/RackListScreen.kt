@@ -56,7 +56,7 @@ internal fun RackListScreen(
     uiState: RackListUiState,
     uiEvent: () -> Flow<RackListUiEvent?>,
     onAddRackSelect: () -> Unit,
-    onRackSelect: (Rack) -> Unit,
+    onRackSelected: (Rack) -> Unit,
     onNavigateToAddRack: () -> Unit,
     onNavigateToRackDetail: (String) -> Unit,
     onNavigateToAddItem: () -> Unit = {},
@@ -142,7 +142,7 @@ internal fun RackListScreen(
                         items(uiState.racks, key = { it.id }) { rack ->
                             RackListItem(
                                 rack = rack,
-                                onClick = { onRackSelect(rack) },
+                                onClick = { onRackSelected(rack) },
                             )
                         }
                     }
@@ -261,7 +261,7 @@ private fun RackListScreenPreview() {
             ),
             uiEvent = { emptyFlow() },
             onAddRackSelect = {},
-            onRackSelect = {},
+            onRackSelected = {},
             onNavigateToAddRack = {},
             onNavigateToRackDetail = {},
             onNavigateToAddItem = {}
@@ -281,7 +281,7 @@ private fun RackListScreenEmptyPreview() {
             ),
             uiEvent = { emptyFlow() },
             onAddRackSelect = {},
-            onRackSelect = {},
+            onRackSelected = {},
             onNavigateToAddRack = {},
             onNavigateToRackDetail = {},
             onNavigateToAddItem = {}
@@ -301,7 +301,7 @@ private fun RackListScreenLoadingPreview() {
             ),
             uiEvent = { emptyFlow() },
             onAddRackSelect = {},
-            onRackSelect = {},
+            onRackSelected = {},
             onNavigateToAddRack = {},
             onNavigateToRackDetail = {},
             onNavigateToAddItem = {}

@@ -15,7 +15,7 @@ struct ItemDetailView: View {
     let onRemoveTag: (String) -> Void
     let onUpdatePhotoUri: (String?) -> Void
     let onSave: () -> Void
-    let onDeleteClick: () -> Void
+    let onDelete: () -> Void
     let onDismissDeleteConfirm: () -> Void
     let onConfirmDelete: () -> Void
     let onNavigateBack: () -> Void
@@ -118,8 +118,11 @@ struct ItemDetailView: View {
                             .disabled(uiState.isSaving)
                             .accessibilityIdentifier("itemDetailSaveButton")
 
-                            Button(role: .destructive, action: onDeleteClick) {
-                                Text("Remove item")
+                            Button(role: .destructive, action: onDelete) {
+                                HStack {
+                                    Text("Remove item")
+                                }
+                                .frame(maxWidth: .infinity)
                             }
                             .disabled(uiState.isSaving)
                             .accessibilityIdentifier("itemDetailDeleteButton")

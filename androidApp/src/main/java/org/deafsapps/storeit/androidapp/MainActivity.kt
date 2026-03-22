@@ -51,8 +51,8 @@ class MainActivity : ComponentActivity() {
                             RackListScreen(
                                 uiState = uiState,
                                 uiEvent = { rackListViewModel.uiEvent },
-                                onAddRackSelect = rackListViewModel::onAddRackSelect,
-                                onRackSelect = rackListViewModel::onRackSelect,
+                                onAddRackSelect = rackListViewModel::onAddRackSelected,
+                                onRackSelected = rackListViewModel::onRackSelected,
                                 onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
                                 onNavigateToRackDetail = { id -> currentScreen = NavScreen.RackDetail(id) },
                                 onNavigateToAddItem = { currentScreen = NavScreen.AddItem() },
@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
                                 onAddItem = { rackId, slotId ->
                                     currentScreen = NavScreen.AddItem(rackId = rackId, slotId = slotId)
                                 },
-                                onItemClick = { itemId ->
+                                onItemSelected = { itemId ->
                                     currentScreen = NavScreen.ItemDetail(
                                         itemId = itemId,
                                         rackId = screen.rackId,

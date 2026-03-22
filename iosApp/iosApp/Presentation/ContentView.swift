@@ -36,8 +36,8 @@ struct ContentView: View {
                     RackListView(
                         uiState: state,
                         uiEvent: event,
-                        onAddRackSelect: { rackListViewModel.sharedVm.onAddRackSelect() },
-                        onRackSelect: { rack in rackListViewModel.sharedVm.onRackSelect(rack: rack) }
+                        onAddRackSelected: { rackListViewModel.sharedVm.onAddRackSelected() },
+                        onRackSelected: { rack in rackListViewModel.sharedVm.onRackSelected(rack: rack) }
                     )
                     .onChange(of: onEnum(of: event)) { _, _ in
                         handleRackListEvent(event)
@@ -158,7 +158,7 @@ private struct AddItemScreen: View {
                 onAddTag: addItemViewModel.sharedVm.onAddTag,
                 onRemoveTag: addItemViewModel.sharedVm.onRemoveTag,
                 onUpdatePhotoUri: addItemViewModel.sharedVm.onUpdatePhotoUri,
-                onSelectRackAndSlotClick: addItemViewModel.sharedVm.onSelectRackAndSlotSelect,
+                onSelectRackAndSlotSelected: addItemViewModel.sharedVm.onSelectRackAndSlotSelected,
                 onSaveItem: addItemViewModel.sharedVm.onSaveItem,
                 onRackSelected: addItemViewModel.sharedVm.onRackSelected,
                 onBackFromSelectRack: addItemViewModel.sharedVm.onBackFromSelectRack,
@@ -204,7 +204,7 @@ private struct ItemDetailScreen: View {
                 onRemoveTag: itemDetailViewModel.sharedVm.onRemoveTag,
                 onUpdatePhotoUri: itemDetailViewModel.sharedVm.onUpdatePhotoUri,
                 onSave: itemDetailViewModel.sharedVm.onSave,
-                onDeleteClick: itemDetailViewModel.sharedVm.onDeleteClick,
+                onDelete: itemDetailViewModel.sharedVm.onDeleteSelected,
                 onDismissDeleteConfirm: itemDetailViewModel.sharedVm.onDismissDeleteConfirm,
                 onConfirmDelete: itemDetailViewModel.sharedVm.onConfirmDelete,
                 onNavigateBack: onNavigateBack

@@ -100,7 +100,7 @@ internal fun ItemDetailScreen(
         onRemoveTag = viewModel::onRemoveTag,
         onUpdatePhotoUri = viewModel::onUpdatePhotoUri,
         onSave = viewModel::onSave,
-        onDeleteClick = viewModel::onDeleteClick,
+        onDeleteClick = viewModel::onDeleteSelected,
         onDismissDeleteConfirm = viewModel::onDismissDeleteConfirm,
         onConfirmDelete = viewModel::onConfirmDelete,
     )

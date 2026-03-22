@@ -110,7 +110,7 @@ internal fun AddItemScreen(
         onAddTag = viewModel::onAddTag,
         onRemoveTag = viewModel::onRemoveTag,
         onUpdatePhotoUri = viewModel::onUpdatePhotoUri,
-        onSelectRackAndSlotSelect = viewModel::onSelectRackAndSlotSelect,
+        onSelectRackAndSlotSelect = viewModel::onSelectRackAndSlotSelected,
         onSaveItem = viewModel::onSaveItem,
         onRackSelected = viewModel::onRackSelected,
         onBackFromSelectRack = viewModel::onBackFromSelectRack,

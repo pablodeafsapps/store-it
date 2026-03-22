@@ -87,7 +87,7 @@ class ItemDetailViewModel(
         _uiState.update { state -> state.copy(photoUri = uri, error = null) }
     }
 
-    fun onDeleteClick() {
+    fun onDeleteSelected() {
         _uiState.update { state -> state.copy(showDeleteConfirm = true) }
     }
 

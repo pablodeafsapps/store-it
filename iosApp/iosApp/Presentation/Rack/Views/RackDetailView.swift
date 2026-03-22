@@ -39,8 +39,8 @@ struct RackDetailView: View {
                     onImageTap: { xRel, yRel in
                         rackDetailViewModel.sharedVm.onImageTap(xRel: xRel, yRel: yRel, forItemPlacement: forItemPlacement)
                     },
-                    onEditSelect: rackDetailViewModel.sharedVm.onEditSelect,
-                    onRemoveRackSelect: rackDetailViewModel.sharedVm.onRemoveRackSelect,
+                    onEditSelected: rackDetailViewModel.sharedVm.onEditSelected,
+                    onRemoveRackSelected: rackDetailViewModel.sharedVm.onRemoveRackSelected,
                     onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
                     onUpdateEditName: rackDetailViewModel.sharedVm.onUpdateEditName,
                     onUpdateEditDescription: rackDetailViewModel.sharedVm.onUpdateEditDescription,
@@ -96,8 +96,8 @@ private struct RackDetailContent: View {
     let state: RackDetailUiState
     let event: RackDetailUiEvent?
     let onImageTap: (Float, Float) -> Void
-    let onEditSelect: () -> Void
-    let onRemoveRackSelect: () -> Void
+    let onEditSelected: () -> Void
+    let onRemoveRackSelected: () -> Void
     let onDismissEditDialog: () -> Void
     let onUpdateEditName: (String) -> Void
     let onUpdateEditDescription: (String) -> Void
@@ -174,11 +174,11 @@ private struct RackDetailContent: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button("Edit") {
-                            onEditSelect()
+                            onEditSelected()
                         }
                         .accessibilityIdentifier("editRackMenuItem")
                         Button("Remove rack", role: .destructive) {
-                            onRemoveRackSelect()
+                            onRemoveRackSelected()
                         }
                         .accessibilityIdentifier("removeRackMenuItem")
                     } label: {

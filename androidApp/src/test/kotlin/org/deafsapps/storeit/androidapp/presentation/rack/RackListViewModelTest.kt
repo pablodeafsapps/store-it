@@ -129,7 +129,7 @@ internal class RackListViewModelTest {
           val collectJob: Job = launch { sut.uiEvent.collect { events.add(it) } }
           advanceUntilIdle()
 
-          sut.onAddRackSelect()
+          sut.onAddRackSelected()
 
           advanceUntilIdle()
           val event = events.filterNotNull().single()
@@ -147,7 +147,7 @@ internal class RackListViewModelTest {
           advanceUntilIdle()
           val rack = Rack(id = "r1", name = "My Rack")
 
-          sut.onRackSelect(rack = rack)
+          sut.onRackSelected(rack = rack)
           advanceUntilIdle()
 
           val event = events.filterNotNull().single()

@@ -4,8 +4,8 @@ import ComposeApp
 struct RackListView: View {
     let uiState: RackListUiState
     let uiEvent: RackListUiEvent?
-    let onAddRackSelect: () -> Void
-    let onRackSelect: (Rack) -> Void
+    let onAddRackSelected: () -> Void
+    let onRackSelected: (Rack) -> Void
 
     var body: some View {
         NavigationView {
@@ -32,7 +32,7 @@ struct RackListView: View {
             .accessibilityIdentifier("racksListScreen")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: onAddRackSelect) {
+                    Button(action: onAddRackSelected) {
                         Image(systemName: "plus")
                     }
                     .accessibilityIdentifier("addRackToolbarButton")
@@ -50,7 +50,7 @@ struct RackListView: View {
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-            Button(action: onAddRackSelect) {
+            Button(action: onAddRackSelected) {
                 Text("Add Rack")
                     .frame(maxWidth: .infinity)
             }
@@ -65,7 +65,7 @@ struct RackListView: View {
         List {
             ForEach(uiState.racks, id: \.id) { rack in
                 RackRowView(rack: rack) {
-                    onRackSelect(rack)
+                    onRackSelected(rack)
                 }
             }
         }

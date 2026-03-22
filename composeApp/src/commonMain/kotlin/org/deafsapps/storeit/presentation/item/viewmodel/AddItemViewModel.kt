@@ -116,7 +116,7 @@ class AddItemViewModel(
         _uiState.update { state -> state.copy(photoUri = uri, error = null) }
     }
 
-    fun onSelectRackAndSlotSelect() {
+    fun onSelectRackAndSlotSelected() {
         _uiState.update { state ->
             state.copy(step = if (state.selectedRackId != null) AddItemStep.SELECT_SLOT else AddItemStep.SELECT_RACK)
         }

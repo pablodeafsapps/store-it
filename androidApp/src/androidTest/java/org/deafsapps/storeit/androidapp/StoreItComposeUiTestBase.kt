@@ -103,8 +103,8 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                             RackListScreen(
                                 uiState = uiState,
                                 uiEvent = { rackListViewModel.uiEvent },
-                                onAddRackSelect = rackListViewModel::onAddRackSelect,
-                                onRackSelect = rackListViewModel::onRackSelect,
+                                onAddRackSelect = rackListViewModel::onAddRackSelected,
+                                onRackSelected = rackListViewModel::onRackSelected,
                                 onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
                                 onNavigateToRackDetail = { id ->
                                     currentScreen = NavScreen.RackDetail(rackId = id)
@@ -153,7 +153,7 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                                 onAddItem = { rackId, slotId ->
                                     currentScreen = NavScreen.AddItem(rackId = rackId, slotId = slotId)
                                 },
-                                onItemClick = { itemId ->
+                                onItemSelected = { itemId ->
                                     currentScreen = NavScreen.ItemDetail(
                                         itemId = itemId,
                                         rackId = screen.rackId,

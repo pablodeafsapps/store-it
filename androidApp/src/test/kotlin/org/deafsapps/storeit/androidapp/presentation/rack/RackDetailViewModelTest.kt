@@ -120,7 +120,7 @@ internal class RackDetailViewModelTest {
             val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
 
-            sut.onEditSelect()
+            sut.onEditSelected()
             advanceUntilIdle()
 
             val state = collectedStates.last()
@@ -144,7 +144,7 @@ internal class RackDetailViewModelTest {
         val collectedStates = mutableListOf<RackDetailUiState>()
         val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
-        sut.onEditSelect()
+        sut.onEditSelected()
         advanceUntilIdle()
 
         sut.onDismissEditDialog()
@@ -167,7 +167,7 @@ internal class RackDetailViewModelTest {
             val collectedStates = mutableListOf<RackDetailUiState>()
             val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
             advanceUntilIdle()
-            sut.onEditSelect()
+            sut.onEditSelected()
             advanceUntilIdle()
             sut.onUpdateEditName("New Name")
             val updatedRack = dummyRack.copy(name = "New Name")
@@ -195,7 +195,7 @@ internal class RackDetailViewModelTest {
         val collectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
 
-        sut.onRemoveRackSelect()
+        sut.onRemoveRackSelected()
         advanceUntilIdle()
 
         val state = collectedStates.last()
@@ -215,7 +215,7 @@ internal class RackDetailViewModelTest {
             ).ok()
             sut = getDummyRackDetailViewModel()
             advanceUntilIdle()
-            sut.onRemoveRackSelect()
+            sut.onRemoveRackSelected()
 
             sut.onDismissDeleteConfirm()
 
@@ -234,7 +234,7 @@ internal class RackDetailViewModelTest {
             fakeDeleteRack.invokeResult = Unit.ok()
             sut = getDummyRackDetailViewModel()
             advanceUntilIdle()
-            sut.onRemoveRackSelect()
+            sut.onRemoveRackSelected()
             val collectedEvents = mutableListOf<RackDetailUiEvent?>()
             val collectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
             advanceUntilIdle()
@@ -293,7 +293,7 @@ internal class RackDetailViewModelTest {
         val collectedStates = mutableListOf<RackDetailUiState>()
         val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
-        sut.onEditSelect()
+        sut.onEditSelected()
         advanceUntilIdle()
         val collectedEvents = mutableListOf<RackDetailUiEvent?>()
         val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
@@ -322,7 +322,7 @@ internal class RackDetailViewModelTest {
         val collectedStates = mutableListOf<RackDetailUiState>()
         val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
         advanceUntilIdle()
-        sut.onRemoveRackSelect()
+        sut.onRemoveRackSelected()
         advanceUntilIdle()
         val collectedEvents = mutableListOf<RackDetailUiEvent?>()
         val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }

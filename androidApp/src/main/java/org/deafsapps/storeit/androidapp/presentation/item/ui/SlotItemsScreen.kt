@@ -36,7 +36,7 @@ internal fun SlotItemsScreen(
     slotId: String,
     onNavigateBack: () -> Unit,
     onAddItem: (rackId: String, slotId: String) -> Unit,
-    onItemClick: (itemId: String) -> Unit,
+    onItemSelected: (itemId: String) -> Unit,
 ) {
     val viewModelStoreOwner = remember {
         object : ViewModelStoreOwner {
@@ -134,7 +134,7 @@ internal fun SlotItemsScreen(
                                 modifier = Modifier
                                     .padding(Dimens.screenPadding)
                                     .testTag("slotItemRow_${item.id}")
-                                    .clickable { onItemClick(item.id) },
+                                    .clickable { onItemSelected(item.id) },
                             )
                         }
                         item {
