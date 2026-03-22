@@ -241,8 +241,8 @@ final class UxTests: XCTestCase {
         XCTAssertTrue(sheetTitle.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["No items stored here."].exists)
 
-        let closeButton = app.buttons["Close"]
-        XCTAssertTrue(closeButton.exists)
-        closeButton.tap()
+        let backFromSlotItems = app.buttons["Back"]
+        XCTAssertTrue(backFromSlotItems.waitForExistence(timeout: 5))
+        backFromSlotItems.tap()
     }
 }

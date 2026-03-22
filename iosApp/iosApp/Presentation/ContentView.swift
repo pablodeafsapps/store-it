@@ -6,6 +6,7 @@ enum NavScreen {
     case addRack
     case addItem(initialRackId: String?, initialSlotId: String?)
     case rackDetail(rackId: String)
+    case slotItems(rackId: String, slotId: String)
 }
 
 enum RackListNavigation {
@@ -89,6 +90,18 @@ struct ContentView: View {
                 onNavigateBack: { currentScreen = .rackList },
                 onAddItemHere: { initialRackId, initialSlotId in
                     currentScreen = .addItem(initialRackId: initialRackId, initialSlotId: initialSlotId)
+                },
+                onNavigateToSlotItems: { r, s in
+                    currentScreen = .slotItems(rackId: r, slotId: s)
+                }
+            )
+        case .slotItems(let rackId, let slotId):
+            SlotItemsView(
+                rackId: rackId,
+                slotId: slotId,
+                onNavigateBack: { currentScreen = .rackDetail(rackId: rackId) },
+                onAddItem: { r, s in
+                    currentScreen = .addItem(initialRackId: r, initialSlotId: s)
                 }
             )
         }

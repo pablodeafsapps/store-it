@@ -7,13 +7,15 @@ struct RackDetailView: View {
     let forItemPlacement: Bool
     let onSlotSelectedForItem: ((String, String) -> Void)?
     let onAddItemHere: ((String, String) -> Void)?
+    let onNavigateToSlotItems: ((String, String) -> Void)?
 
     init(
         rackId: String,
         onNavigateBack: @escaping () -> Void,
         forItemPlacement: Bool = false,
         onSlotSelectedForItem: ((String, String) -> Void)? = nil,
-        onAddItemHere: ((String, String) -> Void)? = nil
+        onAddItemHere: ((String, String) -> Void)? = nil,
+        onNavigateToSlotItems: ((String, String) -> Void)? = nil
     ) {
         _rackDetailViewModel = StateObject(
             wrappedValue: ViewModelHolder(IosKoinHelper().getRackDetailViewModel(rackId: rackId))
@@ -22,6 +24,7 @@ struct RackDetailView: View {
         self.forItemPlacement = forItemPlacement
         self.onSlotSelectedForItem = onSlotSelectedForItem
         self.onAddItemHere = onAddItemHere
+        self.onNavigateToSlotItems = onNavigateToSlotItems
     }
 
     var body: some View {
@@ -36,7 +39,6 @@ struct RackDetailView: View {
                     onImageTap: { xRel, yRel in
                         rackDetailViewModel.sharedVm.onImageTap(xRel: xRel, yRel: yRel, forItemPlacement: forItemPlacement)
                     },
-                    onDismissSlotItemsSheet: rackDetailViewModel.sharedVm.onDismissSlotItemsSheet,
                     onEditSelect: rackDetailViewModel.sharedVm.onEditSelect,
                     onRemoveRackSelect: rackDetailViewModel.sharedVm.onRemoveRackSelect,
                     onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
@@ -61,6 +63,10 @@ struct RackDetailView: View {
                     if event is RackDetailUiEventNavigateBack {
                         onNavigateBack()
                     } else if !forItemPlacement,
+                              let nav = event as? RackDetailUiEventNavigateToSlotItems,
+                              let onNavigateToSlotItems {
+                        onNavigateToSlotItems(nav.rackId, nav.slotId)
+                    } else if !forItemPlacement,
                               let slotSelected = event as? RackDetailUiEventSlotSelected,
                               let onAddItemHere {
                         onAddItemHere(slotSelected.rackId, slotSelected.slotId)
@@ -79,6 +85,9 @@ private func eventKey(_ event: RackDetailUiEvent?) -> String {
     if let slotSelected = event as? RackDetailUiEventSlotSelected {
         return "slot-selected-\(slotSelected.rackId)-\(slotSelected.slotId)"
     }
+    if let nav = event as? RackDetailUiEventNavigateToSlotItems {
+        return "slot-items-\(nav.rackId)-\(nav.slotId)"
+    }
     // Fallback: keep the key stable per event type.
     return String(describing: type(of: event))
 }
@@ -87,7 +96,6 @@ private struct RackDetailContent: View {
     let state: RackDetailUiState
     let event: RackDetailUiEvent?
     let onImageTap: (Float, Float) -> Void
-    let onDismissSlotItemsSheet: () -> Void
     let onEditSelect: () -> Void
     let onRemoveRackSelect: () -> Void
     let onDismissEditDialog: () -> Void
@@ -207,36 +215,6 @@ private struct RackDetailContent: View {
             }
         } message: {
             Text("This will delete the rack and all its slots and items. This cannot be undone.")
-        }
-        .sheet(isPresented: Binding(
-            get: { state.slotItemsSheet != nil },
-            set: { if !$0 { onDismissSlotItemsSheet() } }
-        )) {
-            if let sheet = state.slotItemsSheet {
-                NavigationView {
-                    Group {
-                        if sheet.items.isEmpty {
-                            Text("No items stored here.")
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .accessibilityIdentifier("slotItemsSheetEmpty")
-                        } else {
-                            List(sheet.items, id: \.id) { item in
-                                Text(item.name)
-                                    .accessibilityIdentifier("slotItemRow_\(item.id)")
-                            }
-                        }
-                    }
-                    .navigationTitle("Items in this slot")
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Close") { onDismissSlotItemsSheet() }
-                                .accessibilityIdentifier("slotItemsSheetCloseButton")
-                        }
-                    }
-                }
-                .accessibilityIdentifier("slotItemsSheet")
-            }
         }
     }
 }
