@@ -7,13 +7,21 @@ struct SlotItemsView: View {
     private let slotId: String
     let onNavigateBack: () -> Void
     let onAddItem: (String, String) -> Void
+    let onItemSelected: (String) -> Void
 
-    init(rackId: String, slotId: String, onNavigateBack: @escaping () -> Void, onAddItem: @escaping (String, String) -> Void) {
+    init(
+        rackId: String,
+        slotId: String,
+        onNavigateBack: @escaping () -> Void,
+        onAddItem: @escaping (String, String) -> Void,
+        onItemSelected: @escaping (String) -> Void
+    ) {
         self.rackId = rackId
         self.slotId = slotId
         _viewModel = StateObject(wrappedValue: ViewModelHolder(IosKoinHelper().getSlotItemsViewModel(rackId: rackId, slotId: slotId)))
         self.onNavigateBack = onNavigateBack
         self.onAddItem = onAddItem
+        self.onItemSelected = onItemSelected
     }
 
     var body: some View {
@@ -42,8 +50,14 @@ struct SlotItemsView: View {
                         }
                     } else {
                         List(state.items, id: \.id) { item in
-                            Text(item.name)
-                                .accessibilityIdentifier("slotItemRow_\(item.id)")
+                            Button {
+                                onItemSelected(item.id)
+                            } label: {
+                                Text(item.name)
+                                    .foregroundColor(.primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .accessibilityIdentifier("slotItemRow_\(item.id)")
                         }
                         .accessibilityIdentifier("slotItemsScreenList")
                         .safeAreaInset(edge: .bottom) {

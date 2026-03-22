@@ -7,6 +7,7 @@ enum NavScreen {
     case addItem(initialRackId: String?, initialSlotId: String?)
     case rackDetail(rackId: String)
     case slotItems(rackId: String, slotId: String)
+    case itemDetail(itemId: String, rackId: String, slotId: String)
 }
 
 enum RackListNavigation {
@@ -102,7 +103,15 @@ struct ContentView: View {
                 onNavigateBack: { currentScreen = .rackDetail(rackId: rackId) },
                 onAddItem: { r, s in
                     currentScreen = .addItem(initialRackId: r, initialSlotId: s)
+                },
+                onItemSelected: { itemId in
+                    currentScreen = .itemDetail(itemId: itemId, rackId: rackId, slotId: slotId)
                 }
+            )
+        case .itemDetail(let itemId, let rackId, let slotId):
+            ItemDetailScreen(
+                itemId: itemId,
+                onNavigateBack: { currentScreen = .slotItems(rackId: rackId, slotId: slotId) }
             )
         }
     }
@@ -159,6 +168,49 @@ private struct AddItemScreen: View {
                 onNavigateBack: onNavigateBack
             )
         }
+    }
+}
+
+private struct ItemDetailScreen: View {
+    private let itemId: String
+    @StateObject private var itemDetailViewModel: ViewModelHolder<ItemDetailViewModel>
+    let onNavigateBack: () -> Void
+
+    init(itemId: String, onNavigateBack: @escaping () -> Void) {
+        self.itemId = itemId
+        _itemDetailViewModel = StateObject(
+            wrappedValue: ViewModelHolder(IosKoinHelper().getItemDetailViewModel(itemId: itemId))
+        )
+        self.onNavigateBack = onNavigateBack
+    }
+
+    var body: some View {
+        Observing(itemDetailViewModel.sharedVm.uiState, itemDetailViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
+            ItemDetailView(
+                uiState: state,
+                uiEvent: event,
+                onUpdateName: itemDetailViewModel.sharedVm.onUpdateName,
+                onUpdateDescription: itemDetailViewModel.sharedVm.onUpdateDescription,
+                onUpdateQuantity: { quantity in
+                    if let quantity {
+                        itemDetailViewModel.sharedVm.onUpdateQuantity(quantity: KotlinInt(int: Int32(quantity)))
+                    } else {
+                        itemDetailViewModel.sharedVm.onUpdateQuantity(quantity: nil)
+                    }
+                },
+                onUpdateOwner: itemDetailViewModel.sharedVm.onUpdateOwner,
+                onUpdateTagInput: itemDetailViewModel.sharedVm.onUpdateTagInput,
+                onAddTag: itemDetailViewModel.sharedVm.onAddTag,
+                onRemoveTag: itemDetailViewModel.sharedVm.onRemoveTag,
+                onUpdatePhotoUri: itemDetailViewModel.sharedVm.onUpdatePhotoUri,
+                onSave: itemDetailViewModel.sharedVm.onSave,
+                onDeleteClick: itemDetailViewModel.sharedVm.onDeleteClick,
+                onDismissDeleteConfirm: itemDetailViewModel.sharedVm.onDismissDeleteConfirm,
+                onConfirmDelete: itemDetailViewModel.sharedVm.onConfirmDelete,
+                onNavigateBack: onNavigateBack
+            )
+        }
+        .id(itemId)
     }
 }
 
