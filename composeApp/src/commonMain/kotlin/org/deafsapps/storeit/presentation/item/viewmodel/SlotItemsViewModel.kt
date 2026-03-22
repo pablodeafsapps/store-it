@@ -70,6 +70,6 @@ class SlotItemsViewModel(
 
 private fun DomainError.toErrorCause(): String = when (this) {
     is DomainError.ValidationError -> reason
-    is DomainError.NotFound -> message
-    is DomainError.Unknown -> message
+    is DomainError.NotFound -> "Slot items not found"
+    is DomainError.Unknown -> "An unknown error occurred"
 }

@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.androidapp.presentation.item.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -35,6 +36,7 @@ internal fun SlotItemsScreen(
     slotId: String,
     onNavigateBack: () -> Unit,
     onAddItem: (rackId: String, slotId: String) -> Unit,
+    onItemClick: (itemId: String) -> Unit,
 ) {
     val viewModelStoreOwner = remember {
         object : ViewModelStoreOwner {
@@ -131,7 +133,8 @@ internal fun SlotItemsScreen(
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier
                                     .padding(Dimens.screenPadding)
-                                    .testTag("slotItemRow_${item.id}"),
+                                    .testTag("slotItemRow_${item.id}")
+                                    .clickable { onItemClick(item.id) },
                             )
                         }
                         item {

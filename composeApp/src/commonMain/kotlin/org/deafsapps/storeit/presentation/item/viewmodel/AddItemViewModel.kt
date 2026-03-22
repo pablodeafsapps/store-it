@@ -191,6 +191,6 @@ class AddItemViewModel(
 
 private fun DomainError.toErrorCause(): String = when (this) {
     is DomainError.ValidationError -> reason
-    is DomainError.NotFound -> "Not found"
+    is DomainError.NotFound -> "Item not found"
     is DomainError.Unknown -> "An unknown error occurred"
 }

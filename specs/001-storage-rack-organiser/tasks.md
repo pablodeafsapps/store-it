@@ -93,7 +93,7 @@
 - [X] T020 [P] [US3] Unit tests for SearchItemsUseCase and GetItemByIdUseCase in `composeApp/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/`
 - [X] T021 [US3] Slot items list (Android): from rack detail, tap slot → show list of items in that slot in `composeApp/.../ui/item/SlotItemsScreen.kt`; empty state and option to add item (FR-006)
 - [X] T032 [US3] Slot items list (iOS): from rack detail tap slot → show list of items in that slot in iosApp; empty state and option to add item (FR-006)
-- [ ] T022 [US3] Item detail and edit (Android): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in `composeApp/.../ui/item/ItemDetailScreen.kt` (FR-007)
+- [X] T022 [US3] Item detail and edit (Android): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in `composeApp/.../ui/item/ItemDetailScreen.kt` (FR-007)
 - [ ] T033 [US3] Item detail and edit (iOS): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in iosApp (FR-007)
 - [ ] T023 [US3] Global search (Android): search box always available; search items by name and description; results show item and rack/slot; tap result navigates to item in `composeApp/.../ui/search/SearchScreen.kt` or equivalent (FR-008); no-results state (edge case)
 - [ ] T034 [US3] Global search (iOS): search box always available; search items by name and description; results show item and rack/slot; tap result navigates to item in iosApp; no-results state (FR-008)

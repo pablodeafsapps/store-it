@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
+import org.deafsapps.storeit.androidapp.presentation.item.ui.ItemDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.SlotItemsScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
@@ -27,6 +28,7 @@ sealed interface NavScreen {
     data object AddRack : NavScreen
     data class RackDetail(val rackId: String) : NavScreen
     data class SlotItems(val rackId: String, val slotId: String) : NavScreen
+    data class ItemDetail(val itemId: String, val rackId: String, val slotId: String) : NavScreen
     data class AddItem(val rackId: String? = null, val slotId: String? = null) : NavScreen
 }
 
@@ -91,6 +93,24 @@ class MainActivity : ComponentActivity() {
                                 onNavigateBack = { currentScreen = NavScreen.RackDetail(screen.rackId) },
                                 onAddItem = { rackId, slotId ->
                                     currentScreen = NavScreen.AddItem(rackId = rackId, slotId = slotId)
+                                },
+                                onItemClick = { itemId ->
+                                    currentScreen = NavScreen.ItemDetail(
+                                        itemId = itemId,
+                                        rackId = screen.rackId,
+                                        slotId = screen.slotId,
+                                    )
+                                },
+                            )
+                        }
+                        is NavScreen.ItemDetail -> {
+                            ItemDetailScreen(
+                                itemId = screen.itemId,
+                                onNavigateBack = {
+                                    currentScreen = NavScreen.SlotItems(
+                                        rackId = screen.rackId,
+                                        slotId = screen.slotId,
+                                    )
                                 },
                             )
                         }
