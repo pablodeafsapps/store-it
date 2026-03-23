@@ -24,6 +24,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -60,6 +61,7 @@ internal fun RackListScreen(
     onNavigateToAddRack: () -> Unit,
     onNavigateToRackDetail: (String) -> Unit,
     onNavigateToAddItem: () -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
@@ -113,49 +115,77 @@ internal fun RackListScreen(
             }
         },
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
         ) {
-            when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(Dimens.progressIndicatorSizeLarge),
-                    )
-                }
-                uiState.racks.isEmpty() -> {
-                    EmptyState(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(Dimens.screenPaddingLarge),
-                        onAddRackSelect = onAddRackSelect,
-                    )
-                }
-                else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(Dimens.listContentPadding),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.listItemSpacing),
-                    ) {
-                        items(uiState.racks, key = { it.id }) { rack ->
-                            RackListItem(
-                                rack = rack,
-                                onClick = { onRackSelected(rack) },
-                            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Dimens.listContentPadding)
+                    .padding(bottom = Dimens.listItemSpacing),
+            ) {
+                OutlinedTextField(
+                    value = "",
+                    readOnly = true,
+                    enabled = false,
+                    onValueChange = {},
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search items by name or description") },
+                    singleLine = true,
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable(onClick = onNavigateToSearch)
+                        .testTag("rackListSearchField"),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            ) {
+                when {
+                    uiState.isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(Dimens.progressIndicatorSizeLarge),
+                        )
+                    }
+                    uiState.racks.isEmpty() -> {
+                        EmptyState(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(Dimens.screenPaddingLarge),
+                            onAddRackSelect = onAddRackSelect,
+                        )
+                    }
+                    else -> {
+                        LazyColumn(
+                            contentPadding = PaddingValues(Dimens.listContentPadding),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.listItemSpacing),
+                        ) {
+                            items(uiState.racks, key = { it.id }) { rack ->
+                                RackListItem(
+                                    rack = rack,
+                                    onClick = { onRackSelected(rack) },
+                                )
+                            }
                         }
                     }
                 }
-            }
-            uiState.error?.let { error ->
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(Dimens.screenPadding),
-                )
+                uiState.error?.let { error ->
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(Dimens.screenPadding),
+                    )
+                }
             }
         }
     }
@@ -264,7 +294,8 @@ private fun RackListScreenPreview() {
             onRackSelected = {},
             onNavigateToAddRack = {},
             onNavigateToRackDetail = {},
-            onNavigateToAddItem = {}
+            onNavigateToAddItem = {},
+            onNavigateToSearch = {},
         )
     }
 }
@@ -284,7 +315,8 @@ private fun RackListScreenEmptyPreview() {
             onRackSelected = {},
             onNavigateToAddRack = {},
             onNavigateToRackDetail = {},
-            onNavigateToAddItem = {}
+            onNavigateToAddItem = {},
+            onNavigateToSearch = {},
         )
     }
 }
@@ -304,7 +336,8 @@ private fun RackListScreenLoadingPreview() {
             onRackSelected = {},
             onNavigateToAddRack = {},
             onNavigateToRackDetail = {},
-            onNavigateToAddItem = {}
+            onNavigateToAddItem = {},
+            onNavigateToSearch = {},
         )
     }
 }

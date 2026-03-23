@@ -16,19 +16,27 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.ItemDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.SlotItemsScreen
+import org.deafsapps.storeit.androidapp.presentation.search.ui.SearchScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
+import org.deafsapps.storeit.presentation.search.viewmodel.SearchViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 sealed interface NavScreen {
     data object RackList : NavScreen
+    data object Search : NavScreen
     data object AddRack : NavScreen
     data class RackDetail(val rackId: String) : NavScreen
     data class SlotItems(val rackId: String, val slotId: String) : NavScreen
-    data class ItemDetail(val itemId: String, val rackId: String, val slotId: String) : NavScreen
+    data class ItemDetail(
+        val itemId: String,
+        val rackId: String,
+        val slotId: String,
+        val fromSearch: Boolean = false,
+    ) : NavScreen
     data class AddItem(val rackId: String? = null, val slotId: String? = null) : NavScreen
 }
 
@@ -36,6 +44,7 @@ class MainActivity : ComponentActivity() {
 
     private val rackListViewModel: RackListViewModel by viewModel()
     private val addRackViewModel: AddRackViewModel by viewModel()
+    private val searchViewModel: SearchViewModel by viewModel()
 
     @Suppress("LongMethod")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +65,23 @@ class MainActivity : ComponentActivity() {
                                 onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
                                 onNavigateToRackDetail = { id -> currentScreen = NavScreen.RackDetail(id) },
                                 onNavigateToAddItem = { currentScreen = NavScreen.AddItem() },
+                                onNavigateToSearch = { currentScreen = NavScreen.Search },
+                            )
+                        }
+                        is NavScreen.Search -> {
+                            val uiState by searchViewModel.uiState.collectAsStateWithLifecycle()
+                            SearchScreen(
+                                uiState = uiState,
+                                onQueryChange = searchViewModel::onQueryChange,
+                                onItemSelected = { placement ->
+                                    currentScreen = NavScreen.ItemDetail(
+                                        itemId = placement.item.id,
+                                        rackId = placement.item.rackId,
+                                        slotId = placement.item.slotId,
+                                        fromSearch = true,
+                                    )
+                                },
+                                onNavigateBack = { currentScreen = NavScreen.RackList },
                             )
                         }
                         is NavScreen.AddRack -> {
@@ -107,10 +133,14 @@ class MainActivity : ComponentActivity() {
                             ItemDetailScreen(
                                 itemId = screen.itemId,
                                 onNavigateBack = {
-                                    currentScreen = NavScreen.SlotItems(
-                                        rackId = screen.rackId,
-                                        slotId = screen.slotId,
-                                    )
+                                    currentScreen = if (screen.fromSearch) {
+                                        NavScreen.Search
+                                    } else {
+                                        NavScreen.SlotItems(
+                                            rackId = screen.rackId,
+                                            slotId = screen.slotId,
+                                        )
+                                    }
                                 },
                             )
                         }

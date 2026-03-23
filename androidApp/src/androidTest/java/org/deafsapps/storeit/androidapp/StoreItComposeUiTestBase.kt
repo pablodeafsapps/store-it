@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.ItemDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.SlotItemsScreen
+import org.deafsapps.storeit.androidapp.presentation.search.ui.SearchScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
@@ -112,6 +113,23 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                                 onNavigateToAddItem = {
                                     currentScreen = NavScreen.AddItem()
                                 },
+                                onNavigateToSearch = {
+                                    currentScreen = NavScreen.Search
+                                },
+                            )
+                        }
+
+                        NavScreen.Search -> {
+                            SearchScreen(
+                                onNavigateBack = { currentScreen = NavScreen.RackList },
+                                onItemSelected = { placement ->
+                                    currentScreen = NavScreen.ItemDetail(
+                                        itemId = placement.item.id,
+                                        rackId = placement.item.rackId,
+                                        slotId = placement.item.slotId,
+                                        fromSearch = true,
+                                    )
+                                },
                             )
                         }
 
@@ -167,10 +185,14 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                             ItemDetailScreen(
                                 itemId = screen.itemId,
                                 onNavigateBack = {
-                                    currentScreen = NavScreen.SlotItems(
-                                        rackId = screen.rackId,
-                                        slotId = screen.slotId,
-                                    )
+                                    currentScreen = if (screen.fromSearch) {
+                                        NavScreen.Search
+                                    } else {
+                                        NavScreen.SlotItems(
+                                            rackId = screen.rackId,
+                                            slotId = screen.slotId,
+                                        )
+                                    }
                                 },
                             )
                         }
