@@ -6,6 +6,7 @@ import org.deafsapps.storeit.presentation.item.viewmodel.SlotItemsViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
+import org.deafsapps.storeit.presentation.search.viewmodel.SearchViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.parameter.parametersOf
@@ -27,4 +28,6 @@ object IosKoinHelper : KoinComponent {
 
     fun getItemDetailViewModel(itemId: String): ItemDetailViewModel =
         get(parameters = { parametersOf(itemId) })
+
+    fun getSearchViewModel(): SearchViewModel = get()
 }

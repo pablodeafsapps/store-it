@@ -96,7 +96,7 @@
 - [X] T022 [US3] Item detail and edit (Android): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in `composeApp/.../ui/item/ItemDetailScreen.kt` (FR-007)
 - [X] T033 [US3] Item detail and edit (iOS): tap item → view all fields; edit name, description, quantity, owner, tags (and photo if required) in iosApp (FR-007)
 - [X] T023 [US3] Global search (Android): search box always available; search items by name and description; results show item and rack/slot; tap result navigates to item in `composeApp/.../ui/search/SearchScreen.kt` or equivalent (FR-008); no-results state (edge case)
-- [ ] T034 [US3] Global search (iOS): search box always available; search items by name and description; results show item and rack/slot; tap result navigates to item in iosApp; no-results state (FR-008)
+- [X] T034 [US3] Global search (iOS): search box always available; search items by name and description; results show item and rack/slot; tap result navigates to item in iosApp; no-results state (FR-008)
 
 **Checkpoint**: All user stories are independently functional
 

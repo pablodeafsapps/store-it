@@ -6,10 +6,13 @@ struct RackListView: View {
     let uiEvent: RackListUiEvent?
     let onAddRackSelected: () -> Void
     let onRackSelected: (Rack) -> Void
+    let onNavigateToSearch: () -> Void
 
     var body: some View {
         NavigationView {
-            ZStack {
+            VStack(spacing: 0) {
+                searchEntryBar
+                ZStack {
                 if uiState.isLoading {
                     ProgressView()
                         .scaleEffect(1.2)
@@ -26,6 +29,7 @@ struct RackListView: View {
                         Spacer()
                     }
                 }
+                }
             }
             .navigationTitle("Racks")
             .navigationBarTitleDisplayMode(.inline)
@@ -39,6 +43,26 @@ struct RackListView: View {
                 }
             }
         }
+    }
+
+    private var searchEntryBar: some View {
+        Button(action: onNavigateToSearch) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                Text("Search items by name or description")
+                    .foregroundColor(.secondary)
+                Spacer(minLength: 0)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("rackListSearchField")
     }
 
     private var emptyState: some View {
