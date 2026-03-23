@@ -153,7 +153,7 @@ private struct SearchFlowScreen: View {
     }
 
     var body: some View {
-        Observing(viewModel.sharedVm.uiState, viewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, _ in
+        Observing(viewModel.sharedVm.uiState) { state in
             GlobalSearchView(
                 uiState: state,
                 onQueryChange: { viewModel.sharedVm.onQueryChange(query: $0) },
