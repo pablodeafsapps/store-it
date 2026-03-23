@@ -8,20 +8,8 @@ struct GlobalSearchView: View {
     let onNavigateBack: () -> Void
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
-                TextField(
-                    "Search by name or description",
-                    text: Binding(
-                        get: { uiState.query },
-                        set: { onQueryChange($0) }
-                    )
-                )
-                .textFieldStyle(.roundedBorder)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .accessibilityIdentifier("searchScreenQueryField")
-
                 Group {
                     if uiState.isLoading {
                         Spacer()
@@ -73,11 +61,25 @@ struct GlobalSearchView: View {
             .navigationTitle("Search items")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Back") {
                         onNavigateBack()
                     }
                     .accessibilityIdentifier("searchScreenBackButton")
+                }
+            }
+            .searchable(
+                text: Binding(
+                    get: { uiState.query },
+                    set: { onQueryChange($0) }
+                ),
+                placement: .navigationBarDrawer(displayMode: .automatic),
+                prompt: "Search by name or description"
+            )
+            .onSubmit(of: .search) {
+                let trimmed = uiState.query.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed != uiState.query {
+                    onQueryChange(trimmed)
                 }
             }
         }
