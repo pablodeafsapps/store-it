@@ -179,10 +179,11 @@ class AddItemViewModel(
                     _uiState.update { state -> state.copy(isLoading = false, error = message) }
                 },
                 ifOk = {
-                    _uiState.update { state ->
-                        state.copy(isLoading = false, isSuccess = true)
-                    }
                     _uiEvent.emit(AddItemUiEvent.NavigateBack)
+                    _uiState.value = AddItemUiState.getDefault(
+                        initialRackId = initialRackId,
+                        initialSlotId = initialSlotId,
+                    )
                 },
             )
         }

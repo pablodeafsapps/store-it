@@ -33,6 +33,7 @@ import org.deafsapps.storeit.domain.repository.RackRepository
 import org.deafsapps.storeit.domain.repository.SlotRepository
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
+import org.deafsapps.storeit.presentation.search.viewmodel.SearchViewModel
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.koin.androidx.compose.koinViewModel
@@ -97,6 +98,7 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                     val addRackViewModel: AddRackViewModel = koinViewModel(
                         viewModelStoreOwner = viewModelStoreOwner,
                     )
+                    val searchViewModel: SearchViewModel = koinViewModel()
 
                     when (val screen = currentScreen) {
                         NavScreen.RackList -> {
@@ -120,7 +122,10 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                         }
 
                         NavScreen.Search -> {
+                            val uiState by searchViewModel.uiState.collectAsStateWithLifecycle()
                             SearchScreen(
+                                uiState = uiState,
+                                onQueryChange = searchViewModel::onQueryChange,
                                 onNavigateBack = { currentScreen = NavScreen.RackList },
                                 onItemSelected = { placement ->
                                     currentScreen = NavScreen.ItemDetail(
@@ -143,10 +148,7 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                                 onUpdateDescription = addRackViewModel::onUpdateDescription,
                                 onUpdateLocation = addRackViewModel::onUpdateLocation,
                                 onSaveRack = addRackViewModel::onSaveRack,
-                                onNavigateBack = {
-                                    addRackViewModel.onNavigateBack()
-                                    currentScreen = NavScreen.RackList
-                                },
+                                onNavigateBack = { currentScreen = NavScreen.RackList },
                             )
                         }
 

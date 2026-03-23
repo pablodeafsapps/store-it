@@ -94,18 +94,10 @@ class AddRackViewModel(
                     }
                 },
                 ifOk = { _ ->
-                    _uiState.update { state ->
-                        state.copy(isLoading = false, isSuccess = true)
-                    }
                     _uiEvent.emit(AddRackUiEvent.NavigateBack)
+                    _uiState.value = AddRackUiState.getDefault()
                 },
             )
-        }
-    }
-
-    fun onNavigateBack() {
-        _uiState.update {
-            AddRackUiState.getDefault()
         }
     }
 }

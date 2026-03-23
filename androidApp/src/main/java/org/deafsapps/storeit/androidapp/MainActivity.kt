@@ -94,10 +94,7 @@ class MainActivity : ComponentActivity() {
                                 onUpdateDescription = addRackViewModel::onUpdateDescription,
                                 onUpdateLocation = addRackViewModel::onUpdateLocation,
                                 onSaveRack = addRackViewModel::onSaveRack,
-                                onNavigateBack = {
-                                    addRackViewModel.onNavigateBack()
-                                    currentScreen = NavScreen.RackList
-                                                 },
+                                onNavigateBack = { currentScreen = NavScreen.RackList },
                             )
                         }
                         is NavScreen.RackDetail -> {

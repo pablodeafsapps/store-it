@@ -131,7 +131,7 @@ internal class AddRackViewModelTest {
     }
 
     @Test
-    fun `GIVEN valid name and save succeeds WHEN saveRack THEN isSuccess true and uiEvent NavigateBack`() =
+    fun `GIVEN valid name and save succeeds WHEN saveRack THEN form reset and uiEvent NavigateBack`() =
         runTest(testDispatcher) {
             sut = AddRackViewModel(coroutineScope = testScope, saveRackUseCase = fakeSaveRackUseCase)
             val states = mutableListOf<AddRackUiState>()
@@ -150,7 +150,8 @@ internal class AddRackViewModelTest {
             advanceUntilIdle()
 
             val state = states.last()
-            assertTrue(state.isSuccess)
+            assertEquals("", state.name)
+            assertFalse(state.isSuccess)
             assertNull(state.error)
             val event = events.filterNotNull().single()
             assertTrue(event is AddRackUiEvent.NavigateBack)
