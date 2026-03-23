@@ -64,11 +64,32 @@ internal class InMemoryItemRepository : ItemRepository {
                 DomainError.ValidationError(field = "slotId", reason = "Slot ID cannot be blank").err()
             else -> {
                 val itemToSave = if (items.containsKey(item.id)) {
-                    item.copy(updatedAt = Clock.System.now().toEpochMilliseconds())
+                    Item(
+                        id = item.id,
+                        rackId = item.rackId,
+                        slotId = item.slotId,
+                        name = item.name,
+                        description = item.description,
+                        photoUri = item.photoUri,
+                        quantity = item.quantity,
+                        owner = item.owner,
+                        tags = item.tags,
+                        createdAt = item.createdAt,
+                        updatedAt = Clock.System.now().toEpochMilliseconds(),
+                    )
                 } else {
-                    item.copy(
+                    Item(
+                        id = item.id,
+                        rackId = item.rackId,
+                        slotId = item.slotId,
+                        name = item.name,
+                        description = item.description,
+                        photoUri = item.photoUri,
+                        quantity = item.quantity,
+                        owner = item.owner,
+                        tags = item.tags,
                         createdAt = Clock.System.now().toEpochMilliseconds(),
-                        updatedAt = null
+                        updatedAt = null,
                     )
                 }
                 items[itemToSave.id] = itemToSave

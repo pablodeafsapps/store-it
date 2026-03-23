@@ -170,7 +170,15 @@ internal class RackDetailViewModelTest {
             sut.onEditSelected()
             advanceUntilIdle()
             sut.onUpdateEditName("New Name")
-            val updatedRack = dummyRack.copy(name = "New Name")
+            val updatedRack = Rack(
+                id = dummyRack.id,
+                name = "New Name",
+                description = dummyRack.description,
+                location = dummyRack.location,
+                photoUri = dummyRack.photoUri,
+                createdAt = dummyRack.createdAt,
+                updatedAt = dummyRack.updatedAt,
+            )
             fakeSaveRack.invokeResult = updatedRack.ok()
 
             sut.onSaveRackEdits()

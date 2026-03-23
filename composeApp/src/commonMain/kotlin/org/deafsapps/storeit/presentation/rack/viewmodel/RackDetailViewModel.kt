@@ -109,15 +109,19 @@ class RackDetailViewModel(
         val state = _uiState.value
         val rack = state.rack ?: return
         viewModelScope.launch {
-            val updated = rack.copy(
+            val updatedRack = Rack(
+                id = rack.id,
                 name = state.editName.trim(),
                 description = state.editDescription.trim(),
                 location = state.editLocation.trim(),
+                photoUri = rack.photoUri,
+                createdAt = rack.createdAt,
+                updatedAt = rack.updatedAt,
             )
-            saveRackUseCase(input = updated).fold(
+            saveRackUseCase(input = updatedRack).fold(
                 ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(message = error.toErrorCause())) },
                 ifOk = {
-                    _uiState.update { state -> state.copy(rack = updated, showEditDialog = false) }
+                    _uiState.update { state -> state.copy(rack = updatedRack, showEditDialog = false) }
                 },
             )
         }

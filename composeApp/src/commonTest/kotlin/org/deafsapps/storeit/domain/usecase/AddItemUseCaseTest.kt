@@ -41,7 +41,19 @@ class AddItemUseCaseTest {
     @Test
     fun `GIVEN fake returns updated item WHEN invoke with same id THEN returns updated item`() = runTest {
         val item = Item(id = "1", rackId = "r1", slotId = "s1", name = "Original")
-        val updated = item.copy(name = "Updated", description = "New desc")
+        val updated = Item(
+            id = item.id,
+            rackId = item.rackId,
+            slotId = item.slotId,
+            name = "Updated",
+            description = "New desc",
+            photoUri = item.photoUri,
+            quantity = item.quantity,
+            owner = item.owner,
+            tags = item.tags,
+            createdAt = item.createdAt,
+            updatedAt = item.updatedAt,
+        )
         fakeItemRepository.saveItemResult = updated.ok()
 
         val result = sut(input = updated)

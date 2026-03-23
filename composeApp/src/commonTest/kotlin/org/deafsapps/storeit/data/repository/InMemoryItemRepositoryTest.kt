@@ -227,7 +227,19 @@ class InMemoryItemRepositoryTest {
     fun `GIVEN existing item WHEN saveItem with same id THEN updates and returns item`() = runTest {
         val item = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Original Name")
         sut.saveItem(item =item)
-        val updatedItem = item.copy(name = "Updated Name", description = "New Description")
+        val updatedItem = Item(
+            id = item.id,
+            rackId = item.rackId,
+            slotId = item.slotId,
+            name = "Updated Name",
+            description = "New Description",
+            photoUri = item.photoUri,
+            quantity = item.quantity,
+            owner = item.owner,
+            tags = item.tags,
+            createdAt = item.createdAt,
+            updatedAt = item.updatedAt,
+        )
 
         val result = sut.saveItem(item =updatedItem)
 

@@ -34,11 +34,24 @@ internal class InMemoryRackRepository : RackRepository {
             rack.id.isBlank() -> DomainError.ValidationError(field = "id", reason = "ID cannot be blank").err()
             else -> {
                 val rackToSave = if (racks.value.containsKey(rack.id)) {
-                    rack.copy(updatedAt = Clock.System.now().toEpochMilliseconds())
+                    Rack(
+                        id = rack.id,
+                        name = rack.name,
+                        description = rack.description,
+                        location = rack.location,
+                        photoUri = rack.photoUri,
+                        createdAt = rack.createdAt,
+                        updatedAt = Clock.System.now().toEpochMilliseconds(),
+                    )
                 } else {
-                    rack.copy(
+                    Rack(
+                        id = rack.id,
+                        name = rack.name,
+                        description = rack.description,
+                        location = rack.location,
+                        photoUri = rack.photoUri,
                         createdAt = Clock.System.now().toEpochMilliseconds(),
-                        updatedAt = null
+                        updatedAt = null,
                     )
                 }
                 rackToSave.ok().also { racks.updateAndEmit(rackToUpdate = rackToSave) }

@@ -103,7 +103,15 @@ class InMemoryRackRepositoryTest {
     fun `GIVEN existing rack WHEN saveRack with same id THEN updates and returns rack`() = runTest {
         val rack = Rack(id = "1", name = "Original Name")
         sut.saveRack(rack = rack)
-        val updatedRack = rack.copy(name = "Updated Name", description = "New Description")
+        val updatedRack = Rack(
+            id = rack.id,
+            name = "Updated Name",
+            description = "New Description",
+            location = rack.location,
+            photoUri = rack.photoUri,
+            createdAt = rack.createdAt,
+            updatedAt = rack.updatedAt,
+        )
 
         val result = sut.saveRack(rack =updatedRack)
 

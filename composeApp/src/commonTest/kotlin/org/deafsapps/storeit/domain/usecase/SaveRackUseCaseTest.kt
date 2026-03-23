@@ -40,8 +40,24 @@ class SaveRackUseCaseTest {
     @Test
     fun `GIVEN fake returns updated rack WHEN invoke with same id THEN returns updated rack`() = runTest {
         val rack = Rack(id = "1", name = "Original")
-        val updated = rack.copy(name = "Updated", description = "New desc")
-        fakeRackRepository.saveRackResult = updated.copy(updatedAt = 1L).ok()
+        val updated = Rack(
+            id = rack.id,
+            name = "Updated",
+            description = "New desc",
+            location = rack.location,
+            photoUri = rack.photoUri,
+            createdAt = rack.createdAt,
+            updatedAt = rack.updatedAt,
+        )
+        fakeRackRepository.saveRackResult = Rack(
+            id = updated.id,
+            name = updated.name,
+            description = updated.description,
+            location = updated.location,
+            photoUri = updated.photoUri,
+            createdAt = updated.createdAt,
+            updatedAt = 1L,
+        ).ok()
 
         val result = sut(input = updated)
 
