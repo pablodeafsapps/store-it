@@ -119,6 +119,7 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 - **Prefer `internal` by default**: Use `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Do not add `internal` to members inside an interface (e.g. sealed subclasses); the containing type’s visibility applies.
 - **Expect/actual**: Use `internal` on both `expect` and `actual` when the API is only used inside the module; use public only for types that other modules or the framework must see.
+- **Domain data models (`:composeApp` only)**: Concrete domain model types (e.g. `internal data class …Model` implementing `Item`, `Rack`, …) live in **`composeApp`** and are **`internal`** so they are **not** visible to **`androidApp`** or **`iosApp`**. Other modules depend on **public interfaces** in `org.deafsapps.storeit.domain.model` (e.g. `Item`, `Rack`) and **public factory functions** with the same names as the former constructors (e.g. `Item(...)`, `Rack(...)`) to construct values. Do not reference `*Model` types from app modules or tests outside `composeApp`.
 
 ### 3.4 Expect / Actual
 
@@ -134,8 +135,9 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 3.6 Shared Models
 
-- Keep shared models in commonMain: data classes or interfaces used in use cases and repositories.
-- Prefer immutable data: `data class` in Kotlin; in Swift, structs with `let` properties.
+- **Boundary**: Domain models used across **`androidApp`**, **`iosApp`**, and **`composeApp`** are expressed as **public interfaces** in `commonMain` (e.g. `Item`, `Rack`, `ShelfSlot`). **Implementations** are **`internal data class …Model`** in `:composeApp` only; they must not be imported or referenced from **`androidApp`** or **`iosApp`**.
+- **Construction**: Use **public factory functions** in the same package (e.g. `Item(...)`, `Rack(...)`) so call sites keep a constructor-like API without exposing concrete types. Inside `composeApp`, prefer factories or `asModel()` helpers when you need `data class` features (e.g. replacing former `.copy()` usage).
+- Prefer immutable values at the interface boundary; in Swift, structs with `let` properties where you mirror types locally.
 - Use a single source of truth for DTOs if you share networking (e.g. kotlinx.serialization); document field names and optionality so iOS can mirror or generate models consistently.
 
 ---
@@ -144,7 +146,7 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 4.1 Layer Boundaries
 
-- **Domain**: Entities and use case interfaces (and implementations). No framework or platform types; only pure Kotlin (and shared types).
+- **Domain**: Entities (as public interfaces + internal implementations in `:composeApp`), use case interfaces (and implementations). No framework or platform types; only pure Kotlin (and shared types). Types consumed by **`androidApp`** / **`iosApp`** are the public domain interfaces, not internal `*Model` classes (see §3.6).
 - **Data**: Repository implementations, DTOs, mappers, remote/local data sources. Depends only on domain.
 - **Presentation / UI**: ViewModels (or equivalent), UI state, platform UI. Depends on domain (use cases); avoid depending on data layer types in the UI.
 

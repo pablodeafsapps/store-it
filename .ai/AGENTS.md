@@ -78,7 +78,7 @@ The multiplatform module (`:composeApp`) is configured roughly as:
 - **commonMain**:
   - Pure Kotlin, **no platform types**.
   - Contains:
-    - **Domain layer**: entities, value objects, use case interfaces and implementations, domain services, domain-specific errors.
+    - **Domain layer**: entities, value objects, use case interfaces and implementations, domain services, domain-specific errors. **Concrete domain data classes** (e.g. `internal data class …Model` for `Item`, `Rack`, …) are **`internal` to `:composeApp`**; **`androidApp`** and **`iosApp`** must only use **public domain interfaces** and **public factory functions** (see §3.1 and §7.4).
     - **Data layer contracts**: repository interfaces, common DTOs, mapping logic (when platform-agnostic), simple cache abstractions.
     - **Shared presentation** (optional): shared state holders (e.g. `StateFlow`-based ViewModels) used by both platforms.
     - `expect` declarations for minimal platform services (time, UUID, logging, secure storage, etc.).
@@ -99,9 +99,10 @@ The multiplatform module (`:composeApp`) is configured roughly as:
 
 - **Domain (core)** – in `commonMain`:
   - Business rules and invariants.
-  - Entities, value objects, domain services.
+  - **Entities at the module boundary**: public **interfaces** (e.g. `Item`, `Rack`) for types that flow to **`androidApp`** / **`iosApp`** or the exported framework; **`internal`** `data class` implementations (e.g. `ItemModel`, `RackModel`) stay inside **`composeApp`** only. App modules and Swift must not depend on `*Model` types.
+  - Value objects, domain services.
   - Use cases / interactors (`UseCase` classes or functions).
-  - Repository interfaces, expressed in domain terms.
+  - Repository interfaces, expressed in domain terms (they use the public domain interfaces, not internal concrete classes).
   - No reference to networking, databases, UI, or platform APIs.
 
 - **Data** – primarily in `commonMain`, extended in `androidMain` & `iosMain`:
@@ -125,7 +126,7 @@ The multiplatform module (`:composeApp`) is configured roughly as:
 - Domain depends on **nothing** but Kotlin stdlib and allowed shared libraries.
 - Data depends on Domain and infrastructure abstractions/platform APIs (via `expect` or injected interfaces).
 - Presentation depends on Domain (and optionally Data when the team explicitly decides to collapse them).
-- UI depends only on Presentation and shared models.
+- UI depends only on Presentation and **shared domain types exposed as public interfaces** from `:composeApp` (not internal domain implementations).
 
 These rules are enforced by:
 
@@ -259,7 +260,9 @@ This section describes how an engineer (or automation agent) should add or modif
 ### 6.1 Domain First
 
 - **Define domain model(s)** in `commonMain`:
-  - Entities, value objects, domain events if needed.
+  - Add a **public interface** for each entity that may cross the **`composeApp`** boundary (UI state, repository contracts, Swift interop).
+  - Implement it with an **`internal data class`** (suffix **`Model`** in this project) and expose **public factory functions** (e.g. `Item(...)`, `Rack(...)`) so **`androidApp`** / **`iosApp`** never reference concrete implementations. Do not add new public `data class` domain entities unless the team explicitly widens the API.
+  - Value objects, domain events if needed.
 - **Define or extend repository interfaces**:
   - Express operations purely in domain terms.
   - Avoid leaking transport/storage details (HTTP, DB schemas).
@@ -370,6 +373,7 @@ This section describes how an engineer (or automation agent) should add or modif
 ### 7.4 Encapsulation & implementation style
 
 - **Visibility**: Prefer `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Use `internal` on both `expect` and `actual` when the API is only used inside the module.
+- **Domain data models**: Shared logic lives in **`composeApp`**; **domain model implementations** (`internal data class …Model`) are **not** part of the public API for **`androidApp`** or **`iosApp`**. Other modules may import only **public interfaces** and **factories** from `org.deafsapps.storeit.domain.model`. Preserving this boundary keeps platform code from coupling to concrete Kotlin types and leaves room for future persistence/network DTOs named without colliding with domain internals.
 - **Expression-bodied functions**: Prefer single-expression function bodies using `= expression` (no `return` keyword) when the logic fits clearly in one expression; use `when`/`if` expressions where appropriate to keep functions as expressions.
 
 ### 7.5 Concurrency & Thread Safety
