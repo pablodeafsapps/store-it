@@ -5,25 +5,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.rememberNavBackStack
 import de.mannodermaus.junit5.compose.ComposeContext
 import de.mannodermaus.junit5.compose.createAndroidComposeExtension
 import kotlinx.coroutines.test.runTest
-import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
-import org.deafsapps.storeit.androidapp.presentation.item.ui.ItemDetailScreen
-import org.deafsapps.storeit.androidapp.presentation.item.ui.SlotItemsScreen
-import org.deafsapps.storeit.androidapp.presentation.search.ui.SearchScreen
-import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
-import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
-import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.model.ShelfSlot
@@ -86,128 +76,27 @@ internal abstract class StoreItComposeUiTestBase : KoinComponent {
                 }
             }
 
+            val backStack = rememberNavBackStack(initialScreen)
+
+            val rackListViewModel: RackListViewModel = koinViewModel(
+                viewModelStoreOwner = viewModelStoreOwner,
+            )
+            val addRackViewModel: AddRackViewModel = koinViewModel(
+                viewModelStoreOwner = viewModelStoreOwner,
+            )
+            val searchViewModel: SearchViewModel = koinViewModel()
+
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    var currentScreen: NavScreen by remember { mutableStateOf(initialScreen) }
-
-                    val rackListViewModel: RackListViewModel = koinViewModel(
-                        viewModelStoreOwner = viewModelStoreOwner,
+                    StoreItNavDisplay(
+                        backStack = backStack,
+                        rackListViewModel = rackListViewModel,
+                        addRackViewModel = addRackViewModel,
+                        searchViewModel = searchViewModel,
+                        onRootBack = { },
                     )
-                    val addRackViewModel: AddRackViewModel = koinViewModel(
-                        viewModelStoreOwner = viewModelStoreOwner,
-                    )
-                    val searchViewModel: SearchViewModel = koinViewModel()
-
-                    when (val screen = currentScreen) {
-                        NavScreen.RackList -> {
-                            val uiState by rackListViewModel.uiState.collectAsStateWithLifecycle()
-                            RackListScreen(
-                                uiState = uiState,
-                                uiEvent = { rackListViewModel.uiEvent },
-                                onAddRackSelect = rackListViewModel::onAddRackSelected,
-                                onRackSelected = rackListViewModel::onRackSelected,
-                                onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
-                                onNavigateToRackDetail = { id ->
-                                    currentScreen = NavScreen.RackDetail(rackId = id)
-                                },
-                                onNavigateToAddItem = {
-                                    currentScreen = NavScreen.AddItem()
-                                },
-                                onNavigateToSearch = {
-                                    currentScreen = NavScreen.Search
-                                },
-                            )
-                        }
-
-                        NavScreen.Search -> {
-                            val uiState by searchViewModel.uiState.collectAsStateWithLifecycle()
-                            SearchScreen(
-                                uiState = uiState,
-                                onQueryChange = searchViewModel::onQueryChange,
-                                onNavigateBack = { currentScreen = NavScreen.RackList },
-                                onItemSelected = { placement ->
-                                    currentScreen = NavScreen.ItemDetail(
-                                        itemId = placement.item.id,
-                                        rackId = placement.item.rackId,
-                                        slotId = placement.item.slotId,
-                                        fromSearch = true,
-                                    )
-                                },
-                            )
-                        }
-
-                        NavScreen.AddRack -> {
-                            val uiState by addRackViewModel.uiState.collectAsStateWithLifecycle()
-                            AddRackScreen(
-                                uiState = uiState,
-                                uiEvent = { addRackViewModel.uiEvent },
-                                onUpdatePhotoUri = addRackViewModel::onUpdatePhotoUri,
-                                onUpdateName = addRackViewModel::onUpdateName,
-                                onUpdateDescription = addRackViewModel::onUpdateDescription,
-                                onUpdateLocation = addRackViewModel::onUpdateLocation,
-                                onSaveRack = addRackViewModel::onSaveRack,
-                                onNavigateBack = { currentScreen = NavScreen.RackList },
-                            )
-                        }
-
-                        is NavScreen.RackDetail -> {
-                            RackDetailScreen(
-                                rackId = screen.rackId,
-                                onNavigateBack = { currentScreen = NavScreen.RackList },
-                                onAddItemHere = { rackId, slotId ->
-                                    currentScreen = NavScreen.AddItem(rackId = rackId, slotId = slotId)
-                                },
-                                onNavigateToSlotItems = { rackId, slotId ->
-                                    currentScreen = NavScreen.SlotItems(rackId = rackId, slotId = slotId)
-                                },
-                            )
-                        }
-
-                        is NavScreen.SlotItems -> {
-                            SlotItemsScreen(
-                                rackId = screen.rackId,
-                                slotId = screen.slotId,
-                                onNavigateBack = { currentScreen = NavScreen.RackDetail(screen.rackId) },
-                                onAddItem = { rackId, slotId ->
-                                    currentScreen = NavScreen.AddItem(rackId = rackId, slotId = slotId)
-                                },
-                                onItemSelected = { itemId ->
-                                    currentScreen = NavScreen.ItemDetail(
-                                        itemId = itemId,
-                                        rackId = screen.rackId,
-                                        slotId = screen.slotId,
-                                    )
-                                },
-                            )
-                        }
-
-                        is NavScreen.ItemDetail -> {
-                            ItemDetailScreen(
-                                itemId = screen.itemId,
-                                onNavigateBack = {
-                                    currentScreen = if (screen.fromSearch) {
-                                        NavScreen.Search
-                                    } else {
-                                        NavScreen.SlotItems(
-                                            rackId = screen.rackId,
-                                            slotId = screen.slotId,
-                                        )
-                                    }
-                                },
-                            )
-                        }
-
-                        is NavScreen.AddItem -> {
-                            AddItemScreen(
-                                initialRackId = screen.rackId,
-                                initialSlotId = screen.slotId,
-                                onNavigateBack = { currentScreen = NavScreen.RackList },
-                                onNavigateToAddRack = { currentScreen = NavScreen.AddRack },
-                            )
-                        }
-                    }
                 }
             }
         }

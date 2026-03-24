@@ -10,4 +10,5 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.skie) apply false
     alias(libs.plugins.android.junit) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
 }
