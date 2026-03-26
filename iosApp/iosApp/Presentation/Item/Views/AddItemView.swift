@@ -4,7 +4,6 @@ import ComposeApp
 
 struct AddItemView: View {
     let uiState: AddItemUiState
-    let uiEvent: AddItemUiEvent?
     let onUpdateName: (String) -> Void
     let onUpdateDescription: (String) -> Void
     let onUpdateQuantity: (Int?) -> Void
@@ -25,6 +24,7 @@ struct AddItemView: View {
     @State private var showPhotoPicker = false
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
+    @State private var photoLoadTask: Task<Void, Never>? = nil
 
     var body: some View {
         Group {
@@ -37,11 +37,6 @@ struct AddItemView: View {
                 selectSlotContent
             @unknown default:
                 formContent
-            }
-        }
-        .onChange(of: onEnum(of: uiEvent)) { _, _ in
-            if uiEvent != nil {
-                onNavigateBack()
             }
         }
     }
@@ -152,7 +147,8 @@ struct AddItemView: View {
             matching: .images
         )
         .onChange(of: selectedPhotoItem) { _, newValue in
-            Task {
+            photoLoadTask?.cancel()
+            photoLoadTask = Task {
                 guard
                     let data = try? await newValue?.loadTransferable(type: Data.self),
                     let image = UIImage(data: data),
@@ -167,6 +163,10 @@ struct AddItemView: View {
                 try? jpegData.write(to: tempURL)
                 onUpdatePhotoUri(tempURL.path)
             }
+        }
+        .onDisappear {
+            photoLoadTask?.cancel()
+            photoLoadTask = nil
         }
     }
 

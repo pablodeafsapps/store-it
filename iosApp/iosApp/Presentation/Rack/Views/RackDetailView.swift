@@ -28,13 +28,9 @@ struct RackDetailView: View {
     }
 
     var body: some View {
-        Observing(
-            rackDetailViewModel.sharedVm.uiState,
-            rackDetailViewModel.sharedVm.uiEvent.withInitialValue(nil)
-        ) { state, event in
+        Observing(rackDetailViewModel.sharedVm.uiState) { state in
             RackDetailContent(
                 state: state,
-                event: event,
                 onImageTap: { xRel, yRel in
                     rackDetailViewModel.sharedVm.onImageTap(xRel: xRel, yRel: yRel, forItemPlacement: forItemPlacement)
                 },
@@ -56,43 +52,28 @@ struct RackDetailView: View {
                     }
                 }
             )
-                .onChange(of: eventKey(event)) { _, _ in
-                    guard let event else { return }
-
-                    if event is RackDetailUiEventNavigateBack {
-                        onNavigateBack()
-                    } else if !forItemPlacement,
-                              let nav = event as? RackDetailUiEventNavigateToSlotItems,
-                              let onNavigateToSlotItems {
-                        onNavigateToSlotItems(nav.rackId, nav.slotId)
-                    } else if !forItemPlacement,
-                              let slotSelected = event as? RackDetailUiEventSlotSelected,
-                              let onAddItemHere {
-                        onAddItemHere(slotSelected.rackId, slotSelected.slotId)
-                    }
+        }
+        .task {
+            for await event in rackDetailViewModel.sharedVm.uiEvent {
+                guard let event else { continue }
+                if event is RackDetailUiEventNavigateBack {
+                    onNavigateBack()
+                } else if !forItemPlacement,
+                          let nav = event as? RackDetailUiEventNavigateToSlotItems,
+                          let onNavigateToSlotItems {
+                    onNavigateToSlotItems(nav.rackId, nav.slotId)
+                } else if !forItemPlacement,
+                          let slotSelected = event as? RackDetailUiEventSlotSelected,
+                          let onAddItemHere {
+                    onAddItemHere(slotSelected.rackId, slotSelected.slotId)
                 }
+            }
         }
     }
 }
 
-private func eventKey(_ event: RackDetailUiEvent?) -> String {
-    guard let event else { return "nil" }
-    if event is RackDetailUiEventNavigateBack {
-        return "nav-back"
-    }
-    if let slotSelected = event as? RackDetailUiEventSlotSelected {
-        return "slot-selected-\(slotSelected.rackId)-\(slotSelected.slotId)"
-    }
-    if let nav = event as? RackDetailUiEventNavigateToSlotItems {
-        return "slot-items-\(nav.rackId)-\(nav.slotId)"
-    }
-    // Fallback: keep the key stable per event type.
-    return String(describing: type(of: event))
-}
-
 private struct RackDetailContent: View {
     let state: RackDetailUiState
-    let event: RackDetailUiEvent?
     let onImageTap: (Float, Float) -> Void
     let onEditSelected: () -> Void
     let onRemoveRackSelected: () -> Void
@@ -227,36 +208,48 @@ private struct RackImageView: View {
 
     var body: some View {
         Group {
-            if let path = photoUri, let uiImage = loadImage(from: path) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                    .overlay(alignment: .topLeading) {
-                        GeometryReader { geo in
-                            let w = max(geo.size.width, 1)
-                            let h = max(geo.size.height, 1)
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .accessibilityIdentifier("rackDetailImageArea")
-                                .onTapGesture(coordinateSpace: .local) { location in
-                                    let xRel = Float((location.x / w).clamped(to: 0...1))
-                                    let yRel = Float((location.y / h).clamped(to: 0...1))
-                                    onTap(xRel, yRel)
-                                }
-                            ForEach(slots, id: \.id) { slot in
-                                Circle()
-                                    .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
-                                    .frame(width: 24, height: 24)
-                                    .position(
-                                        x: CGFloat(slot.xRel) * geo.size.width,
-                                        y: CGFloat(slot.yRel) * geo.size.height
-                                    )
-                                    .allowsHitTesting(false)
+            if let path = photoUri {
+                AsyncImage(url: URL(fileURLWithPath: path)) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    default:
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 200)
+                            .overlay(alignment: .center) {
+                                ProgressView()
                             }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .overlay(alignment: .topLeading) {
+                    GeometryReader { geo in
+                        let w = max(geo.size.width, 1)
+                        let h = max(geo.size.height, 1)
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .accessibilityIdentifier("rackDetailImageArea")
+                            .onTapGesture(coordinateSpace: .local) { location in
+                                let xRel = Float((location.x / w).clamped(to: 0...1))
+                                let yRel = Float((location.y / h).clamped(to: 0...1))
+                                onTap(xRel, yRel)
+                            }
+                        ForEach(slots, id: \.id) { slot in
+                            Circle()
+                                .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
+                                .frame(width: 24, height: 24)
+                                .position(
+                                    x: CGFloat(slot.xRel) * geo.size.width,
+                                    y: CGFloat(slot.yRel) * geo.size.height
+                                )
+                                .allowsHitTesting(false)
                         }
                     }
-                    .accessibilityIdentifier("rackDetailImageArea")
+                }
+                .accessibilityIdentifier("rackDetailImageArea")
             } else {
                 Rectangle()
                     .fill(Color.gray.opacity(0.2))
@@ -292,12 +285,6 @@ private struct RackImageView: View {
                     .accessibilityIdentifier("rackDetailImageArea")
             }
         }
-    }
-
-    private func loadImage(from path: String) -> UIImage? {
-        let url = URL(fileURLWithPath: path)
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return UIImage(data: data)
     }
 }
 

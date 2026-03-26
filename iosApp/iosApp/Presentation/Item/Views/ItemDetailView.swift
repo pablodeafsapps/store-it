@@ -4,7 +4,6 @@ import ComposeApp
 
 struct ItemDetailView: View {
     let uiState: ItemDetailUiState
-    let uiEvent: ItemDetailUiEvent?
 
     let onUpdateName: (String) -> Void
     let onUpdateDescription: (String) -> Void
@@ -23,6 +22,7 @@ struct ItemDetailView: View {
     @State private var showPhotoPicker = false
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
+    @State private var photoLoadTask: Task<Void, Never>? = nil
 
     var body: some View {
         Group {
@@ -137,7 +137,8 @@ struct ItemDetailView: View {
                 matching: .images
             )
             .onChange(of: selectedPhotoItem) { _, newValue in
-                Task {
+                photoLoadTask?.cancel()
+                photoLoadTask = Task {
                     guard
                         let data = try? await newValue?.loadTransferable(type: Data.self),
                         let image = UIImage(data: data),
@@ -153,11 +154,9 @@ struct ItemDetailView: View {
                     onUpdatePhotoUri(tempURL.path)
                 }
             }
-            .onChange(of: itemDetailEventKey(uiEvent)) { _, _ in
-                guard let uiEvent else { return }
-                if uiEvent is ItemDetailUiEventNavigateBack {
-                    onNavigateBack()
-                }
+            .onDisappear {
+                photoLoadTask?.cancel()
+                photoLoadTask = nil
             }
             .alert("Remove item?", isPresented: Binding(
                 get: { uiState.showDeleteConfirm },
@@ -213,15 +212,4 @@ struct ItemDetailView: View {
             .accessibilityIdentifier("itemDetailPhotoPickerButton")
         }
     }
-}
-
-private func itemDetailEventKey(_ event: ItemDetailUiEvent?) -> String {
-    guard let event else { return "nil" }
-    if event is ItemDetailUiEventNavigateBack {
-        return "nav-back"
-    }
-    if let err = event as? ItemDetailUiEventShowError {
-        return "error-\(err.message)"
-    }
-    return String(describing: type(of: event))
 }

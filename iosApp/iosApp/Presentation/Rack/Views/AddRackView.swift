@@ -10,6 +10,7 @@ struct AddRackView: View {
     @State private var showImagePicker = false
     @State private var selectedPhoto: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
+    @State private var photoLoadTask: Task<Void, Never>? = nil
     
     init(onNavigateBack: @escaping () -> Void) {
         _addRackViewModel = StateObject(wrappedValue: ViewModelHolder(IosKoinHelper().getAddRackViewModel()))
@@ -17,12 +18,19 @@ struct AddRackView: View {
     }
     
     var body: some View {
-        Observing(addRackViewModel.sharedVm.uiState, addRackViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
-            content(state: state, event: event)
+        Observing(addRackViewModel.sharedVm.uiState) { state in
+            content(state: state)
+        }
+        .task {
+            for await event in addRackViewModel.sharedVm.uiEvent {
+                if event != nil {
+                    onNavigateBack()
+                }
+            }
         }
     }
 
-    private func content(state: AddRackUiState, event: AddRackUiEvent?) -> some View {
+    private func content(state: AddRackUiState) -> some View {
         Form {
             Section {
                 photoPickerSection
@@ -49,10 +57,9 @@ struct AddRackView: View {
         .onChange(of: selectedPhoto) { _, newItem in
             persistSelectedPhoto(newItem)
         }
-        .onChange(of: onEnum(of: event)) { _, _ in
-            if event != nil {
-                onNavigateBack()
-            }
+        .onDisappear {
+            photoLoadTask?.cancel()
+            photoLoadTask = nil
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -109,7 +116,8 @@ struct AddRackView: View {
     }
 
     private func persistSelectedPhoto(_ newItem: PhotosPickerItem?) {
-        Task {
+        photoLoadTask?.cancel()
+        photoLoadTask = Task {
             guard let data = try? await newItem?.loadTransferable(type: Data.self),
                   let image = UIImage(data: data),
                   let imageData = image.jpegData(compressionQuality: 0.8) else { return }

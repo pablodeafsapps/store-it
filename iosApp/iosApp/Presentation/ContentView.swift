@@ -55,19 +55,19 @@ struct ContentView: View {
             )
         case .addRack:
             AddRackView(
-                onNavigateBack: { path.removeLast() }
+                onNavigateBack: { popRoute() }
             )
         case .addItem(let initialRackId, let initialSlotId):
             AddItemScreen(
                 initialRackId: initialRackId,
                 initialSlotId: initialSlotId,
                 onNavigateToAddRack: { path.append(.addRack) },
-                onNavigateBack: { path.removeLast() }
+                onNavigateBack: { popRoute() }
             )
         case .rackDetail(let rackId):
             RackDetailView(
                 rackId: rackId,
-                onNavigateBack: { path.removeLast() },
+                onNavigateBack: { popRoute() },
                 onAddItemHere: { initialRackId, initialSlotId in
                     path.append(.addItem(initialRackId: initialRackId, initialSlotId: initialSlotId))
                 },
@@ -89,7 +89,7 @@ struct ContentView: View {
         case .itemDetail(let itemId):
             ItemDetailScreen(
                 itemId: itemId,
-                onNavigateBack: { path.removeLast() }
+                onNavigateBack: { popRoute() }
             )
         }
     }
@@ -101,6 +101,11 @@ struct ContentView: View {
         } else if let detail = event as? RackListUiEventNavigateToRackDetail {
             path.append(.rackDetail(rackId: detail.rackId))
         }
+    }
+
+    private func popRoute() {
+        guard !path.isEmpty else { return }
+        path.removeLast()
     }
 }
 
@@ -143,10 +148,9 @@ private struct AddItemScreen: View {
     }
 
     var body: some View {
-        Observing(addItemViewModel.sharedVm.uiState, addItemViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
+        Observing(addItemViewModel.sharedVm.uiState) { state in
             AddItemView(
                 uiState: state,
-                uiEvent: event,
                 onUpdateName: addItemViewModel.sharedVm.onUpdateName,
                 onUpdateDescription: addItemViewModel.sharedVm.onUpdateDescription,
                 onUpdateQuantity: { quantity in
@@ -171,6 +175,13 @@ private struct AddItemScreen: View {
                 onNavigateBack: onNavigateBack
             )
         }
+        .task {
+            for await event in addItemViewModel.sharedVm.uiEvent {
+                if event != nil {
+                    onNavigateBack()
+                }
+            }
+        }
     }
 }
 
@@ -188,10 +199,9 @@ private struct ItemDetailScreen: View {
     }
 
     var body: some View {
-        Observing(itemDetailViewModel.sharedVm.uiState, itemDetailViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
+        Observing(itemDetailViewModel.sharedVm.uiState) { state in
             ItemDetailView(
                 uiState: state,
-                uiEvent: event,
                 onUpdateName: itemDetailViewModel.sharedVm.onUpdateName,
                 onUpdateDescription: itemDetailViewModel.sharedVm.onUpdateDescription,
                 onUpdateQuantity: { quantity in
@@ -212,6 +222,13 @@ private struct ItemDetailScreen: View {
                 onConfirmDelete: itemDetailViewModel.sharedVm.onConfirmDelete,
                 onNavigateBack: onNavigateBack
             )
+        }
+        .task {
+            for await event in itemDetailViewModel.sharedVm.uiEvent {
+                if event is ItemDetailUiEventNavigateBack {
+                    onNavigateBack()
+                }
+            }
         }
         .id(itemId)
     }
