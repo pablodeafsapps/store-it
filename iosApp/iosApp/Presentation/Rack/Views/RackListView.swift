@@ -29,7 +29,7 @@ struct RackListView: View {
                 }
             }
         }
-        .navigationTitle("Racks")
+        .navigationTitle("racks_title")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("racksListScreen")
         .toolbar {
@@ -47,7 +47,7 @@ struct RackListView: View {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
-                Text("Search items by name or description")
+                Text("rack_search_placeholder")
                     .foregroundColor(.secondary)
                 Spacer(minLength: 0)
             }
@@ -64,15 +64,15 @@ struct RackListView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Text("No racks yet")
+            Text("rack_list_empty_title")
                 .font(.title2)
                 .foregroundColor(.secondary)
-            Text("Add your first storage rack to get started")
+            Text("rack_list_empty_subtitle")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
             Button(action: onAddRackSelected) {
-                Text("Add Rack")
+                Text("add_rack_button")
                     .frame(maxWidth: .infinity)
             }
             .accessibilityIdentifier("addRackButton")

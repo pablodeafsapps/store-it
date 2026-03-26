@@ -39,11 +39,11 @@ struct AddRackView: View {
             errorSection(error: state.error)
             saveSection(isLoading: state.isLoading)
         }
-        .navigationTitle("Add Rack")
+        .navigationTitle("add_rack_title")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
+                Button("common_cancel") {
                     onNavigateBack()
                 }
                 .accessibilityIdentifier("cancelButton")
@@ -67,19 +67,19 @@ struct AddRackView: View {
     @ViewBuilder
     private func detailsSection(state: AddRackUiState) -> some View {
         Section {
-            TextField("Name *", text: Binding(
+            TextField("rack_name_required_label", text: Binding(
                 get: { state.name },
                 set: { addRackViewModel.sharedVm.onUpdateName(name: $0) }
             ))
             .accessibilityIdentifier("addRackNameField")
 
-            TextField("Description", text: Binding(
+            TextField("rack_description_label", text: Binding(
                 get: { state.description_ },
                 set: { addRackViewModel.sharedVm.onUpdateDescription(description: $0) }
             ), axis: .vertical)
             .lineLimit(3...6)
 
-            TextField("Location", text: Binding(
+            TextField("rack_location_label", text: Binding(
                 get: { state.location },
                 set: { addRackViewModel.sharedVm.onUpdateLocation(location: $0) }
             ))
@@ -106,7 +106,7 @@ struct AddRackView: View {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle())
                     }
-                    Text("Save Rack")
+                    Text("rack_save_button")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -145,7 +145,7 @@ struct AddRackView: View {
                     .fill(Color.gray.opacity(0.2))
                     .frame(height: 200)
                     .overlay(
-                        Text("No photo selected")
+                        Text("photo_none_selected")
                             .foregroundColor(.gray)
                     )
                     .cornerRadius(8)
@@ -154,7 +154,7 @@ struct AddRackView: View {
             Button(action: {
                 showImagePicker = true
             }) {
-                Text(addRackViewModel.sharedVm.uiState.value.photoUri != nil ? "Change Photo" : "Select Photo")
+                Text(addRackViewModel.sharedVm.uiState.value.photoUri != nil ? "photo_change" : "photo_select")
                     .frame(maxWidth: .infinity)
             }
             .accessibilityIdentifier("changeOrSelectPhotoButton")

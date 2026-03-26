@@ -35,42 +35,42 @@ struct ItemDetailView: View {
                             photoSection
                         }
 
-                        Section(header: Text("Details")) {
-                            TextField("Name", text: Binding(
+                        Section(header: Text("details_section_title")) {
+                            TextField("item_name_label", text: Binding(
                                 get: { uiState.name },
                                 set: onUpdateName
                             ))
                             .accessibilityIdentifier("itemDetailNameField")
 
-                            TextField("Description", text: Binding(
+                            TextField("item_description_label", text: Binding(
                                 get: { uiState.description_ },
                                 set: onUpdateDescription
                             ), axis: .vertical)
                             .lineLimit(3...6)
                             .accessibilityIdentifier("itemDetailDescriptionField")
 
-                            TextField("Quantity", text: Binding(
+                            TextField("item_quantity_label", text: Binding(
                                 get: { uiState.quantity?.description ?? "" },
                                 set: { newValue in onUpdateQuantity(Int(newValue)) }
                             ))
                             .keyboardType(.numberPad)
                             .accessibilityIdentifier("itemDetailQuantityField")
 
-                            TextField("Owner", text: Binding(
+                            TextField("item_owner_label", text: Binding(
                                 get: { uiState.owner },
                                 set: onUpdateOwner
                             ))
                             .accessibilityIdentifier("itemDetailOwnerField")
                         }
 
-                        Section(header: Text("Tags")) {
+                        Section(header: Text("tags_section_title")) {
                             HStack {
-                                TextField("Add tag", text: Binding(
+                                TextField("item_add_tag_placeholder", text: Binding(
                                     get: { uiState.tagInput },
                                     set: onUpdateTagInput
                                 ))
                                 .accessibilityIdentifier("itemDetailTagsInputField")
-                                Button("Add") {
+                                Button("common_add") {
                                     onAddTag()
                                 }
                                 .accessibilityIdentifier("itemDetailAddTagButton")
@@ -110,7 +110,7 @@ struct ItemDetailView: View {
                                         ProgressView()
                                             .accessibilityIdentifier("itemDetailSaveProgress")
                                     }
-                                    Text("Save")
+                                    Text("common_save")
                                 }
                                 .frame(maxWidth: .infinity)
                             }
@@ -119,7 +119,7 @@ struct ItemDetailView: View {
 
                             Button(role: .destructive, action: onDelete) {
                                 HStack {
-                                    Text("Remove item")
+                                    Text("item_remove_button")
                                 }
                                 .frame(maxWidth: .infinity)
                             }
@@ -129,7 +129,7 @@ struct ItemDetailView: View {
                 }
             }
         }
-        .navigationTitle("Item details")
+        .navigationTitle("item_detail_title")
         .navigationBarTitleDisplayMode(.inline)
         .photosPicker(
                 isPresented: $showPhotoPicker,
@@ -158,20 +158,20 @@ struct ItemDetailView: View {
                 photoLoadTask?.cancel()
                 photoLoadTask = nil
             }
-            .alert("Remove item?", isPresented: Binding(
+            .alert("item_remove_confirm_title", isPresented: Binding(
                 get: { uiState.showDeleteConfirm },
                 set: { if !$0 { onDismissDeleteConfirm() } }
             )) {
-                Button("Cancel", role: .cancel) {
+                Button("common_cancel", role: .cancel) {
                     onDismissDeleteConfirm()
                 }
                 .accessibilityIdentifier("itemDetailDeleteCancelButton")
-                Button("Remove", role: .destructive) {
+                Button("common_remove", role: .destructive) {
                     onConfirmDelete()
                 }
                 .accessibilityIdentifier("itemDetailDeleteConfirmButton")
             } message: {
-                Text("This cannot be undone.")
+                Text("item_remove_confirm_message")
             }
     }
 
@@ -198,14 +198,14 @@ struct ItemDetailView: View {
                     .fill(Color.gray.opacity(0.2))
                     .frame(height: 200)
                     .overlay(
-                        Text("No photo selected")
+                        Text("photo_none_selected")
                             .foregroundColor(.gray)
                     )
                     .cornerRadius(8)
             }
 
             Button(action: { showPhotoPicker = true }) {
-                Text(uiState.photoUri != nil ? "Change photo" : "Select photo")
+                Text(uiState.photoUri != nil ? "photo_change" : "photo_select")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)

@@ -1,0 +1,68 @@
+"common_back" = "Back";
+"common_cancel" = "Cancel";
+"common_save" = "Save";
+"common_remove" = "Remove";
+"common_add" = "Add";
+
+"racks_title" = "Racks";
+"rack_search_placeholder" = "Search items by name or description";
+"rack_list_empty_title" = "No racks yet";
+"rack_list_empty_subtitle" = "Add your first storage rack to get started";
+"add_rack_button" = "Add Rack";
+
+"add_rack_title" = "Add Rack";
+"rack_name_required_label" = "Name *";
+"rack_description_label" = "Description";
+"rack_location_label" = "Location";
+"rack_save_button" = "Save Rack";
+"photo_none_selected" = "No photo selected";
+"photo_change" = "Change Photo";
+"photo_select" = "Select Photo";
+
+"rack_detail_not_found" = "Rack not found";
+"rack_title_default" = "Rack";
+"rack_location_prefix" = "Location: %@";
+"rack_no_photo" = "No photo";
+"rack_use_this_slot" = "Use this slot";
+"rack_edit_button" = "Edit";
+"rack_remove_button" = "Remove rack";
+"rack_remove_confirm_title" = "Remove rack?";
+"rack_remove_confirm_message" = "This will delete the rack and all its slots and items. This cannot be undone.";
+"rack_edit_title" = "Edit rack";
+
+"search_title" = "Search items";
+"search_prompt" = "Search by name or description";
+"search_hint_type_to_search" = "Type to search your items.";
+"search_no_results" = "No items match your search.";
+"search_result_rack_prefix" = "Rack: %@";
+"search_result_slot_prefix" = "Slot: %@";
+
+"add_item_title" = "Add Item";
+"details_section_title" = "Details";
+"tags_section_title" = "Tags";
+"item_name_label" = "Name";
+"item_description_label" = "Description";
+"item_quantity_label" = "Quantity";
+"item_owner_label" = "Owner";
+"item_add_tag_placeholder" = "Add tag";
+"item_place_selected" = "Rack & slot selected";
+"item_place_select" = "Select rack & slot";
+"item_save_button" = "Save Item";
+
+"select_rack_title" = "Select Rack";
+"select_rack_empty_message" = "No racks. Add a rack first to place items.";
+"select_rack_add_button" = "Add Rack";
+"select_rack_first_message" = "Select a rack first";
+
+"slot_items_title" = "Items in this slot";
+"slot_items_empty" = "No items stored here.";
+"slot_items_add_item" = "Add item";
+
+"item_detail_title" = "Item details";
+"item_remove_button" = "Remove item";
+"item_remove_confirm_title" = "Remove item?";
+"item_remove_confirm_message" = "This cannot be undone.";
+
+"add_item_hint_add_rack_first" = "Add a rack first to place items";
+"add_item_hint_add_item" = "Add item";
+

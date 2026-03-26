@@ -47,36 +47,36 @@ struct AddItemView: View {
                     photoSection
                 }
 
-                Section(header: Text("Details")) {
-                    TextField("Name", text: Binding(
+                Section(header: Text("details_section_title")) {
+                    TextField("item_name_label", text: Binding(
                         get: { uiState.name },
                         set: onUpdateName
                     ))
-                    TextField("Description", text: Binding(
+                    TextField("item_description_label", text: Binding(
                         get: { uiState.description_ },
                         set: onUpdateDescription
                     ), axis: .vertical)
                     .lineLimit(3...6)
 
-                    TextField("Quantity", text: Binding(
+                    TextField("item_quantity_label", text: Binding(
                         get: { uiState.quantity?.description ?? "" },
                         set: { newValue in onUpdateQuantity(Int(newValue)) }
                     ))
                     .keyboardType(.numberPad)
 
-                    TextField("Owner", text: Binding(
+                    TextField("item_owner_label", text: Binding(
                         get: { uiState.owner },
                         set: onUpdateOwner
                     ))
                 }
 
-                Section(header: Text("Tags")) {
+                Section(header: Text("tags_section_title")) {
                     HStack {
-                        TextField("Add tag", text: Binding(
+                        TextField("item_add_tag_placeholder", text: Binding(
                             get: { uiState.tagInput },
                             set: onUpdateTagInput
                         ))
-                        Button("Add") {
+                        Button("common_add") {
                             onAddTag()
                         }
                         .disabled(uiState.tagInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -103,8 +103,8 @@ struct AddItemView: View {
                     Button(action: { onSelectRackAndSlotSelected() }) {
                         Text(
                             uiState.selectedRackId != nil && uiState.selectedSlotId != nil
-                            ? "Rack & slot selected"
-                            : "Select rack & slot"
+                            ? "item_place_selected"
+                            : "item_place_select"
                         )
                         .frame(maxWidth: .infinity)
                     }
@@ -124,19 +124,19 @@ struct AddItemView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle())
                             }
-                            Text("Save Item")
+                            Text("item_save_button")
                         }
                         .frame(maxWidth: .infinity)
                     }
                     .disabled(uiState.isLoading)
                 }
         }
-        .navigationTitle("Add Item")
+        .navigationTitle("add_item_title")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
+                Button("common_cancel") {
                     onNavigateBack()
                 }
             }
@@ -193,14 +193,14 @@ struct AddItemView: View {
                     .fill(Color.gray.opacity(0.2))
                     .frame(height: 200)
                     .overlay(
-                        Text("No photo selected")
+                        Text("photo_none_selected")
                             .foregroundColor(.gray)
                     )
                     .cornerRadius(8)
             }
 
             Button(action: { showPhotoPicker = true }) {
-                Text(uiState.photoUri != nil ? "Change Photo" : "Select Photo")
+                Text(uiState.photoUri != nil ? "photo_change" : "photo_select")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -211,10 +211,10 @@ struct AddItemView: View {
         List {
             if uiState.racks.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("No racks. Add a rack first to place items.")
+                    Text("select_rack_empty_message")
                         .foregroundColor(.secondary)
                     Button(action: onNavigateToAddRack) {
-                        Text("Add Rack")
+                        Text("select_rack_add_button")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -237,12 +237,12 @@ struct AddItemView: View {
                 }
             }
         }
-        .navigationTitle("Select Rack")
+        .navigationTitle("select_rack_title")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Back") {
+                Button("common_back") {
                     onBackFromSelectRack()
                 }
             }
@@ -253,8 +253,8 @@ struct AddItemView: View {
         guard let rackId = uiState.selectedRackId else {
             return AnyView(
                 VStack {
-                    Text("Select a rack first")
-                    Button("Back") {
+                    Text("select_rack_first_message")
+                    Button("common_back") {
                         onBackFromSelectSlot()
                     }
                 }

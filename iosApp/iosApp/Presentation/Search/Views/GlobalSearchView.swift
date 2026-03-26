@@ -21,13 +21,13 @@ struct GlobalSearchView: View {
                         .accessibilityIdentifier("searchScreenError")
                     Spacer()
                 } else if uiState.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Type to search your items.")
+                    Text("search_hint_type_to_search")
                         .foregroundColor(.secondary)
                         .padding(.top, 16)
                         .accessibilityIdentifier("searchScreenHint")
                     Spacer()
                 } else if uiState.results.isEmpty {
-                    Text("No items match your search.")
+                    Text("search_no_results")
                         .foregroundColor(.secondary)
                         .padding(.top, 16)
                         .accessibilityIdentifier("searchScreenNoResults")
@@ -41,10 +41,10 @@ struct GlobalSearchView: View {
                                 Text(row.item.name)
                                     .font(.headline)
                                     .foregroundColor(.primary)
-                                Text("Rack: \(row.rackName)")
+                                Text(String(format: NSLocalizedString("search_result_rack_prefix", comment: ""), row.rackName))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                Text("Slot: \(row.slotSummary)")
+                                Text(String(format: NSLocalizedString("search_result_slot_prefix", comment: ""), row.slotSummary))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -56,7 +56,7 @@ struct GlobalSearchView: View {
                 }
             }
         }
-        .navigationTitle("Search items")
+        .navigationTitle("search_title")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(
             text: Binding(
@@ -64,7 +64,7 @@ struct GlobalSearchView: View {
                 set: { onQueryChange($0) }
             ),
             placement: .navigationBarDrawer(displayMode: .automatic),
-            prompt: "Search by name or description"
+            prompt: "search_prompt"
         )
         .onSubmit(of: .search) {
             let trimmed = uiState.query.trimmingCharacters(in: .whitespacesAndNewlines)

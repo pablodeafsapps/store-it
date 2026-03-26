@@ -107,7 +107,7 @@ private struct RackDetailContent: View {
                                 .font(.body)
                         }
                         if !rack.location.isEmpty {
-                            Text("Location: \(rack.location)")
+                            Text(String(format: NSLocalizedString("rack_location_prefix", comment: ""), rack.location))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
@@ -115,7 +115,7 @@ private struct RackDetailContent: View {
                     .padding()
                 }
             } else {
-                Text(state.error ?? "Rack not found")
+                Text(state.error ?? NSLocalizedString("rack_detail_not_found", comment: ""))
                     .foregroundColor(.red)
                     .padding()
             }
@@ -132,7 +132,7 @@ private struct RackDetailContent: View {
                 VStack {
                     Spacer()
                     Button(action: { onUseSelectedSlot() }) {
-                        Text("Use this slot")
+                        Text("rack_use_this_slot")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -140,13 +140,13 @@ private struct RackDetailContent: View {
                 }
             }
         }
-        .navigationTitle(state.rack?.name ?? "Rack")
+        .navigationTitle(state.rack?.name ?? NSLocalizedString("rack_title_default", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(forItemPlacement)
         .toolbar {
             if forItemPlacement {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Back") {
+                    Button("common_back") {
                         onNavigateBack()
                     }
                 }
@@ -154,11 +154,11 @@ private struct RackDetailContent: View {
             if !forItemPlacement {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
-                        Button("Edit") {
+                        Button("rack_edit_button") {
                             onEditSelected()
                         }
                         .accessibilityIdentifier("editRackMenuItem")
-                        Button("Remove rack", role: .destructive) {
+                        Button("rack_remove_button", role: .destructive) {
                             onRemoveRackSelected()
                         }
                         .accessibilityIdentifier("removeRackMenuItem")
@@ -184,18 +184,18 @@ private struct RackDetailContent: View {
                 onSave: onSaveRackEdits
             )
         }
-        .alert("Remove rack?", isPresented: Binding(
+        .alert("rack_remove_confirm_title", isPresented: Binding(
             get: { state.showDeleteConfirm },
             set: { if !$0 { onDismissDeleteConfirm() } }
         )) {
-            Button("Cancel", role: .cancel) {
+            Button("common_cancel", role: .cancel) {
                 onDismissDeleteConfirm()
             }
-            Button("Remove", role: .destructive) {
+            Button("common_remove", role: .destructive) {
                 onConfirmDeleteRack()
             }
         } message: {
-            Text("This will delete the rack and all its slots and items. This cannot be undone.")
+            Text("rack_remove_confirm_message")
         }
     }
 }
@@ -255,7 +255,7 @@ private struct RackImageView: View {
                     .fill(Color.gray.opacity(0.2))
                     .frame(height: 200)
                     .overlay(alignment: .center) {
-                        Text("No photo")
+                        Text("rack_no_photo")
                             .foregroundColor(.secondary)
                     }
                     .overlay(alignment: .topLeading) {
@@ -307,20 +307,20 @@ private struct EditRackSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Name", text: Binding(get: { name }, set: onNameChange))
-                TextField("Description", text: Binding(get: { description }, set: onDescriptionChange), axis: .vertical)
+                TextField("item_name_label", text: Binding(get: { name }, set: onNameChange))
+                TextField("rack_description_label", text: Binding(get: { description }, set: onDescriptionChange), axis: .vertical)
                     .lineLimit(3...6)
-                TextField("Location", text: Binding(get: { location }, set: onLocationChange))
+                TextField("rack_location_label", text: Binding(get: { location }, set: onLocationChange))
             }
-            .navigationTitle("Edit rack")
+            .navigationTitle("rack_edit_title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { onDismiss() }
+                    Button("common_cancel") { onDismiss() }
                         .accessibilityIdentifier("editRackCancelButton")
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { onSave() }
+                    Button("common_save") { onSave() }
                         .accessibilityIdentifier("editRackSaveButton")
                 }
             }

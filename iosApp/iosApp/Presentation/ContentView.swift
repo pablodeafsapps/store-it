@@ -28,7 +28,7 @@ struct ContentView: View {
                             .opacity(state.racks.isEmpty ? 0.5 : 1)
                             .padding()
                             .accessibilityIdentifier("addItemFloatingButton")
-                            .accessibilityHint(state.racks.isEmpty ? "Add a rack first to place items" : "Add item")
+                            .accessibilityHint(state.racks.isEmpty ? "add_item_hint_add_rack_first" : "add_item_hint_add_item")
                         }
                     }
                 }

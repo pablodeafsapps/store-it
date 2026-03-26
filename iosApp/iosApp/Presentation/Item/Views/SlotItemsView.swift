@@ -35,10 +35,10 @@ struct SlotItemsView: View {
                 } else if state.items.isEmpty {
                     VStack(spacing: 16) {
                         Spacer()
-                        Text("No items stored here.")
+                        Text("slot_items_empty")
                             .foregroundColor(.secondary)
                             .accessibilityIdentifier("slotItemsScreenEmpty")
-                        Button("Add item") {
+                        Button("slot_items_add_item") {
                             onAddItem(rackId, slotId)
                         }
                         .accessibilityIdentifier("slotItemsScreenAddItemButton")
@@ -57,7 +57,7 @@ struct SlotItemsView: View {
                     }
                     .accessibilityIdentifier("slotItemsScreenList")
                     .safeAreaInset(edge: .bottom) {
-                        Button("Add item") {
+                        Button("slot_items_add_item") {
                             onAddItem(rackId, slotId)
                         }
                         .frame(maxWidth: .infinity)
@@ -67,7 +67,7 @@ struct SlotItemsView: View {
                     }
                 }
             }
-            .navigationTitle("Items in this slot")
+            .navigationTitle("slot_items_title")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
