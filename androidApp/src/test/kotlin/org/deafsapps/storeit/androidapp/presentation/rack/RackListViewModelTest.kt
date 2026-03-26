@@ -138,6 +138,28 @@ internal class RackListViewModelTest {
       }
 
   @Test
+  fun `GIVEN any state WHEN onAddRackSelect is called twice THEN uiEvent emits two distinct NavigateToAddRack events`() =
+      runTest(testDispatcher) {
+          fakeGetRacksUseCase.invokeResult = emptyList<Rack>().ok()
+          sut = RackListViewModel(coroutineScope = TestScope(testDispatcher), getRacksFlowUseCase = fakeGetRacksUseCase)
+          val events = mutableListOf<RackListUiEvent>()
+          val collectJob: Job = launch {
+              sut.uiEvent.collect { event ->
+                  event?.let { events.add(it) }
+              }
+          }
+          advanceUntilIdle()
+
+          sut.onAddRackSelected()
+          sut.onAddRackSelected()
+          advanceUntilIdle()
+
+          assertEquals(2, events.size)
+          assertTrue(events.all { it is RackListUiEvent.NavigateToAddRack })
+          collectJob.cancel()
+      }
+
+  @Test
   fun `GIVEN any state WHEN onRackSelect THEN uiEvent emits NavigateToRackDetail with rack id`() =
       runTest(testDispatcher) {
           fakeGetRacksUseCase.invokeResult = emptyList<Rack>().ok()

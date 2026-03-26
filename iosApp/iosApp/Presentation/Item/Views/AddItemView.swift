@@ -47,8 +47,7 @@ struct AddItemView: View {
     }
 
     private var formContent: some View {
-        NavigationView {
-            Form {
+        Form {
                 Section {
                     photoSection
                 }
@@ -136,37 +135,37 @@ struct AddItemView: View {
                     }
                     .disabled(uiState.isLoading)
                 }
-            }
-            .navigationTitle("Add Item")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        onNavigateBack()
-                    }
+        }
+        .navigationTitle("Add Item")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") {
+                    onNavigateBack()
                 }
             }
-            .photosPicker(
-                isPresented: $showPhotoPicker,
-                selection: $selectedPhotoItem,
-                matching: .images
-            )
-            .onChange(of: selectedPhotoItem) { _, newValue in
-                Task {
-                    guard
-                        let data = try? await newValue?.loadTransferable(type: Data.self),
-                        let image = UIImage(data: data),
-                        let jpegData = image.jpegData(compressionQuality: 0.8)
-                    else { return }
+        }
+        .photosPicker(
+            isPresented: $showPhotoPicker,
+            selection: $selectedPhotoItem,
+            matching: .images
+        )
+        .onChange(of: selectedPhotoItem) { _, newValue in
+            Task {
+                guard
+                    let data = try? await newValue?.loadTransferable(type: Data.self),
+                    let image = UIImage(data: data),
+                    let jpegData = image.jpegData(compressionQuality: 0.8)
+                else { return }
 
-                    selectedImageData = data
+                selectedImageData = data
 
-                    let tempURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent(UUID().uuidString)
-                        .appendingPathExtension("jpg")
-                    try? jpegData.write(to: tempURL)
-                    onUpdatePhotoUri(tempURL.path)
-                }
+                let tempURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString)
+                    .appendingPathExtension("jpg")
+                try? jpegData.write(to: tempURL)
+                onUpdatePhotoUri(tempURL.path)
             }
         }
     }
@@ -209,43 +208,42 @@ struct AddItemView: View {
     }
 
     private var selectRackContent: some View {
-        NavigationView {
-            List {
-                if uiState.racks.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("No racks. Add a rack first to place items.")
-                            .foregroundColor(.secondary)
-                        Button(action: onNavigateToAddRack) {
-                            Text("Add Rack")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
+        List {
+            if uiState.racks.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("No racks. Add a rack first to place items.")
+                        .foregroundColor(.secondary)
+                    Button(action: onNavigateToAddRack) {
+                        Text("Add Rack")
+                            .frame(maxWidth: .infinity)
                     }
-                    .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
-                } else {
-                    ForEach(uiState.racks, id: \.id) { rack in
-                        Button(action: { onRackSelected(rack) }) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(rack.name)
-                                    .font(.headline)
-                                if !rack.location.isEmpty {
-                                    Text(rack.location)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
+                    .buttonStyle(.borderedProminent)
+                }
+                .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
+            } else {
+                ForEach(uiState.racks, id: \.id) { rack in
+                    Button(action: { onRackSelected(rack) }) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(rack.name)
+                                .font(.headline)
+                            if !rack.location.isEmpty {
+                                Text(rack.location)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
                             }
-                            .padding(.vertical, 4)
                         }
+                        .padding(.vertical, 4)
                     }
                 }
             }
-            .navigationTitle("Select Rack")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Back") {
-                        onBackFromSelectRack()
-                    }
+        }
+        .navigationTitle("Select Rack")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Back") {
+                    onBackFromSelectRack()
                 }
             }
         }

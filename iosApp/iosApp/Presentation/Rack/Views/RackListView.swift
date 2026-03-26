@@ -3,16 +3,14 @@ import ComposeApp
 
 struct RackListView: View {
     let uiState: RackListUiState
-    let uiEvent: RackListUiEvent?
     let onAddRackSelected: () -> Void
     let onRackSelected: (Rack) -> Void
     let onNavigateToSearch: () -> Void
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                searchEntryBar
-                ZStack {
+        VStack(spacing: 0) {
+            searchEntryBar
+            ZStack {
                 if uiState.isLoading {
                     ProgressView()
                         .scaleEffect(1.2)
@@ -29,18 +27,17 @@ struct RackListView: View {
                         Spacer()
                     }
                 }
-                }
             }
-            .navigationTitle("Racks")
-            .navigationBarTitleDisplayMode(.inline)
-            .accessibilityIdentifier("racksListScreen")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: onAddRackSelected) {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityIdentifier("addRackToolbarButton")
+        }
+        .navigationTitle("Racks")
+        .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("racksListScreen")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: onAddRackSelected) {
+                    Image(systemName: "plus")
                 }
+                .accessibilityIdentifier("addRackToolbarButton")
             }
         }
     }

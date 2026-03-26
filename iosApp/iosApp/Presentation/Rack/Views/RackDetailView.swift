@@ -28,35 +28,34 @@ struct RackDetailView: View {
     }
 
     var body: some View {
-        NavigationView {
-            Observing(
-                rackDetailViewModel.sharedVm.uiState,
-                rackDetailViewModel.sharedVm.uiEvent.withInitialValue(nil)
-            ) { state, event in
-                RackDetailContent(
-                    state: state,
-                    event: event,
-                    onImageTap: { xRel, yRel in
-                        rackDetailViewModel.sharedVm.onImageTap(xRel: xRel, yRel: yRel, forItemPlacement: forItemPlacement)
-                    },
-                    onEditSelected: rackDetailViewModel.sharedVm.onEditSelected,
-                    onRemoveRackSelected: rackDetailViewModel.sharedVm.onRemoveRackSelected,
-                    onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
-                    onUpdateEditName: rackDetailViewModel.sharedVm.onUpdateEditName,
-                    onUpdateEditDescription: rackDetailViewModel.sharedVm.onUpdateEditDescription,
-                    onUpdateEditLocation: rackDetailViewModel.sharedVm.onUpdateEditLocation,
-                    onSaveRackEdits: rackDetailViewModel.sharedVm.onSaveRackEdits,
-                    onDismissDeleteConfirm: rackDetailViewModel.sharedVm.onDismissDeleteConfirm,
-                    onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack,
-                    onNavigateBack: onNavigateBack,
-                    forItemPlacement: forItemPlacement,
-                    onUseSelectedSlot: {
-                        if let rack = state.rack,
-                           let slotId = state.selectedSlot?.id {
-                            onSlotSelectedForItem?(rack.id, slotId)
-                        }
+        Observing(
+            rackDetailViewModel.sharedVm.uiState,
+            rackDetailViewModel.sharedVm.uiEvent.withInitialValue(nil)
+        ) { state, event in
+            RackDetailContent(
+                state: state,
+                event: event,
+                onImageTap: { xRel, yRel in
+                    rackDetailViewModel.sharedVm.onImageTap(xRel: xRel, yRel: yRel, forItemPlacement: forItemPlacement)
+                },
+                onEditSelected: rackDetailViewModel.sharedVm.onEditSelected,
+                onRemoveRackSelected: rackDetailViewModel.sharedVm.onRemoveRackSelected,
+                onDismissEditDialog: rackDetailViewModel.sharedVm.onDismissEditDialog,
+                onUpdateEditName: rackDetailViewModel.sharedVm.onUpdateEditName,
+                onUpdateEditDescription: rackDetailViewModel.sharedVm.onUpdateEditDescription,
+                onUpdateEditLocation: rackDetailViewModel.sharedVm.onUpdateEditLocation,
+                onSaveRackEdits: rackDetailViewModel.sharedVm.onSaveRackEdits,
+                onDismissDeleteConfirm: rackDetailViewModel.sharedVm.onDismissDeleteConfirm,
+                onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack,
+                onNavigateBack: onNavigateBack,
+                forItemPlacement: forItemPlacement,
+                onUseSelectedSlot: {
+                    if let rack = state.rack,
+                       let slotId = state.selectedSlot?.id {
+                        onSlotSelectedForItem?(rack.id, slotId)
                     }
-                )
+                }
+            )
                 .onChange(of: eventKey(event)) { _, _ in
                     guard let event else { return }
 
@@ -72,7 +71,6 @@ struct RackDetailView: View {
                         onAddItemHere(slotSelected.rackId, slotSelected.slotId)
                     }
                 }
-            }
         }
     }
 }
@@ -163,12 +161,14 @@ private struct RackDetailContent: View {
         }
         .navigationTitle(state.rack?.name ?? "Rack")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(forItemPlacement)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Back") {
-                    onNavigateBack()
+            if forItemPlacement {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Back") {
+                        onNavigateBack()
+                    }
                 }
-                .accessibilityIdentifier("rackDetailBackButton")
             }
             if !forItemPlacement {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -238,6 +238,7 @@ private struct RackImageView: View {
                             let h = max(geo.size.height, 1)
                             Color.clear
                                 .contentShape(Rectangle())
+                                .accessibilityIdentifier("rackDetailImageArea")
                                 .onTapGesture(coordinateSpace: .local) { location in
                                     let xRel = Float((location.x / w).clamped(to: 0...1))
                                     let yRel = Float((location.y / h).clamped(to: 0...1))
@@ -270,6 +271,7 @@ private struct RackImageView: View {
                             let h = max(geo.size.height, 1)
                             Color.clear
                                 .contentShape(Rectangle())
+                                .accessibilityIdentifier("rackDetailImageArea")
                                 .onTapGesture(coordinateSpace: .local) { location in
                                     let xRel = Float((location.x / w).clamped(to: 0...1))
                                     let yRel = Float((location.y / h).clamped(to: 0...1))
@@ -316,7 +318,7 @@ private struct EditRackSheet: View {
     let onSave: () -> Void
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 TextField("Name", text: Binding(get: { name }, set: onNameChange))
                 TextField("Description", text: Binding(get: { description }, set: onDescriptionChange), axis: .vertical)

@@ -4,103 +4,121 @@ import ComposeApp
 import PhotosUI
 
 struct AddRackView: View {
-    let uiState: AddRackUiState
-    let uiEvent: AddRackUiEvent?
-    let onUpdateName: (String) -> Void
-    let onUpdateDescription: (String) -> Void
-    let onUpdateLocation: (String) -> Void
-    let onUpdatePhotoUri: (String) -> Void
-    let onSaveRack: () -> Void
+    @StateObject private var addRackViewModel: ViewModelHolder<AddRackViewModel>
     let onNavigateBack: () -> Void
 
     @State private var showImagePicker = false
     @State private var selectedPhoto: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
     
+    init(onNavigateBack: @escaping () -> Void) {
+        _addRackViewModel = StateObject(wrappedValue: ViewModelHolder(IosKoinHelper().getAddRackViewModel()))
+        self.onNavigateBack = onNavigateBack
+    }
+    
     var body: some View {
-        NavigationView {
-            Form {
-                Section {
-                    photoPickerSection
-                }
-                
-                Section {
-                    TextField("Name *", text: Binding(
-                        get: { uiState.name },
-                        set: { onUpdateName($0) }
-                    ))
-                    .accessibilityIdentifier("addRackNameField")
-                    
-                    TextField("Description", text: Binding(
-                        get: { uiState.description_},
-                        set: { onUpdateDescription($0) }
-                    ), axis: .vertical)
-                    .lineLimit(3...6)
-                    
-                    TextField("Location", text: Binding(
-                        get: { uiState.location },
-                        set: { onUpdateLocation($0) }
-                    ))
-                }
-                
-                if let error = uiState.error {
-                    Section {
-                        Text(error)
-                            .foregroundColor(.red)
-                    }
-                }
-                
-                Section {
-                    Button(action: {
-                        onSaveRack()
-                    }) {
-                        HStack {
-                            if uiState.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle())
-                            }
-                            Text("Save Rack")
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .accessibilityIdentifier("saveRackButton")
-                    .disabled(uiState.isLoading)
-                }
+        Observing(addRackViewModel.sharedVm.uiState, addRackViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
+            content(state: state, event: event)
+        }
+    }
+
+    private func content(state: AddRackUiState, event: AddRackUiEvent?) -> some View {
+        Form {
+            Section {
+                photoPickerSection
             }
-            .navigationTitle("Add Rack")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        onNavigateBack()
-                    }
-                    .accessibilityIdentifier("cancelButton")
-                }
-            }
-            .photosPicker(
-                isPresented: $showImagePicker,
-                selection: $selectedPhoto,
-                matching: .images
-            )
-            .onChange(of: selectedPhoto) { oldItem, newItem in
-                Task {
-                    guard let data = try? await newItem?.loadTransferable(type: Data.self),
-                          let image = UIImage(data: data),
-                          let imageData = image.jpegData(compressionQuality: 0.8) else { return }
-                    selectedImageData = data
-                    let tempURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent(UUID().uuidString)
-                        .appendingPathExtension("jpg")
-                    try? imageData.write(to: tempURL)
-                    onUpdatePhotoUri(tempURL.path)
-                    
-                }
-            }
-            .onChange(of: onEnum(of: uiEvent)) { _, _ in
-                if uiEvent != nil {
+            detailsSection(state: state)
+            errorSection(error: state.error)
+            saveSection(isLoading: state.isLoading)
+        }
+        .navigationTitle("Add Rack")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") {
                     onNavigateBack()
                 }
+                .accessibilityIdentifier("cancelButton")
             }
+        }
+        .photosPicker(
+            isPresented: $showImagePicker,
+            selection: $selectedPhoto,
+            matching: .images
+        )
+        .onChange(of: selectedPhoto) { _, newItem in
+            persistSelectedPhoto(newItem)
+        }
+        .onChange(of: onEnum(of: event)) { _, _ in
+            if event != nil {
+                onNavigateBack()
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+
+    @ViewBuilder
+    private func detailsSection(state: AddRackUiState) -> some View {
+        Section {
+            TextField("Name *", text: Binding(
+                get: { state.name },
+                set: { addRackViewModel.sharedVm.onUpdateName(name: $0) }
+            ))
+            .accessibilityIdentifier("addRackNameField")
+
+            TextField("Description", text: Binding(
+                get: { state.description_ },
+                set: { addRackViewModel.sharedVm.onUpdateDescription(description: $0) }
+            ), axis: .vertical)
+            .lineLimit(3...6)
+
+            TextField("Location", text: Binding(
+                get: { state.location },
+                set: { addRackViewModel.sharedVm.onUpdateLocation(location: $0) }
+            ))
+        }
+    }
+
+    @ViewBuilder
+    private func errorSection(error: String?) -> some View {
+        if let error {
+            Section {
+                Text(error)
+                    .foregroundColor(.red)
+            }
+        }
+    }
+
+    private func saveSection(isLoading: Bool) -> some View {
+        Section {
+            Button(action: {
+                addRackViewModel.sharedVm.onSaveRack()
+            }) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                    }
+                    Text("Save Rack")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .accessibilityIdentifier("saveRackButton")
+            .disabled(isLoading)
+        }
+    }
+
+    private func persistSelectedPhoto(_ newItem: PhotosPickerItem?) {
+        Task {
+            guard let data = try? await newItem?.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data),
+                  let imageData = image.jpegData(compressionQuality: 0.8) else { return }
+            selectedImageData = data
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension("jpg")
+            try? imageData.write(to: tempURL)
+            addRackViewModel.sharedVm.onUpdatePhotoUri(uri: tempURL.path)
         }
     }
     
@@ -128,7 +146,7 @@ struct AddRackView: View {
             Button(action: {
                 showImagePicker = true
             }) {
-                Text(uiState.photoUri != nil ? "Change Photo" : "Select Photo")
+                Text(addRackViewModel.sharedVm.uiState.value.photoUri != nil ? "Change Photo" : "Select Photo")
                     .frame(maxWidth: .infinity)
             }
             .accessibilityIdentifier("changeOrSelectPhotoButton")
@@ -140,13 +158,6 @@ struct AddRackView: View {
 private struct AddRackView_Previews: PreviewProvider {
     static var previews: some View {
         AddRackView(
-            uiState: AddRackUiState.getDefault,
-            uiEvent: nil,
-            onUpdateName: { _ in },
-            onUpdateDescription: {_ in },
-            onUpdateLocation: {_ in },
-            onUpdatePhotoUri: {_ in },
-            onSaveRack: {},
             onNavigateBack: {},
         )
     }

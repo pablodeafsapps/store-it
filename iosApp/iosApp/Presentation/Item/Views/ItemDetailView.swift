@@ -25,13 +25,12 @@ struct ItemDetailView: View {
     @State private var selectedImageData: Data? = nil
 
     var body: some View {
-        NavigationView {
-            Group {
-                if uiState.isLoading {
-                    ProgressView()
-                        .accessibilityIdentifier("itemDetailLoading")
-                } else {
-                    Form {
+        Group {
+            if uiState.isLoading {
+                ProgressView()
+                    .accessibilityIdentifier("itemDetailLoading")
+            } else {
+                Form {
                         Section {
                             photoSection
                         }
@@ -127,20 +126,12 @@ struct ItemDetailView: View {
                             .disabled(uiState.isSaving)
                             .accessibilityIdentifier("itemDetailDeleteButton")
                         }
-                    }
                 }
             }
-            .navigationTitle("Item details")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Back") {
-                        onNavigateBack()
-                    }
-                    .accessibilityIdentifier("itemDetailBackButton")
-                }
-            }
-            .photosPicker(
+        }
+        .navigationTitle("Item details")
+        .navigationBarTitleDisplayMode(.inline)
+        .photosPicker(
                 isPresented: $showPhotoPicker,
                 selection: $selectedPhotoItem,
                 matching: .images
@@ -183,7 +174,6 @@ struct ItemDetailView: View {
             } message: {
                 Text("This cannot be undone.")
             }
-        }
     }
 
     private var photoSection: some View {

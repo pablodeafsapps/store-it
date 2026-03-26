@@ -1,55 +1,26 @@
 import SwiftUI
 import ComposeApp
 
-enum NavScreen {
-    case rackList
-    case search
-    case addRack
-    case addItem(initialRackId: String?, initialSlotId: String?)
-    case rackDetail(rackId: String)
-    case slotItems(rackId: String, slotId: String)
-    case itemDetail(itemId: String, rackId: String, slotId: String, fromSearch: Bool)
-}
-
-enum RackListNavigation {
-    static func nextScreen(current: NavScreen, event: RackListUiEvent?) -> NavScreen {
-        guard let event = event else { return current }
-        if event is RackListUiEventNavigateToAddRack {
-            return .addRack
-        } else if let detail = event as? RackListUiEventNavigateToRackDetail {
-            return .rackDetail(rackId: detail.rackId)
-        } else {
-            return current
-        }
-    }
-}
-
 struct ContentView: View {
     @StateObject private var rackListViewModel: ViewModelHolder<RackListViewModel> = ViewModelHolder(IosKoinHelper().getRackListViewModel())
-    @StateObject private var addRackViewModel: ViewModelHolder<AddRackViewModel> = ViewModelHolder(IosKoinHelper().getAddRackViewModel())
-    @State private var currentScreen: NavScreen = .rackList
+    @State private var path: [AppRoute] = []
 
     var body: some View {
-        switch currentScreen {
-        case .rackList:
-            Observing(rackListViewModel.sharedVm.uiState, rackListViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
+        NavigationStack(path: $path) {
+            Observing(rackListViewModel.sharedVm.uiState) { state in
                 ZStack {
                     RackListView(
                         uiState: state,
-                        uiEvent: event,
                         onAddRackSelected: { rackListViewModel.sharedVm.onAddRackSelected() },
                         onRackSelected: { rack in rackListViewModel.sharedVm.onRackSelected(rack: rack) },
-                        onNavigateToSearch: { currentScreen = .search }
+                        onNavigateToSearch: { path.append(.search) }
                     )
-                    .onChange(of: onEnum(of: event)) { _, _ in
-                        handleRackListEvent(event)
-                    }
 
                     VStack {
                         Spacer()
                         HStack {
                             Spacer()
-                            Button(action: { currentScreen = .addItem(initialRackId: nil, initialSlotId: nil) }) {
+                            Button(action: { path.append(.addItem(initialRackId: nil, initialSlotId: nil)) }) {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.system(size: 28))
                             }
@@ -62,93 +33,83 @@ struct ContentView: View {
                     }
                 }
             }
+            .task {
+                for await event in rackListViewModel.sharedVm.uiEvent {
+                    handleRackListEvent(event)
+                }
+            }
+            .navigationDestination(for: AppRoute.self) { route in
+                routeDestination(route)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func routeDestination(_ route: AppRoute) -> some View {
+        switch route {
         case .search:
             SearchFlowScreen(
-                onNavigateBack: { currentScreen = .rackList },
                 onItemSelected: { placement in
-                    currentScreen = .itemDetail(
-                        itemId: placement.item.id,
-                        rackId: placement.item.rackId,
-                        slotId: placement.item.slotId,
-                        fromSearch: true
-                    )
+                    path.append(.itemDetail(itemId: placement.item.id))
                 }
             )
         case .addRack:
-            Observing(addRackViewModel.sharedVm.uiState, addRackViewModel.sharedVm.uiEvent.withInitialValue(nil)) { state, event in
-                AddRackView(
-                    uiState: state,
-                    uiEvent: event,
-                    onUpdateName: addRackViewModel.sharedVm.onUpdateName,
-                    onUpdateDescription: addRackViewModel.sharedVm.onUpdateDescription,
-                    onUpdateLocation: addRackViewModel.sharedVm.onUpdateLocation,
-                    onUpdatePhotoUri: addRackViewModel.sharedVm.onUpdatePhotoUri,
-                    onSaveRack: addRackViewModel.sharedVm.onSaveRack,
-                    onNavigateBack: { currentScreen = .rackList },
-                )
-                .onChange(of: onEnum(of: event)) { _, _ in
-                    if event != nil {
-                        currentScreen = .rackList
-                    }
-                }
-            }
+            AddRackView(
+                onNavigateBack: { path.removeLast() }
+            )
         case .addItem(let initialRackId, let initialSlotId):
             AddItemScreen(
                 initialRackId: initialRackId,
                 initialSlotId: initialSlotId,
-                onNavigateToAddRack: { currentScreen = .addRack },
-                onNavigateBack: { currentScreen = .rackList }
+                onNavigateToAddRack: { path.append(.addRack) },
+                onNavigateBack: { path.removeLast() }
             )
         case .rackDetail(let rackId):
             RackDetailView(
                 rackId: rackId,
-                onNavigateBack: { currentScreen = .rackList },
+                onNavigateBack: { path.removeLast() },
                 onAddItemHere: { initialRackId, initialSlotId in
-                    currentScreen = .addItem(initialRackId: initialRackId, initialSlotId: initialSlotId)
+                    path.append(.addItem(initialRackId: initialRackId, initialSlotId: initialSlotId))
                 },
                 onNavigateToSlotItems: { r, s in
-                    currentScreen = .slotItems(rackId: r, slotId: s)
+                    path.append(.slotItems(rackId: r, slotId: s))
                 }
             )
         case .slotItems(let rackId, let slotId):
             SlotItemsView(
                 rackId: rackId,
                 slotId: slotId,
-                onNavigateBack: { currentScreen = .rackDetail(rackId: rackId) },
                 onAddItem: { r, s in
-                    currentScreen = .addItem(initialRackId: r, initialSlotId: s)
+                    path.append(.addItem(initialRackId: r, initialSlotId: s))
                 },
                 onItemSelected: { itemId in
-                    currentScreen = .itemDetail(itemId: itemId, rackId: rackId, slotId: slotId, fromSearch: false)
+                    path.append(.itemDetail(itemId: itemId))
                 }
             )
-        case .itemDetail(let itemId, let rackId, let slotId, let fromSearch):
+        case .itemDetail(let itemId):
             ItemDetailScreen(
                 itemId: itemId,
-                onNavigateBack: {
-                    if fromSearch {
-                        currentScreen = .search
-                    } else {
-                        currentScreen = .slotItems(rackId: rackId, slotId: slotId)
-                    }
-                }
+                onNavigateBack: { path.removeLast() }
             )
         }
     }
 
     private func handleRackListEvent(_ event: RackListUiEvent?) {
-        currentScreen = RackListNavigation.nextScreen(current: currentScreen, event: event)
+        guard let event else { return }
+        if event is RackListUiEventNavigateToAddRack {
+            path.append(.addRack)
+        } else if let detail = event as? RackListUiEventNavigateToRackDetail {
+            path.append(.rackDetail(rackId: detail.rackId))
+        }
     }
 }
 
 private struct SearchFlowScreen: View {
     @StateObject private var viewModel: ViewModelHolder<SearchViewModel>
-    let onNavigateBack: () -> Void
     let onItemSelected: (ItemWithPlacement) -> Void
 
-    init(onNavigateBack: @escaping () -> Void, onItemSelected: @escaping (ItemWithPlacement) -> Void) {
+    init(onItemSelected: @escaping (ItemWithPlacement) -> Void) {
         _viewModel = StateObject(wrappedValue: ViewModelHolder(IosKoinHelper().getSearchViewModel()))
-        self.onNavigateBack = onNavigateBack
         self.onItemSelected = onItemSelected
     }
 
@@ -157,8 +118,7 @@ private struct SearchFlowScreen: View {
             GlobalSearchView(
                 uiState: state,
                 onQueryChange: { viewModel.sharedVm.onQueryChange(query: $0) },
-                onItemSelected: onItemSelected,
-                onNavigateBack: onNavigateBack
+                onItemSelected: onItemSelected
             )
         }
     }

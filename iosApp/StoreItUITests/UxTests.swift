@@ -103,8 +103,8 @@ final class UxTests: XCTestCase {
         let detailTitle = app.navigationBars["Detail Rack"]
         XCTAssertTrue(detailTitle.waitForExistence(timeout: 5))
 
-        let backButton = app.buttons["Back"]
-        XCTAssertTrue(backButton.exists)
+        let backButton = detailTitle.buttons.element(boundBy: 0)
+        XCTAssertTrue(backButton.waitForExistence(timeout: 5))
         backButton.tap()
 
         let racksTitle = app.navigationBars["Racks"]
@@ -219,19 +219,23 @@ final class UxTests: XCTestCase {
         XCTAssertTrue(rackCell.waitForExistence(timeout: 5))
         rackCell.tap()
 
-        let imageArea = app.otherElements["rackDetailImageArea"]
-        XCTAssertTrue(imageArea.waitForExistence(timeout: 5))
-        imageArea.tap()
+        let detailTitle = app.navigationBars["Slot Tap Rack"]
+        XCTAssertTrue(detailTitle.waitForExistence(timeout: 10))
+
+        let otherImageArea = app.otherElements["rackDetailImageArea"]
+        if otherImageArea.waitForExistence(timeout: 10) {
+            otherImageArea.tap()
+        } else {
+            let imageAreaAsImage = app.images["rackDetailImageArea"]
+            XCTAssertTrue(imageAreaAsImage.waitForExistence(timeout: 10))
+            imageAreaAsImage.tap()
+        }
 
         let cancelAddItem = app.buttons["Cancel"]
         XCTAssertTrue(cancelAddItem.waitForExistence(timeout: 5))
         cancelAddItem.tap()
 
-        XCTAssertTrue(app.navigationBars["Racks"].waitForExistence(timeout: 5))
-
-        let rackCellAgain = app.buttons["rackRowViewButton"]
-        XCTAssertTrue(rackCellAgain.waitForExistence(timeout: 5))
-        rackCellAgain.tap()
+        XCTAssertTrue(app.navigationBars["Slot Tap Rack"].waitForExistence(timeout: 5))
 
         let imageAreaAgain = app.otherElements["rackDetailImageArea"]
         XCTAssertTrue(imageAreaAgain.waitForExistence(timeout: 5))
@@ -241,7 +245,8 @@ final class UxTests: XCTestCase {
         XCTAssertTrue(sheetTitle.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["No items stored here."].exists)
 
-        let backFromSlotItems = app.buttons["Back"]
+        let slotItemsNavBar = app.navigationBars["Items in this slot"]
+        let backFromSlotItems = slotItemsNavBar.buttons.element(boundBy: 0)
         XCTAssertTrue(backFromSlotItems.waitForExistence(timeout: 5))
         backFromSlotItems.tap()
     }
