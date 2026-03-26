@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.res.stringResource
 import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -42,7 +43,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import org.deafsapps.storeit.androidapp.design.CloseIcon
+import org.deafsapps.storeit.androidapp.R
+import org.deafsapps.storeit.androidapp.design.closeIcon
 import org.deafsapps.storeit.presentation.rack.model.AddRackUiEvent
 import org.deafsapps.storeit.presentation.rack.model.AddRackUiState
 
@@ -74,15 +76,15 @@ internal fun AddRackScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Rack") },
+                title = { Text(stringResource(R.string.add_rack_title)) },
                 navigationIcon = {
                     IconButton(
                         onClick = onNavigateBack,
                         modifier = Modifier.testTag("addRackCancelButton"),
                     ) {
                         Icon(
-                            imageVector = CloseIcon,
-                            contentDescription = "Cancel",
+                            imageVector = closeIcon,
+                            contentDescription = stringResource(R.string.common_cancel),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -106,7 +108,7 @@ internal fun AddRackScreen(
             OutlinedTextField(
                 value = uiState.name,
                 onValueChange = { name -> onUpdateName(name) },
-                label = { Text("Name *") },
+                label = { Text(stringResource(R.string.rack_name_required_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("addRackNameField"),
@@ -116,7 +118,7 @@ internal fun AddRackScreen(
             OutlinedTextField(
                 value = uiState.description,
                 onValueChange = { descr -> onUpdateDescription(descr) },
-                label = { Text("Description") },
+                label = { Text(stringResource(R.string.rack_description_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("addRackDescriptionField"),
@@ -126,7 +128,7 @@ internal fun AddRackScreen(
             OutlinedTextField(
                 value = uiState.location,
                 onValueChange = { loc -> onUpdateLocation(loc) },
-                label = { Text("Location") },
+                label = { Text(stringResource(R.string.rack_location_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("addRackLocationField"),
@@ -156,7 +158,7 @@ internal fun AddRackScreen(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Text("Save Rack")
+                    Text(stringResource(R.string.rack_save_button))
                 }
             }
         }
@@ -187,12 +189,12 @@ private fun PhotoPickerSection(
                 if (photoUri != null) {
                     AsyncImage(
                         model = photoUri,
-                        contentDescription = "Rack photo",
+                        contentDescription = stringResource(R.string.rack_photo_content_description),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
                     )
                 } else {
-                    Text("No photo selected")
+                    Text(stringResource(R.string.photo_none_selected))
                 }
             }
         }
@@ -205,7 +207,10 @@ private fun PhotoPickerSection(
                 .fillMaxWidth()
                 .testTag("addRackPhotoPickerButton"),
         ) {
-            Text(if (photoUri != null) "Change Photo" else "Select Photo")
+            Text(
+                if (photoUri != null) stringResource(R.string.photo_change)
+                else stringResource(R.string.photo_select),
+            )
         }
     }
 

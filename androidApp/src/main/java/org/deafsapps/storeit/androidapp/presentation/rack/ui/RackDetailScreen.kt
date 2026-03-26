@@ -37,6 +37,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.Lifecycle
@@ -54,7 +55,8 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.deafsapps.storeit.domain.model.Rack
-import org.deafsapps.storeit.androidapp.design.BackArrowIcon
+import org.deafsapps.storeit.androidapp.design.backArrowIcon
+import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
@@ -146,7 +148,13 @@ private fun RackDetailContent(
 ) {
     Scaffold(
         topBar = {
-            val title = (uiState.rack?.name ?: "Rack") + if (forItemPlacement) " - select slot" else ""
+            val rackName = uiState.rack?.name ?: stringResource(R.string.rack_detail_title_default)
+            val title =
+                if (forItemPlacement) {
+                    stringResource(R.string.rack_detail_title_select_slot, rackName)
+                } else {
+                    rackName
+                }
             TopAppBar(
                 title = { Text(title) },
                 navigationIcon = {
@@ -155,8 +163,8 @@ private fun RackDetailContent(
                         modifier = Modifier.testTag("rackDetailBackButton"),
                     ) {
                         Icon(
-                            imageVector = BackArrowIcon,
-                            contentDescription = "Back",
+                            imageVector = backArrowIcon,
+                            contentDescription = stringResource(R.string.common_back),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -176,7 +184,7 @@ private fun RackDetailContent(
                         ) {
                             DropdownMenuItem(
                                 modifier = Modifier.testTag("editRackMenuItem"),
-                                text = { Text("Edit") },
+                                text = { Text(stringResource(R.string.rack_detail_menu_edit)) },
                                 onClick = {
                                     showMenu = false
                                     onEditSelected()
@@ -184,7 +192,7 @@ private fun RackDetailContent(
                             )
                             DropdownMenuItem(
                                 modifier = Modifier.testTag("removeRackMenuItem"),
-                                text = { Text("Remove rack") },
+                                text = { Text(stringResource(R.string.rack_detail_menu_remove)) },
                                 onClick = {
                                     showMenu = false
                                     onRemoveRackSelected()
@@ -202,7 +210,7 @@ private fun RackDetailContent(
                         onClick = { onSlotSelectedForItem(slot.id) },
                         modifier = Modifier.testTag("useThisSlotButton"),
                     ) {
-                        Text("Use this slot")
+                        Text(stringResource(R.string.rack_detail_use_this_slot))
                     }
                 }
             }
@@ -223,7 +231,7 @@ private fun RackDetailContent(
                 }
                 uiState.rack == null -> {
                     Text(
-                        text = uiState.error ?: "Rack not found",
+                        text = uiState.error ?: stringResource(R.string.rack_not_found),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier
                             .align(Alignment.Center)
@@ -254,7 +262,7 @@ private fun RackDetailContent(
                         }
                         if (rack.location.isNotBlank()) {
                             Text(
-                                text = "Location: ${rack.location}",
+                                text = stringResource(R.string.rack_location_prefix, rack.location),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = Dimens.spacingSmall),
@@ -291,14 +299,14 @@ private fun RackDetailContent(
     if (uiState.showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = onDismissDeleteConfirm,
-            title = { Text("Remove rack?") },
-            text = { Text("This will delete the rack and all its slots and items. This cannot be undone.") },
+            title = { Text(stringResource(R.string.rack_remove_confirm_title)) },
+            text = { Text(stringResource(R.string.rack_remove_confirm_body)) },
             confirmButton = {
                 TextButton(
                     onClick = onConfirmDeleteRack,
                     modifier = Modifier.testTag("removeRackConfirmButton"),
                 ) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_remove), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -306,7 +314,7 @@ private fun RackDetailContent(
                     onClick = onDismissDeleteConfirm,
                     modifier = Modifier.testTag("removeRackCancelButton"),
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             },
         )
@@ -338,7 +346,7 @@ private fun RackImageWithSlots(
             if (photoUri != null) {
                 AsyncImage(
                     model = photoUri,
-                    contentDescription = "Rack photo",
+                    contentDescription = stringResource(R.string.rack_photo_content_description),
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.medium),
@@ -351,7 +359,7 @@ private fun RackImageWithSlots(
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("No photo", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.rack_no_photo), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Box(
@@ -407,13 +415,13 @@ private fun EditRackDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit rack") },
+        title = { Text(stringResource(R.string.rack_edit_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Dimens.dialogContentSpacing)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = onNameChange,
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.rack_edit_name_label)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("editRackNameField"),
@@ -422,7 +430,7 @@ private fun EditRackDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = onDescriptionChange,
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.rack_edit_description_label)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("editRackDescriptionField"),
@@ -431,7 +439,7 @@ private fun EditRackDialog(
                 OutlinedTextField(
                     value = location,
                     onValueChange = onLocationChange,
-                    label = { Text("Location") },
+                    label = { Text(stringResource(R.string.rack_edit_location_label)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("editRackLocationField"),
@@ -444,7 +452,7 @@ private fun EditRackDialog(
                 onClick = onSave,
                 modifier = Modifier.testTag("editRackSaveButton"),
             ) {
-                Text("Save")
+                Text(stringResource(R.string.common_save))
             }
         },
         dismissButton = {
@@ -452,7 +460,7 @@ private fun EditRackDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("editRackCancelButton"),
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
     )

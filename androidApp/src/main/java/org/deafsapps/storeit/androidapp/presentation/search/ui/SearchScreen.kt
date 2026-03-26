@@ -16,18 +16,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import org.deafsapps.storeit.androidapp.design.BackArrowIcon
+import org.deafsapps.storeit.androidapp.design.backArrowIcon
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.stringResource
 import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.domain.model.ItemWithPlacement
+import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.presentation.search.model.SearchUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +60,7 @@ private fun SearchScreenContent(
             TopAppBar(
                 title = {
                     Text(
-                        "Search items",
+                        stringResource(R.string.search_title),
                         modifier = Modifier.testTag("searchScreenTitle"),
                     )
                 },
@@ -69,8 +70,8 @@ private fun SearchScreenContent(
                         modifier = Modifier.testTag("searchScreenBackButton"),
                     ) {
                         Icon(
-                            imageVector = BackArrowIcon,
-                            contentDescription = "Back",
+                            imageVector = backArrowIcon,
+                            contentDescription = stringResource(R.string.common_back),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -90,7 +91,7 @@ private fun SearchScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("searchScreenQueryField"),
-                placeholder = { Text("Search by name or description") },
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 singleLine = true,
             )
             Box(
@@ -120,7 +121,7 @@ private fun SearchScreenContent(
                     }
                     uiState.query.isBlank() -> {
                         Text(
-                            text = "Type to search your items.",
+                            text = stringResource(R.string.search_hint_type_to_search),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
@@ -130,7 +131,7 @@ private fun SearchScreenContent(
                     }
                     uiState.results.isEmpty() -> {
                         Text(
-                            text = "No items match your search.",
+                            text = stringResource(R.string.search_no_results),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
@@ -179,12 +180,12 @@ private fun SearchResultRow(
                 modifier = Modifier.testTag("searchResultItemName_${row.item.id}"),
             )
             Text(
-                text = "Rack: ${row.rackName}",
+                text = stringResource(R.string.search_result_rack_prefix, row.rackName),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "Slot: ${row.slotSummary}",
+                text = stringResource(R.string.search_result_slot_prefix, row.slotSummary),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

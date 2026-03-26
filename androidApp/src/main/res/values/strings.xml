@@ -1,3 +1,82 @@
 <resources>
     <string name="app_name">Store It!</string>
+
+    <string name="common_back">Back</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_save">Save</string>
+    <string name="common_remove">Remove</string>
+    <string name="common_add">Add</string>
+
+    <string name="nav_unknown_route">Unknown route: %1$s</string>
+
+    <string name="rack_list_title">Racks</string>
+    <string name="rack_list_overflow_menu">More options</string>
+    <string name="rack_list_overflow_add_item">Add item</string>
+    <string name="rack_list_search_placeholder">Search items by name or description</string>
+    <string name="rack_list_empty_title">No racks yet</string>
+    <string name="rack_list_empty_subtitle">Add your first storage rack to get started</string>
+    <string name="rack_list_empty_add_rack">Add Rack</string>
+
+    <string name="add_rack_title">Add Rack</string>
+    <string name="rack_name_required_label">Name *</string>
+    <string name="rack_description_label">Description</string>
+    <string name="rack_location_label">Location</string>
+    <string name="rack_save_button">Save Rack</string>
+    <string name="rack_photo_content_description">Rack photo</string>
+    <string name="photo_none_selected">No photo selected</string>
+    <string name="photo_change">Change Photo</string>
+    <string name="photo_select">Select Photo</string>
+
+    <string name="image_picker_title">Select Photo Source</string>
+    <string name="image_picker_take_photo">Take Photo</string>
+    <string name="image_picker_choose_gallery">Choose from Gallery</string>
+
+    <string name="rack_detail_title_default">Rack</string>
+    <string name="rack_detail_title_select_slot">%1$s - select slot</string>
+    <string name="rack_detail_overflow_menu">More options</string>
+    <string name="rack_detail_menu_edit">Edit</string>
+    <string name="rack_detail_menu_remove">Remove rack</string>
+    <string name="rack_detail_use_this_slot">Use this slot</string>
+    <string name="rack_not_found">Rack not found</string>
+    <string name="rack_location_prefix">Location: %1$s</string>
+    <string name="rack_no_photo">No photo</string>
+    <string name="rack_edit_title">Edit rack</string>
+    <string name="rack_edit_name_label">Name</string>
+    <string name="rack_edit_description_label">Description</string>
+    <string name="rack_edit_location_label">Location</string>
+    <string name="rack_remove_confirm_title">Remove rack?</string>
+    <string name="rack_remove_confirm_body">This will delete the rack and all its slots and items. This cannot be undone.</string>
+    <string name="rack_detail_placeholder_title">Rack detail</string>
+    <string name="rack_detail_placeholder_body">Rack: %1$s (detail screen coming in T014)</string>
+
+    <string name="search_title">Search items</string>
+    <string name="search_placeholder">Search by name or description</string>
+    <string name="search_hint_type_to_search">Type to search your items.</string>
+    <string name="search_no_results">No items match your search.</string>
+    <string name="search_result_rack_prefix">Rack: %1$s</string>
+    <string name="search_result_slot_prefix">Slot: %1$s</string>
+
+    <string name="slot_items_title">Items in this slot</string>
+    <string name="slot_items_empty">No items stored here.</string>
+    <string name="slot_items_add_item">Add item</string>
+
+    <string name="add_item_title">Add Item</string>
+    <string name="item_name_label">Name</string>
+    <string name="item_description_label">Description</string>
+    <string name="item_quantity_label">Quantity</string>
+    <string name="item_owner_label">Owner</string>
+    <string name="item_tags_label">Tags</string>
+    <string name="item_photo_content_description">Item photo</string>
+    <string name="item_place_selected">Place: Rack &amp; slot selected</string>
+    <string name="item_place_select">Select rack &amp; slot</string>
+    <string name="item_save_button">Save Item</string>
+
+    <string name="select_rack_title">Select Rack</string>
+    <string name="select_rack_empty_message">You need at least one rack to place an item. Create one first.</string>
+    <string name="select_rack_add_rack">Add rack</string>
+
+    <string name="item_detail_title">Item details</string>
+    <string name="item_remove_button">Remove item</string>
+    <string name="item_remove_confirm_title">Remove item?</string>
+    <string name="item_remove_confirm_body">This cannot be undone.</string>
 </resources>

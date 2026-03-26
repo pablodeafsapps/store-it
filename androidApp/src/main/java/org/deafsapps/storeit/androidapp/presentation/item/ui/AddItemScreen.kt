@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
@@ -50,10 +51,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import org.deafsapps.storeit.androidapp.design.Dimens
-import org.deafsapps.storeit.androidapp.design.BackArrowIcon
-import org.deafsapps.storeit.androidapp.design.CloseIcon
+import org.deafsapps.storeit.androidapp.design.backArrowIcon
+import org.deafsapps.storeit.androidapp.design.closeIcon
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.ImagePickerDialog
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
+import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.item.model.AddItemStep
 import org.deafsapps.storeit.presentation.item.model.AddItemUiEvent
@@ -196,15 +198,15 @@ private fun AddItemForm(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Item") },
+                title = { Text(stringResource(R.string.add_item_title)) },
                 navigationIcon = {
                     IconButton(
                         onClick = onNavigateBack,
                         modifier = Modifier.testTag("addItemCancelButton"),
                     ) {
                         Icon(
-                            imageVector = CloseIcon,
-                            contentDescription = "Cancel",
+                            imageVector = closeIcon,
+                            contentDescription = stringResource(R.string.common_cancel),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -228,7 +230,7 @@ private fun AddItemForm(
             OutlinedTextField(
                 value = uiState.name,
                 onValueChange = onUpdateName,
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.item_name_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("addItemNameField"),
@@ -238,7 +240,7 @@ private fun AddItemForm(
             OutlinedTextField(
                 value = uiState.description,
                 onValueChange = onUpdateDescription,
-                label = { Text("Description") },
+                label = { Text(stringResource(R.string.item_description_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("addItemDescriptionField"),
@@ -248,7 +250,7 @@ private fun AddItemForm(
             OutlinedTextField(
                 value = uiState.quantity?.toString() ?: "",
                 onValueChange = { onUpdateQuantity(it.toIntOrNull()) },
-                label = { Text("Quantity") },
+                label = { Text(stringResource(R.string.item_quantity_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("addItemQuantityField"),
@@ -258,7 +260,7 @@ private fun AddItemForm(
             OutlinedTextField(
                 value = uiState.owner,
                 onValueChange = onUpdateOwner,
-                label = { Text("Owner") },
+                label = { Text(stringResource(R.string.item_owner_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("addItemOwnerField"),
@@ -273,7 +275,7 @@ private fun AddItemForm(
                 OutlinedTextField(
                     value = uiState.tagInput,
                     onValueChange = onUpdateTagInput,
-                    label = { Text("Tags") },
+                    label = { Text(stringResource(R.string.item_tags_label)) },
                     modifier = Modifier
                         .weight(1f)
                         .testTag("addItemTagsInputField"),
@@ -283,7 +285,7 @@ private fun AddItemForm(
                     onClick = onAddTag,
                     modifier = Modifier.testTag("addTagButton"),
                 ) {
-                    Text("Add")
+                    Text(stringResource(R.string.common_add))
                 }
             }
             if (uiState.tags.isNotEmpty()) {
@@ -318,9 +320,9 @@ private fun AddItemForm(
             ) {
                 Text(
                     if (uiState.selectedRackId != null && uiState.selectedSlotId != null)
-                        "Place: Rack & slot selected"
+                        stringResource(R.string.item_place_selected)
                     else
-                        "Select rack & slot",
+                        stringResource(R.string.item_place_select),
                 )
             }
 
@@ -349,7 +351,7 @@ private fun AddItemForm(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Text("Save Item")
+                    Text(stringResource(R.string.item_save_button))
                 }
             }
         }
@@ -388,12 +390,12 @@ private fun PhotoPickerSection(
                 if (photoUri != null) {
                     AsyncImage(
                         model = photoUri,
-                        contentDescription = "Item photo",
+                        contentDescription = stringResource(R.string.item_photo_content_description),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
                     )
                 } else {
-                    Text("No photo selected")
+                    Text(stringResource(R.string.photo_none_selected))
                 }
             }
         }
@@ -404,7 +406,10 @@ private fun PhotoPickerSection(
                 .fillMaxWidth()
                 .testTag("addItemPhotoPickerButton"),
         ) {
-            Text(if (photoUri != null) "Change Photo" else "Select Photo")
+            Text(
+                if (photoUri != null) stringResource(R.string.photo_change)
+                else stringResource(R.string.photo_select),
+            )
         }
     }
 }
@@ -420,15 +425,15 @@ private fun SelectRackContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Select Rack") },
+                title = { Text(stringResource(R.string.select_rack_title)) },
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
                         modifier = Modifier.testTag("selectRackBackButton"),
                     ) {
                         Icon(
-                            imageVector = BackArrowIcon,
-                            contentDescription = "Back",
+                            imageVector = backArrowIcon,
+                            contentDescription = stringResource(R.string.common_back),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -450,7 +455,7 @@ private fun SelectRackContent(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "You need at least one rack to place an item. Create one first.",
+                        text = stringResource(R.string.select_rack_empty_message),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -461,7 +466,7 @@ private fun SelectRackContent(
                         .fillMaxWidth()
                         .testTag("addRackEmptyStateButton"),
                 ) {
-                    Text("Add rack")
+                    Text(stringResource(R.string.select_rack_add_rack))
                 }
             }
         } else {

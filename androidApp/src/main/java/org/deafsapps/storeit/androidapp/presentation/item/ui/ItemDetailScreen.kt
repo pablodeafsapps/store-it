@@ -23,7 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import org.deafsapps.storeit.androidapp.design.BackArrowIcon
+import org.deafsapps.storeit.androidapp.design.backArrowIcon
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -49,6 +50,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.ImagePickerDialog
+import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.presentation.item.model.ItemDetailUiState
 import org.deafsapps.storeit.presentation.item.model.ItemDetailUiEvent
 import org.deafsapps.storeit.presentation.item.viewmodel.ItemDetailViewModel
@@ -134,7 +136,7 @@ private fun ItemDetailScreenContent(
             TopAppBar(
                 title = {
                     Text(
-                        "Item details",
+                        stringResource(R.string.item_detail_title),
                         modifier = Modifier.testTag("itemDetailScreenTitle"),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -146,8 +148,8 @@ private fun ItemDetailScreenContent(
                         modifier = Modifier.testTag("itemDetailBackButton"),
                     ) {
                         Icon(
-                            imageVector = BackArrowIcon,
-                            contentDescription = "Back",
+                            imageVector = backArrowIcon,
+                            contentDescription = stringResource(R.string.common_back),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -182,7 +184,7 @@ private fun ItemDetailScreenContent(
                         OutlinedTextField(
                             value = uiState.name,
                             onValueChange = onUpdateName,
-                            label = { Text("Name") },
+                            label = { Text(stringResource(R.string.item_name_label)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("itemDetailNameField"),
@@ -192,7 +194,7 @@ private fun ItemDetailScreenContent(
                         OutlinedTextField(
                             value = uiState.description,
                             onValueChange = onUpdateDescription,
-                            label = { Text("Description") },
+                            label = { Text(stringResource(R.string.item_description_label)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("itemDetailDescriptionField"),
@@ -202,7 +204,7 @@ private fun ItemDetailScreenContent(
                         OutlinedTextField(
                             value = uiState.quantity?.toString() ?: "",
                             onValueChange = { onUpdateQuantity(it.toIntOrNull()) },
-                            label = { Text("Quantity") },
+                            label = { Text(stringResource(R.string.item_quantity_label)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("itemDetailQuantityField"),
@@ -212,7 +214,7 @@ private fun ItemDetailScreenContent(
                         OutlinedTextField(
                             value = uiState.owner,
                             onValueChange = onUpdateOwner,
-                            label = { Text("Owner") },
+                            label = { Text(stringResource(R.string.item_owner_label)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("itemDetailOwnerField"),
@@ -227,7 +229,7 @@ private fun ItemDetailScreenContent(
                             OutlinedTextField(
                                 value = uiState.tagInput,
                                 onValueChange = onUpdateTagInput,
-                                label = { Text("Tags") },
+                                label = { Text(stringResource(R.string.item_tags_label)) },
                                 modifier = Modifier
                                     .weight(1f)
                                     .testTag("itemDetailTagsInputField"),
@@ -237,7 +239,7 @@ private fun ItemDetailScreenContent(
                                 onClick = onAddTag,
                                 modifier = Modifier.testTag("itemDetailAddTagButton"),
                             ) {
-                                Text("Add")
+                                Text(stringResource(R.string.common_add))
                             }
                         }
                         if (uiState.tags.isNotEmpty()) {
@@ -287,7 +289,7 @@ private fun ItemDetailScreenContent(
                                     color = MaterialTheme.colorScheme.onPrimary,
                                 )
                             } else {
-                                Text("Save")
+                                Text(stringResource(R.string.common_save))
                             }
                         }
 
@@ -298,7 +300,7 @@ private fun ItemDetailScreenContent(
                                 .testTag("itemDetailDeleteButton"),
                             enabled = !uiState.isSaving,
                         ) {
-                            Text("Remove item", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.item_remove_button), color = MaterialTheme.colorScheme.error)
                         }
                     }
             }
@@ -318,14 +320,14 @@ private fun ItemDetailScreenContent(
     if (uiState.showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = onDismissDeleteConfirm,
-            title = { Text("Remove item?") },
-            text = { Text("This cannot be undone.") },
+            title = { Text(stringResource(R.string.item_remove_confirm_title)) },
+            text = { Text(stringResource(R.string.item_remove_confirm_body)) },
             confirmButton = {
                 TextButton(
                     onClick = onConfirmDelete,
                     modifier = Modifier.testTag("itemDetailDeleteConfirmButton"),
                 ) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_remove), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -333,7 +335,7 @@ private fun ItemDetailScreenContent(
                     onClick = onDismissDeleteConfirm,
                     modifier = Modifier.testTag("itemDetailDeleteCancelButton"),
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             },
         )
@@ -362,12 +364,12 @@ private fun ItemDetailPhotoSection(
                 if (photoUri != null) {
                     AsyncImage(
                         model = photoUri,
-                        contentDescription = "Item photo",
+                        contentDescription = stringResource(R.string.item_photo_content_description),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
                     )
                 } else {
-                    Text("No photo selected")
+                    Text(stringResource(R.string.photo_none_selected))
                 }
             }
         }
@@ -378,7 +380,10 @@ private fun ItemDetailPhotoSection(
                 .fillMaxWidth()
                 .testTag("itemDetailPhotoPickerButton"),
         ) {
-            Text(if (photoUri != null) "Change photo" else "Select photo")
+            Text(
+                if (photoUri != null) stringResource(R.string.photo_change)
+                else stringResource(R.string.photo_select),
+            )
         }
     }
 }

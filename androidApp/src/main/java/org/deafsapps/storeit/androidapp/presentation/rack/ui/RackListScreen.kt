@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import org.deafsapps.storeit.androidapp.design.Dimens
@@ -47,6 +48,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
@@ -80,7 +82,7 @@ internal fun RackListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Racks") },
+                title = { Text(stringResource(R.string.rack_list_title)) },
                 actions = {
                     var showMenu by remember { mutableStateOf(false) }
                     IconButton(
@@ -95,7 +97,7 @@ internal fun RackListScreen(
                     ) {
                         DropdownMenuItem(
                             modifier = Modifier.testTag("rackListAddItemMenuItem"),
-                            text = { Text("Add item") },
+                            text = { Text(stringResource(R.string.rack_list_overflow_add_item)) },
                             onClick = {
                                 showMenu = false
                                 onNavigateToAddItem()
@@ -132,7 +134,7 @@ internal fun RackListScreen(
                     enabled = false,
                     onValueChange = {},
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search items by name or description") },
+                    placeholder = { Text(stringResource(R.string.rack_list_search_placeholder)) },
                     singleLine = true,
                 )
                 Box(
@@ -202,12 +204,12 @@ private fun EmptyState(
         verticalArrangement = Arrangement.spacedBy(Dimens.emptyStateVerticalSpacing),
     ) {
         Text(
-            text = "No racks yet",
+            text = stringResource(R.string.rack_list_empty_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = "Add your first storage rack to get started",
+            text = stringResource(R.string.rack_list_empty_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -217,7 +219,7 @@ private fun EmptyState(
                 .fillMaxWidth()
                 .testTag("rackListEmptyStateAddRackButton"),
         ) {
-            Text("Add Rack")
+            Text(stringResource(R.string.rack_list_empty_add_rack))
         }
     }
 }

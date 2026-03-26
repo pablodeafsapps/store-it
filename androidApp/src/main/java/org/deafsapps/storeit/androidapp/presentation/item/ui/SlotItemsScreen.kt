@@ -21,12 +21,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import org.deafsapps.storeit.androidapp.design.BackArrowIcon
+import androidx.compose.ui.res.stringResource
+import org.deafsapps.storeit.androidapp.design.backArrowIcon
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.DisposableEffect
 import org.deafsapps.storeit.androidapp.design.Dimens
+import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.presentation.item.viewmodel.SlotItemsViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -62,7 +64,7 @@ internal fun SlotItemsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Items in this slot",
+                        stringResource(R.string.slot_items_title),
                         modifier = Modifier.testTag("slotItemsScreenTitle"),
                     )
                 },
@@ -72,8 +74,8 @@ internal fun SlotItemsScreen(
                         modifier = Modifier.testTag("slotItemsScreenBackButton"),
                     ) {
                         Icon(
-                            imageVector = BackArrowIcon,
-                            contentDescription = "Back",
+                            imageVector = backArrowIcon,
+                            contentDescription = stringResource(R.string.common_back),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -111,7 +113,7 @@ internal fun SlotItemsScreen(
                             .padding(Dimens.screenPadding),
                     ) {
                         Text(
-                            text = "No items stored here.",
+                            text = stringResource(R.string.slot_items_empty),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier
                                 .align(Alignment.Center)
@@ -123,7 +125,7 @@ internal fun SlotItemsScreen(
                                 .align(Alignment.BottomCenter)
                                 .testTag("slotItemsScreenAddItemButton"),
                         ) {
-                            Text("Add item")
+                            Text(stringResource(R.string.slot_items_add_item))
                         }
                     }
                 }
@@ -150,7 +152,7 @@ internal fun SlotItemsScreen(
                                     .padding(Dimens.screenPadding)
                                     .testTag("slotItemsScreenAddItemButton"),
                             ) {
-                                Text("Add item")
+                                Text(stringResource(R.string.slot_items_add_item))
                             }
                         }
                     }

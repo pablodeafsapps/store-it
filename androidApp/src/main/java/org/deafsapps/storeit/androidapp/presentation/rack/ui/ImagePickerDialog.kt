@@ -19,9 +19,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.core.content.FileProvider
+import org.deafsapps.storeit.androidapp.R
 import java.io.File
 import java.util.UUID
 
@@ -73,7 +75,7 @@ internal fun ImagePickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select Photo Source") },
+        title = { Text(stringResource(R.string.image_picker_title)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -87,7 +89,7 @@ internal fun ImagePickerDialog(
                         .fillMaxWidth()
                         .testTag("imagePickerDialogTakePhotoButton"),
                 ) {
-                    Text("Take Photo")
+                    Text(stringResource(R.string.image_picker_take_photo))
                 }
                 Button(
                     onClick = {
@@ -97,7 +99,7 @@ internal fun ImagePickerDialog(
                         .fillMaxWidth()
                         .testTag("imagePickerDialogChooseGalleryButton"),
                 ) {
-                    Text("Choose from Gallery")
+                    Text(stringResource(R.string.image_picker_choose_gallery))
                 }
             }
         },
@@ -106,7 +108,7 @@ internal fun ImagePickerDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("imagePickerDialogCancelButton"),
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
     )

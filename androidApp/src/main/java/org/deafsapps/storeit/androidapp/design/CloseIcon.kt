@@ -6,7 +6,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-internal val CloseIcon: ImageVector =
+@Suppress("MagicNumber")
+internal val closeIcon: ImageVector =
     ImageVector.Builder(
         name = "CloseIcon",
         defaultWidth = 24.dp,

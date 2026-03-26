@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
@@ -55,7 +56,7 @@ internal fun StoreItNavDisplay(
             entryProvider(
                 fallback = { key ->
                     NavEntry(key) { route ->
-                        Text("Unknown route: $route")
+                        Text(stringResource(R.string.nav_unknown_route, route.toString()))
                     }
                 },
             ) {
