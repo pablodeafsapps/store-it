@@ -4,10 +4,14 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
@@ -25,14 +29,13 @@ import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.deafsapps.storeit.presentation.search.viewmodel.SearchViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 internal fun StoreItNavDisplay(
     backStack: NavBackStack<NavKey>,
-    rackListViewModel: () -> RackListViewModel,
-    addRackViewModel: () -> AddRackViewModel,
-    searchViewModel: () -> SearchViewModel,
     onRootBack: () -> Unit,
+    rackListViewModel: () -> RackListViewModel,
 ) {
     BackHandler {
         if (backStack.size > 1) {
@@ -69,13 +72,11 @@ internal fun StoreItNavDisplay(
                 entry<NavScreen.Search> {
                     SearchNavContent(
                         backStack = backStack,
-                        searchViewModel = searchViewModel,
                     )
                 }
                 entry<NavScreen.AddRack> {
                     AddRackNavContent(
                         backStack = backStack,
-                        addRackViewModel = addRackViewModel,
                     )
                 }
                 entry<NavScreen.RackDetail> { screen ->
@@ -148,12 +149,26 @@ private fun RackListNavContent(
 @Composable
 private fun SearchNavContent(
     backStack: NavBackStack<NavKey>,
-    searchViewModel: () -> SearchViewModel,
 ) {
-    val uiState by searchViewModel().uiState.collectAsStateWithLifecycle()
+    val viewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore = ViewModelStore()
+        }
+    }
+    val searchViewModel: SearchViewModel = koinViewModel(
+        viewModelStoreOwner = viewModelStoreOwner,
+    )
+    val uiState by searchViewModel.uiState.collectAsStateWithLifecycle()
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModelStoreOwner.viewModelStore.clear()
+        }
+    }
+
     SearchScreen(
         uiState = uiState,
-        onQueryChange = searchViewModel()::onQueryChange,
+        onQueryChange = searchViewModel::onQueryChange,
         onItemSelected = { placement ->
             backStack.add(
                 NavScreen.ItemDetail(
@@ -171,17 +186,31 @@ private fun SearchNavContent(
 @Composable
 private fun AddRackNavContent(
     backStack: NavBackStack<NavKey>,
-    addRackViewModel: () -> AddRackViewModel,
 ) {
-    val uiState by addRackViewModel().uiState.collectAsStateWithLifecycle()
+    val viewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore = ViewModelStore()
+        }
+    }
+    val addRackViewModel: AddRackViewModel = koinViewModel(
+        viewModelStoreOwner = viewModelStoreOwner,
+    )
+    val uiState by addRackViewModel.uiState.collectAsStateWithLifecycle()
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModelStoreOwner.viewModelStore.clear()
+        }
+    }
+
     AddRackScreen(
         uiState = uiState,
-        uiEvent = { addRackViewModel().uiEvent },
-        onUpdatePhotoUri = addRackViewModel()::onUpdatePhotoUri,
-        onUpdateName = addRackViewModel()::onUpdateName,
-        onUpdateDescription = addRackViewModel()::onUpdateDescription,
-        onUpdateLocation = addRackViewModel()::onUpdateLocation,
-        onSaveRack = addRackViewModel()::onSaveRack,
+        uiEvent = { addRackViewModel.uiEvent },
+        onUpdatePhotoUri = addRackViewModel::onUpdatePhotoUri,
+        onUpdateName = addRackViewModel::onUpdateName,
+        onUpdateDescription = addRackViewModel::onUpdateDescription,
+        onUpdateLocation = addRackViewModel::onUpdateLocation,
+        onSaveRack = addRackViewModel::onSaveRack,
         onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
     )
 }

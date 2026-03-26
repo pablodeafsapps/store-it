@@ -74,8 +74,7 @@ internal fun AddItemScreen(
 ) {
     val viewModelStoreOwner = remember {
         object : ViewModelStoreOwner {
-            override val viewModelStore =
-                ViewModelStore()
+            override val viewModelStore = ViewModelStore()
         }
     }
     val viewModel: AddItemViewModel = koinViewModel(

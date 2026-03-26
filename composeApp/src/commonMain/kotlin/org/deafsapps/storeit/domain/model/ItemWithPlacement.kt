@@ -1,5 +1,8 @@
 package org.deafsapps.storeit.domain.model
 
+import androidx.compose.runtime.Stable
+
+@Stable
 interface ItemWithPlacement {
     val item: Item
     val rackName: String
