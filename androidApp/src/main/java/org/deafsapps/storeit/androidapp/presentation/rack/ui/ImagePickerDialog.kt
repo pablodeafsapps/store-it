@@ -1,0 +1,126 @@
+package org.deafsapps.storeit.androidapp.presentation.rack.ui
+
+import android.Manifest
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import org.deafsapps.storeit.androidapp.design.Dimens
+import androidx.core.content.FileProvider
+import org.deafsapps.storeit.androidapp.R
+import java.io.File
+import java.util.UUID
+
+@Composable
+internal fun ImagePickerDialog(
+    onDismiss: () -> Unit,
+    onImageSelected: (String) -> Unit,
+) {
+    val context = LocalContext.current
+    val cameraImageUri = remember { mutableStateOf<Uri?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+    ) { success ->
+        if (success) {
+            cameraImageUri.value?.let { uri ->
+                onImageSelected(uri.toString())
+            }
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri: Uri? ->
+        uri?.let {
+            onImageSelected(it.toString())
+        }
+    }
+    val pickMediaRequest = remember {
+        PickVisualMediaRequest.Builder()
+            .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            .build()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            val photoFile = File(context.cacheDir, "rack_photo_${UUID.randomUUID()}.jpg")
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                photoFile,
+            )
+            cameraImageUri.value = uri
+            cameraLauncher.launch(uri)
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.image_picker_title)) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(Dimens.dialogContentSpacing),
+            ) {
+                Button(
+                    onClick = {
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("imagePickerDialogTakePhotoButton"),
+                ) {
+                    Text(stringResource(R.string.image_picker_take_photo))
+                }
+                Button(
+                    onClick = {
+                        galleryLauncher.launch(pickMediaRequest)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("imagePickerDialogChooseGalleryButton"),
+                ) {
+                    Text(stringResource(R.string.image_picker_choose_gallery))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("imagePickerDialogCancelButton"),
+            ) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        },
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ImagePickerDialogPreview() {
+    MaterialTheme {
+        ImagePickerDialog(
+            onDismiss = {},
+            onImageSelected = {},
+        )
+    }
+}

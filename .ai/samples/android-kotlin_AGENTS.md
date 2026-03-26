@@ -348,7 +348,6 @@ koin = ["koin-android", "koin-compose"]
 testing = ["junit", "mockito", "mockito-kotlin"]
 
 [plugins]
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ```
 

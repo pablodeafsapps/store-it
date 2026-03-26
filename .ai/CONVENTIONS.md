@@ -31,7 +31,9 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 
 ### 1.4 Idioms
 
+- **Named parameters (mandatory)**: When calling any function or constructor, you **must** use named arguments at every call site (including tests and calls to standard library or framework APIs), using the form `paramName = value` (e.g. `Rack(id = "1", name = "Rack 1")`, `sut.saveRack(rack = rack)`, `assertEquals(expected = 0, actual = list.size)`). This improves readability and makes refactors safer and is enforced across the codebase.
 - Prefer `val` over `var`; use `var` only when state must change.
+- **Prefer expression-bodied functions**: Use `= expression` instead of `{ return expression }` when the body is a single expression (single- or multi-line). Avoid the `return` keyword where an expression form is clear: e.g. `fun get(id: String) = repo.findById(id)` or `fun delete(id: String) = when { id.isBlank() -> error.err(); else -> unit.ok() }`.
 - Use expression-bodied members when they fit on one line: `fun id(): String = uuid`.
 - Prefer `when` over long `if`/`else`; make it exhaustive for sealed types.
 - Use scope functions by intent: `apply` (configuring), `also` (side effects), `let` (null-safe transform), `run` (object-scoped block), `with` (non-extension).
@@ -52,6 +54,15 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 - Expose cold flows from data layers; collect in the presentation layer.
 - Use `SupervisorJob` in scopes where one child failure should not cancel siblings.
 - Prefer `stateIn`/`shareIn` with appropriate `SharingStarted` (e.g. `WhileSubscribed(5000)`) for shared flows in ViewModels.
+- **Thread-safety**: When implementing repositories or data sources with mutable in-memory state (e.g. `MutableMap`, `MutableList`), use `Mutex` from `kotlinx.coroutines.sync` to synchronize access. Wrap all operations (reads and writes) with `mutex.withLock { }` to prevent race conditions. Example:
+  ```kotlin
+  private val items = mutableMapOf<String, Item>()
+  private val mutex = Mutex()
+  
+  override suspend fun getItem(id: String) = mutex.withLock {
+      items[id]?.ok() ?: DomainError.NotFound(...).err()
+  }
+  ```
 
 ---
 
@@ -92,26 +103,41 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 3.1 Source Set Layout
 
-- **commonMain**: Shared business logic, domain models, use cases, repository interfaces, and expect declarations.
-- **androidMain** / **iosMain**: Platform implementations (expect/actual), platform APIs, and DI wiring.
+- In this project the KMP module is **`:composeApp`** (no separate `:shared` module; post-AGP 9.0 layout). **Principle:** Maximise code in **commonMain**; keep androidMain, iosMain, and app modules as thin as possible.
+- **commonMain**: Shared business logic, domain models, use cases, repository interfaces, shared presentation (pure Kotlin ViewModels, UI state), expect declarations, **AppModule**, **KoinInit** (`initKoin` / `initKoinIos`), and **IosKoinHelper**. No platform types.
+- **androidMain** / **iosMain**: Only **actual** implementations for platform services (e.g. **StoreItViewModel** actuals) and minimal platform integrations. No UI, no ViewModel wrappers—those live in the app modules.
+- **androidApp** (separate module): **StoreItApplication** (custom `Application` that initialises Koin with **AndroidModule**), Activities, Compose UI, and use of shared ViewModels via Koin (no wrapper ViewModels; shared ViewModels extend **StoreItViewModel** and are resolved with `viewModelScope` from the AndroidX environment).
+- **iosApp** (Swift): SwiftUI UI; `ViewModelHolder<T: StoreItViewModel>` holds the KMP ViewModel and calls `clear()` in `deinit`. ViewModels are obtained from **IosKoinHelper** (no scope passed; scope comes from **StoreItViewModel** iOS actual).
 - **commonTest**: Shared unit tests for common code; no platform APIs.
 
-### 3.2 Expect / Actual
+### 3.2 Platform DI and linking (post–breaking change)
 
-- **Expect** in `commonMain`: public API only; minimal surface (what the platform must provide).
+- **Android**: Koin is started from **StoreItApplication** (`:androidApp`) with `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this) }`. `AndroidModule` includes `AppModule`; the app module owns the composition root. Shared ViewModels are resolved via Koin’s ViewModel support; they extend **StoreItViewModel** (actual in androidMain extends AndroidX `ViewModel`).
+- **iOS**: Koin is started from the Swift app entry with `KoinInitKt.doInitKoinIos()` (which runs `initKoin {}` — only `AppModule`). ViewModels are obtained from **IosKoinHelper** (commonMain). **Do not** pass a shared `CoroutineScope` from IosKoinHelper; the **StoreItViewModel** actual in iosMain provides the scope (e.g. `MainScope()` when `coroutineScope` is null). For parameterised ViewModels (e.g. `RackDetailViewModel`), pass only the business parameters: `getRackDetailViewModel(rackId: String)` with `parametersOf(rackId)`. Swift uses **ViewModelHolder** and calls `sharedVm.clear()` in `deinit`.
+
+### 3.3 Visibility & encapsulation
+
+- **Prefer `internal` by default**: Use `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Do not add `internal` to members inside an interface (e.g. sealed subclasses); the containing type’s visibility applies.
+- **Expect/actual**: Use `internal` on both `expect` and `actual` when the API is only used inside the module; use public only for types that other modules or the framework must see.
+- **Domain data models (`:composeApp` only)**: Concrete domain model types (e.g. `internal data class …Model` implementing `Item`, `Rack`, …) live in **`composeApp`** and are **`internal`** so they are **not** visible to **`androidApp`** or **`iosApp`**. Other modules depend on **public interfaces** in `org.deafsapps.storeit.domain.model` (e.g. `Item`, `Rack`) and **public factory functions** with the same names as the former constructors (e.g. `Item(...)`, `Rack(...)`) to construct values. Do not reference `*Model` types from app modules or tests outside `composeApp`.
+
+### 3.4 Expect / Actual
+
+- **Expect** in `commonMain`: minimal surface (what the platform must provide); prefer `internal` when not part of the public API.
 - **Actual** in platform source sets: one implementation per target; avoid branching inside actuals when possible.
 - Name expect/actual consistently: `expect class Platform()`, `expect fun currentTimeMillis(): Long`.
 - Prefer expect/actual for a small set of primitives (clock, UUID, crypto, logging, analytics); keep heavy or frequently changing APIs behind interfaces in common code and inject platform implementations.
 
-### 3.3 Naming Across Platforms
+### 3.5 Naming Across Platforms
 
 - Use the same logical names for shared concepts: e.g. `User`, `AuthToken`, `Result` so that Kotlin and Swift (or KMP-generated headers) align.
 - Repository and use case names should be identical in shared and platform code to avoid cognitive mismatch.
 
-### 3.4 Shared Models
+### 3.6 Shared Models
 
-- Keep shared models in commonMain: data classes or interfaces used in use cases and repositories.
-- Prefer immutable data: `data class` in Kotlin; in Swift, structs with `let` properties.
+- **Boundary**: Domain models used across **`androidApp`**, **`iosApp`**, and **`composeApp`** are expressed as **public interfaces** in `commonMain` (e.g. `Item`, `Rack`, `ShelfSlot`). **Implementations** are **`internal data class …Model`** in `:composeApp` only; they must not be imported or referenced from **`androidApp`** or **`iosApp`**.
+- **Construction**: Use **public factory functions** in the same package (e.g. `Item(...)`, `Rack(...)`) so call sites keep a constructor-like API without exposing concrete types. Inside `composeApp`, prefer factories or `asModel()` helpers when you need `data class` features (e.g. replacing former `.copy()` usage).
+- Prefer immutable values at the interface boundary; in Swift, structs with `let` properties where you mirror types locally.
 - Use a single source of truth for DTOs if you share networking (e.g. kotlinx.serialization); document field names and optionality so iOS can mirror or generate models consistently.
 
 ---
@@ -120,7 +146,7 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 4.1 Layer Boundaries
 
-- **Domain**: Entities and use case interfaces (and implementations). No framework or platform types; only pure Kotlin (and shared types).
+- **Domain**: Entities (as public interfaces + internal implementations in `:composeApp`), use case interfaces (and implementations). No framework or platform types; only pure Kotlin (and shared types). Types consumed by **`androidApp`** / **`iosApp`** are the public domain interfaces, not internal `*Model` classes (see §3.6).
 - **Data**: Repository implementations, DTOs, mappers, remote/local data sources. Depends only on domain.
 - **Presentation / UI**: ViewModels (or equivalent), UI state, platform UI. Depends on domain (use cases); avoid depending on data layer types in the UI.
 
@@ -130,9 +156,13 @@ Dependency rule: inner layers do not know outer layers. Dependencies point inwar
 
 - **domain**: entities, use case interfaces, repository interfaces (optional: use case implementations here).
 - **data**: data sources, repository implementations, DTOs, mappers.
-- **ui / presentation**: ViewModels, UI state, screens (platform-specific or Compose Multiplatform).
+- **ui / presentation**: ViewModels, UI state, screens (platform-specific: Android Compose in `androidApp`, iOS SwiftUI in `iosApp`).
 
 Use cases sit in domain and orchestrate repository interfaces; they return domain types or simple sealed results (Success / Error).
+
+**Pure Kotlin ViewModels (shared)**: State holders in `composeApp/commonMain` are plain Kotlin classes (no AndroidX `ViewModel` or iOS types). Annotate with `@Factory`; inject a `CoroutineScope` via `@Provided` and use cases via constructor (scope owned by the platform). Expose state via `StateFlow`, events via `SharedFlow`. Implement `clear()` that calls `coroutineScope.cancel()`. Prefer automatic data loading: use `stateIn` or `init { coroutineScope.launch { … } }`; for testability inject a `CoroutineScope` (e.g. `TestScope` from `runTest`).
+
+**Platform wrappers**: **Android** (`:androidApp`): AndroidX `ViewModel` with `@KoinViewModel` in the Android app module holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. Do not put ViewModel wrappers in `composeApp/androidMain`. **iOS**: Swift `ObservableObject` in `iosApp` obtains the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
 
 ### 4.3 Dependency Direction
 
@@ -180,6 +210,7 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 - One repository per aggregate or entity root. Exposes domain types; hides data source details (remote, cache, DB).
 - Methods: `getById`, `getStream`, `save`, `delete` (or equivalent). Return `Flow`/streams for reactive consumption; suspend for one-shot.
 - Implementation coordinates one or more data sources and applies caching/strategy internally.
+- **Thread-safety**: In-memory repository implementations must protect shared mutable state from concurrent access using `Mutex`. All read and write operations accessing mutable collections must be wrapped with `mutex.withLock { }`. Helper methods like `clear()` must also be `suspend` and protected by the mutex.
 
 ### 6.2 Use Case (Interactor)
 
@@ -191,14 +222,17 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 - Dedicated types or extension functions for DTO → Entity and Entity → UI model. Keep mapping in one place; avoid anemic entities that are “just DTOs” in domain.
 
-### 6.4 Dependency Injection
+### 6.4 Dependency Injection (Koin)
 
-- Prefer constructor injection; avoid service locators in business logic.
-- In KMP: shared `expect` for “obtain use case / repository” if needed, or inject in platform main; keep DI configuration in platform source sets when using platform-specific DI (Hilt, Koin, Swift DI).
+- This project uses **Koin** with **Koin Annotations** (KSP): **AppModule** in `commonMain` has `@Module` and `@ComponentScan("org.deafsapps.storeit")`. **Android** uses a custom **Application** subclass (**StoreItApplication** in `:androidApp`) declared in the manifest; in `onCreate()` it calls `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this@StoreItApplication) }`. **AndroidModule** (in `:androidApp`) is `@Module(includes = [AppModule::class])` and provides the composition root. **iOS** calls `KoinInitKt.doInitKoinIos()` from the app entry point; that runs `initKoin {}` (only `AppModule().module`, no platform options).
+- **Shared ViewModels** in `commonMain` extend **StoreItViewModel** (expect in commonMain; actuals in androidMain and iosMain). They take an optional `coroutineScope` (default `null`); on Android the scope comes from the ViewModel machinery; on iOS the **StoreItViewModel** actual uses `MainScope()` when null. **Do not** pass a shared `CoroutineScope` from **IosKoinHelper**; that pattern caused iOS bugs. **IosKoinHelper** (commonMain) exposes getters like `getRackListViewModel()`, `getAddRackViewModel()`, `getRackDetailViewModel(rackId: String)` and resolves with **only** business parameters (e.g. `parametersOf(rackId)` for RackDetail), not a scope.
+- **Android**: Use Koin’s `viewModel()` / `@KoinViewModel` in the app module; no wrapper ViewModel classes. **iOS**: Use `ViewModelHolder<T: StoreItViewModel>` in Swift; it holds the KMP ViewModel and calls `sharedVm.clear()` in `deinit`. Prefer constructor injection; avoid `KoinComponent`/`inject()` in the pure ViewModels.
+- Use case interfaces: expose a typealias (e.g. `GetRacksUseCaseType`) and bind the implementation to it so ViewModels depend on the interface.
 
 ### 6.5 Result / Either
 
 - Use a sealed hierarchy for operations that can fail: e.g. `sealed interface Result<out T> { data class Ok<T>(val value: T) : Result<T>; data class Error(val cause: Throwable) : Result<Nothing> }`, or a type like `Either<L, R>`.
+- **Building Result values**: Prefer the extension functions `value.ok()` and `error.err()` when constructing success/failure (e.g. `list.ok()`, `DomainError.NotFound(...).err()`) instead of `Result.ok(value)` / `Result.err(error)`.
 - Prefer returning `Result<T>` or `Flow<Result<T>>` from use cases rather than throwing in the business layer; let the UI layer handle error presentation.
 
 ---
@@ -208,17 +242,46 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 ### 7.1 Unit Tests
 
 - Test use cases with fake or mock repositories (interfaces); test repository implementations with fake data sources.
-- Naming: `methodUnderTest_scenario_expectedOutcome` or `shouldDoSomethingWhenCondition`.
+- **Subject under test (SUT)**: The class or entity under test must be held in a variable named **`sut`**. All references to the tested type in the test body use `sut` (e.g. `sut(Unit)`, `sut.saveRack(...)`).
+- **Initialisation**: Initialise the SUT and its dependencies in a **`setUp`** function annotated with **`@BeforeTest`**, using **`lateinit var`** for the SUT and any shared dependencies so each test starts from a fresh setup. Do not assign the SUT or dependencies at class level; assign them in `setUp()`.
+- **Naming**: Use **GIVEN–WHEN–THEN** with the words **GIVEN**, **WHEN**, and **THEN** in caps in the test name (e.g. `` `GIVEN saved rack WHEN getRackById with existing id THEN returns rack`() ``). Alternative patterns: `methodUnderTest_scenario_expectedOutcome` or `shouldDoSomethingWhenCondition` only when GIVEN–WHEN–THEN does not fit.
+- **Test body structure**: Organise each test into three sections (setup → action → assertions) separated by **blank lines only**. Do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup section, leave a single blank line after the test opening, then the action and assertion blocks.
+- **Coroutines / suspend**: For tests that call suspend functions, use `runTest { }` from `kotlinx-coroutines-test` (e.g. `fun testName() = runTest { ... }`). Do not use `runBlocking` in tests. Add `kotlinx-coroutines-test` to the test source set dependencies.
 - One logical behaviour per test; avoid testing implementation details (e.g. exact call count unless contract requires it).
 
-### 7.2 Fakes vs Mocks
+### 7.2 Dependencies: use fakes, not real implementations
 
-- Prefer fakes (in-memory or stub implementations) for speed and stability; use mocks when you need to assert interactions (e.g. “save was called once”).
+- **Do not instantiate real dependencies** in unit tests (e.g. do not use `InMemoryRackRepository()` when testing a use case that depends on `RackRepository`). Use a **fake** that implements the same interface.
+- **Name fakes clearly**: e.g. `fakeRackRepository` of type `RackRepository` (or the concrete fake type, e.g. `FakeRackRepository`, if you need to configure it). Initialise the fake in `setUp()` and assign **return values** (or state) on the fake so the test can assess the SUT behaviour. For example, set `fakeRackRepository.getAllRacksResult = listOf(rack1, rack2).ok()` before invoking the use case to verify it returns that list.
+- Fakes live in the test source set (e.g. `commonTest/.../fake/`) and implement the production interface with configurable results or simple in-memory behaviour.
 
-### 7.3 Shared Tests
+### 7.3 Fakes vs Mocks
 
-- commonTest: run use case and repository interface tests with shared fakes; no Android/iOS APIs.
-- Platform tests: ViewModel, UI, or platform-specific code in androidTest/iosTest or equivalent.
+- Prefer fakes (in-memory or stub implementations with configurable return values) for speed and stability; use mocks when you need to assert interactions (e.g. “save was called once”).
+
+### 7.4 UI tests (screens and views)
+
+- **Requirement**: Every new screen or significant view must have UI tests on **both** platforms.
+- **Android (Jetpack Compose, instrumented)**:
+  - Tests live under **`androidApp/src/androidTest/java/...`** (typically mirroring the presentation package, e.g. `presentation/<feature>/ui/`).
+  - **JUnit 5**: Use **`@Test`** from JUnit Jupiter (`org.junit.jupiter.api`). Shared setup on the base class uses **`@BeforeEach`** (e.g. clearing seeded repositories). Unit tests in `:androidApp` also use JUnit 5; instrumented tests rely on the **`de.mannodermaus.android-junit`** Gradle plugin so Jupiter runs on device/emulator.
+  - **Compose rule**: Extend **`StoreItComposeUiTestBase`** (or follow the same pattern). It registers **`createAndroidComposeExtension<ComponentActivity>()`** from **`de.mannodermaus.junit5:android-test-compose`** via **`@RegisterExtension`**, and exposes **`composeUiTest { ... }`** whose lambda is a **`ComposeContext`** receiver—use **`onNodeWithTag`**, **`performClick`**, **`assertIsDisplayed`**, etc. from **`androidx.compose.ui.test`** (with **`androidx.compose.ui:ui-test-junit4`** on the `androidTest` classpath).
+  - **What the base provides**: Koin is available (**`KoinComponent`**); **`baseSetUp()`** clears **`RackRepository`**, **`SlotRepository`**, and **`ItemRepository`** via **`runTest`**. Helpers **`seedRack`**, **`seedSlot`**, **`seedItem`** prepare data. **`renderApp`** builds a small in-test navigation shell ( **`NavScreen`** ) with **`koinViewModel`** and the real Compose screens—prefer exercising production composables with test tags rather than duplicating UI.
+  - **Stable selectors**: Prefer **`Modifier.testTag(...)`** on interactive and assertable nodes; use semantics/text only when tags are not appropriate. **`debugImplementation`** of **`androidx.compose.ui:ui-test-manifest`** is required for Compose UI tests.
+  - **Naming**: Instrumented UI tests in this project use descriptive **`camelCase`** method names (often with **`_`**-separated segments for scenario steps), e.g. `rackList_addRackFab_navigatesToAddRack`. They do **not** use the GIVEN–WHEN–THEN naming from §7.1 unless you deliberately align them.
+- **iOS**: Add UI tests for each new SwiftUI screen (e.g. in the app’s UI test target such as `StoreItUITests`). Cover main user flows and key states. Use `accessibilityIdentifier` (or equivalent) so tests are stable across layout changes.
+- Add or update UI tests whenever a screen is introduced or its behaviour is meaningfully changed.
+
+### 7.5 Android Compose previews
+
+- **Requirement**: Every Android (Jetpack Compose) screen must provide **previews that cover all possible scenarios**.
+- Add `@Preview` composables for: loading state, empty state, error state, success state with data, and any other distinct UI states the screen can show (e.g. different steps in a flow, with/without optional content). This allows design and behaviour review without running the app and catches missing state handling.
+
+### 7.6 Shared vs Platform Tests
+
+- **commonTest**: Use case and repository tests with shared fakes; no Android/iOS APIs. No AndroidX types.
+- **androidApp/src/test**: Unit tests for **pure Kotlin ViewModels** in `commonMain`. Test the pure ViewModel directly: use fakes for use cases and inject a `CoroutineScope` (e.g. `TestScope(testDispatcher)` from `runTest`) for deterministic execution. Use `runTest(testDispatcher)` and `advanceUntilIdle()`; collect `uiState`/`uiEvent` in a list and assert on the latest value so `stateIn`/`shareIn` updates are observed.
+- **`androidApp/src/androidTest`**: Instrumented **Compose UI tests** with JUnit 5 and the Mannodermaus Compose extension (see §7.4). Not to be confused with **`commonTest`** (no Android APIs).
 
 ---
 
@@ -228,14 +291,17 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 - Resources: `snake_case`: `ic_user_avatar`, `string_app_name`. IDs: `camelCase` in code; `snake_case` in XML when consistent with resources.
 - Keep string and dimension resources in appropriate `values` files; use qualifiers for locales and configurations.
+- **Compose dimensions**: Avoid magic numbers for spacing, padding, and sizes. Use a single **`Dimens`** object (e.g. in `androidApp/.../design/Dimens.kt`) with named properties (e.g. `screenPadding`, `spacingMedium`, `cardCornerRadiusSmall`) and reference them from all Compose screens and components.
 
 ### 8.2 iOS
 
+- All iOS UI lives in the **`iosApp`** Swift target; the shared framework (`ComposeApp`) is consumed as a dependency. Koin is initialised in the app entry with `KoinInitKt.doInitKoinIos()`. Obtain ViewModels from **IosKoinHelper** (e.g. `IosKoinHelper().getRackListViewModel()`, `getRackDetailViewModel(rackId:)`) and wrap them in **ViewModelHolder**; the holder calls `sharedVm.clear()` in `deinit`. Use SwiftUI views that take ViewModel state and event callbacks (e.g. `Observing(… uiState, … uiEvent.withInitialValue(nil)) { state, event in … }`).
 - Asset and storyboard names: PascalCase or kebab-case per team choice; be consistent. Swift code references by symbol name.
 
 ### 8.3 Shared Configuration
 
 - For KMP, prefer a single place (e.g. build-time or expect/actual) for environment or feature flags so both platforms stay in sync.
+- **Library versions**: Centralise all library and plugin versions in `gradle/libs.versions.toml`. When upgrading, keep Kotlin, KSP, and Koin/koin-annotations aligned (e.g. Kotlin 2.3.x with KSP 2.3.x; Koin 4.x with koin-annotations 2.3.x).
 
 ---
 

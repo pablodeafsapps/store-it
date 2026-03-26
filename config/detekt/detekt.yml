@@ -1,0 +1,233 @@
+build:
+  maxIssues: 0
+  weights:
+    # complexity: 2
+    # LongParameterList: 1
+    # style: 1
+    # comments: 1
+
+processors:
+  active: true
+  exclude:
+    # Exclude processors that are not relevant for this project
+    - 'FunctionCountProcessor'
+    - 'PropertyCountProcessor'
+    - 'ClassCountProcessor'
+    - 'PackageCountProcessor'
+    - 'KtFileCountProcessor'
+
+console-reports:
+  active: true
+  exclude: []
+
+output-reports:
+  active: true
+  exclude: []
+
+complexity:
+  active: true
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 15
+    ignoreSingleWhenExpression: false
+    ignoreSimpleWhenEntries: false
+    ignoreAnnotated: ['Composable']
+  LongMethod:
+    active: true
+    threshold: 60
+    ignoreAnnotated: ['Composable']
+  LongParameterList:
+    active: true
+    functionThreshold: 6
+    constructorThreshold: 6
+    ignoreDefaultParameters: true
+    ignoreAnnotated: ['Composable', 'KoinViewModel']
+    ignoreAnnotatedParameter: ['Provided', 'InjectedParam']
+  LargeClass:
+    active: true
+    threshold: 600
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 20
+    thresholdInClasses: 10
+    thresholdInInterfaces: 10
+    thresholdInObjects: 10
+    thresholdInEnums: 10
+naming:
+  active: true
+  ClassNaming:
+    active: true
+    classPattern: '[A-Z][a-zA-Z0-9]*'
+    excludes: ['Composable']
+  PackageNaming:
+    active: true
+    packagePattern: '^[a-z]+(\.[a-z][a-z0-9]*)*$'
+  FunctionNaming:
+    active: true
+    functionPattern: '^([a-z][a-zA-Z0-9]*)|(`.*`)$'
+    excludeClassPattern: '$^'
+    ignoreAnnotated: ['Composable', 'Preview']
+  VariableNaming:
+    active: true
+    variablePattern: '^[a-z][a-zA-Z0-9]*$'
+    privateVariablePattern: '^(_)?[a-z][a-zA-Z0-9]*$'
+    excludeClassPattern: '$^'
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '^[A-Z][A-Z_0-9]*$'
+    propertyPattern: '^[a-z][a-zA-Z0-9]*$'
+    privatePropertyPattern: '^(_)?[a-z][a-zA-Z0-9]*$'
+
+style:
+  active: true
+  MagicNumber:
+    active: true
+    ignoreNumbers: ['-1', '0', '1', '2']
+    ignoreHashCodeFunction: true
+    ignorePropertyDeclaration: false
+    ignoreLocalVariableDeclaration: false
+    ignoreConstantDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: false
+    ignoreAnnotation: false
+    ignoreNamedArgument: true
+    ignoreEnums: true
+    ignoreRanges: false
+    ignoreExtensionFunctions: false
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+    excludePackageStatements: false
+    excludeImportStatements: false
+    excludeCommentStatements: false
+    ignoreAnnotated: ['Test']
+  NewLineAtEndOfFile:
+    active: true
+  TrailingWhitespace:
+    active: true
+  ReturnCount:
+    active: true
+    max: 3
+    excludedFunctions: ['equals', 'toString']
+  WildcardImport:
+    active: true
+    excludeImports: ['java.util.*', 'kotlinx.coroutines.*']
+  ModifierOrder:
+    active: true
+  UnusedImports:
+    active: true
+  ExpressionBodySyntax:
+    active: true
+  OptionalAbstractKeyword:
+    active: true
+  RedundantVisibilityModifierRule:
+    active: true
+  SafeCast:
+    active: true
+  UnnecessaryParentheses:
+    active: true
+  UnnecessaryAbstractClass:
+    active: true
+  UnnecessaryApply:
+    active: true
+  UnnecessaryInheritance:
+    active: true
+  UnnecessaryLet:
+    active: true
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated: ['Suppress', 'VisibleForTesting', 'Preview']
+  UseCheckOrError:
+    active: true
+  UseRequire:
+    active: true
+  UseRequireNotNull:
+    active: true
+  UseDataClass:
+    active: true
+  UseIfInsteadOfWhen:
+    active: true
+  UseIsNullOrEmpty:
+    active: true
+  UseOrEmpty:
+    active: true
+
+comments:
+  active: true
+  CommentOverPrivateFunction:
+    active: false
+  CommentOverPrivateProperty:
+    active: false
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false
+  UndocumentedPublicProperty:
+    active: false
+
+potential-bugs:
+  active: true
+  UnreachableCode:
+    active: true
+
+coroutines:
+  active: true
+  RedundantSuspendModifier:
+    active: true
+  SuspendFunWithFlowReturnType:
+    active: true
+
+empty-blocks:
+  active: true
+  EmptyCatchBlock:
+    active: true
+  EmptyClassBlock:
+    active: true
+  EmptyDefaultConstructor:
+    active: true
+  EmptyDoWhileBlock:
+    active: true
+  EmptyElseBlock:
+    active: true
+  EmptyFinallyBlock:
+    active: true
+  EmptyForBlock:
+    active: true
+  EmptyFunctionBlock:
+    active: true
+  EmptyIfBlock:
+    active: true
+  EmptyInitBlock:
+    active: true
+  EmptySecondaryConstructor:
+    active: true
+  EmptyWhenBlock:
+    active: true
+  EmptyWhileBlock:
+    active: true
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: true
+    exceptionNames: ['ArrayIndexOutOfBoundsException', 'Error', 'Exception', 'IllegalMonitorStateException', 'IndexOutOfBoundsException', 'NullPointerException', 'Throwable']
+  TooGenericExceptionThrown:
+    active: true
+    exceptionNames: ['ArrayIndexOutOfBoundsException', 'Error', 'Exception', 'IllegalMonitorStateException', 'IndexOutOfBoundsException', 'NullPointerException', 'Throwable']
+  ExceptionRaisedInUnexpectedLocation:
+    active: true
+    methodNames: ['equals', 'hashCode', 'toString', 'finalize']
+  SwallowedException:
+    active: true
+    ignoredExceptionTypes: ['InterruptedException', 'NumberFormatException']
+    allowedExceptionNameRegex: '^(ignore|expected).*'
+
+performance:
+  active: true
+  SpreadOperator:
+    active: true
+  UnnecessaryTemporaryInstantiation:
+    active: true
+  ForEachOnRange:
+    active: true
+  UnnecessaryPartOfBinaryExpression:
+    active: true

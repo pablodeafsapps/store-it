@@ -1,0 +1,13 @@
+---
+description: Prefer internal visibility for classes and interfaces to enforce encapsulation
+alwaysApply: true
+---
+
+# Encapsulation: use internal by default
+
+- **Classes, interfaces, objects**: Prefer `internal` unless the type must be part of the module’s public API (e.g. consumed by another Gradle module). Same for sealed subclasses and data classes.
+- **Top-level functions** (including extensions): Prefer `internal` unless they are part of the module’s public API.
+- **Expect/actual**: Use `internal` on both the `expect` and the `actual` declaration when the API is only used inside the module.
+- Only leave types/functions **public** when they are intentionally exposed to other modules or as a stable public API.
+
+Apply this for all new and modified Kotlin files in the project.
