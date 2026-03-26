@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -53,6 +54,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.androidapp.design.BackArrowIcon
 import org.deafsapps.storeit.presentation.rack.model.RackDetailSlotVo
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
@@ -148,11 +150,15 @@ private fun RackDetailContent(
             TopAppBar(
                 title = { Text(title) },
                 navigationIcon = {
-                    TextButton(
+                    IconButton(
                         onClick = onNavigateBack,
                         modifier = Modifier.testTag("rackDetailBackButton"),
                     ) {
-                        Text("Back")
+                        Icon(
+                            imageVector = BackArrowIcon,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 },
                 actions = {

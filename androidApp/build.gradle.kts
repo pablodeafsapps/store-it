@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.coil.compose)
     debugImplementation(libs.compose.uiTooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

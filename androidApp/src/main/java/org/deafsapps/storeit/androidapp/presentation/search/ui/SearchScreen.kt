@@ -16,7 +16,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import org.deafsapps.storeit.androidapp.design.BackArrowIcon
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -62,11 +64,15 @@ private fun SearchScreenContent(
                     )
                 },
                 navigationIcon = {
-                    TextButton(
+                    IconButton(
                         onClick = onNavigateBack,
                         modifier = Modifier.testTag("searchScreenBackButton"),
                     ) {
-                        Text("Back")
+                        Icon(
+                            imageVector = BackArrowIcon,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 },
             )

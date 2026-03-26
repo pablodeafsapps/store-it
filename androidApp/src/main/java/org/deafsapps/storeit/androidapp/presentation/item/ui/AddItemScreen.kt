@@ -26,7 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -49,6 +50,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import org.deafsapps.storeit.androidapp.design.Dimens
+import org.deafsapps.storeit.androidapp.design.BackArrowIcon
+import org.deafsapps.storeit.androidapp.design.CloseIcon
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.ImagePickerDialog
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
 import org.deafsapps.storeit.domain.model.Rack
@@ -195,11 +198,15 @@ private fun AddItemForm(
             TopAppBar(
                 title = { Text("Add Item") },
                 navigationIcon = {
-                    TextButton(
+                    IconButton(
                         onClick = onNavigateBack,
                         modifier = Modifier.testTag("addItemCancelButton"),
                     ) {
-                        Text("Cancel")
+                        Icon(
+                            imageVector = CloseIcon,
+                            contentDescription = "Cancel",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 },
             )
@@ -415,11 +422,15 @@ private fun SelectRackContent(
             TopAppBar(
                 title = { Text("Select Rack") },
                 navigationIcon = {
-                    TextButton(
+                    IconButton(
                         onClick = onBack,
                         modifier = Modifier.testTag("selectRackBackButton"),
                     ) {
-                        Text("Back")
+                        Icon(
+                            imageVector = BackArrowIcon,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 },
             )
