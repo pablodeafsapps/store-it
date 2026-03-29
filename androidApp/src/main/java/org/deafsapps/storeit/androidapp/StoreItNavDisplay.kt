@@ -24,8 +24,10 @@ import org.deafsapps.storeit.androidapp.presentation.item.ui.ItemDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.SlotItemsScreen
 import org.deafsapps.storeit.androidapp.presentation.search.ui.SearchScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
-import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
+import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackBrowseScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
+import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
+import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.deafsapps.storeit.presentation.search.viewmodel.SearchViewModel
@@ -80,24 +82,30 @@ internal fun StoreItNavDisplay(
                     )
                 }
                 entry<NavScreen.RackDetail> { screen ->
-                    RackDetailScreen(
+                    RackBrowseScreen(
                         rackId = screen.rackId,
-                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
-                        onAddItemHere = { rackId, slotId ->
-                            backStack.add(NavScreen.AddItem(rackId = rackId, slotId = slotId))
+                        onAddItemHere = { rackId, slotId, slotXRel, slotYRel ->
+                            backStack.add(
+                                NavScreen.AddItemAtDraftSlot(
+                                    rackId = rackId,
+                                    slotId = slotId,
+                                    slotXRel = slotXRel,
+                                    slotYRel = slotYRel,
+                                )
+                            )
                         },
                         onNavigateToSlotItems = { rackId, slotId ->
                             backStack.add(NavScreen.SlotItems(rackId = rackId, slotId = slotId))
                         },
+                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                     )
                 }
                 entry<NavScreen.SlotItems> { screen ->
                     SlotItemsScreen(
                         rackId = screen.rackId,
                         slotId = screen.slotId,
-                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                         onAddItem = { rackId, slotId ->
-                            backStack.add(NavScreen.AddItem(rackId = rackId, slotId = slotId))
+                            backStack.add(NavScreen.AddItemAtSlot(rackId = rackId, slotId = slotId))
                         },
                         onItemSelected = { itemId ->
                             backStack.add(
@@ -108,6 +116,7 @@ internal fun StoreItNavDisplay(
                                 ),
                             )
                         },
+                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                     )
                 }
                 entry<NavScreen.ItemDetail> { screen ->
@@ -116,12 +125,36 @@ internal fun StoreItNavDisplay(
                         onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                     )
                 }
-                entry<NavScreen.AddItem> { screen ->
+                entry<NavScreen.AddItem> {
+                    AddItemScreen(
+                        initialRackId = null,
+                        addItemSlot = AddItemSlotVo.None,
+                        onNavigateToAddRack = { backStack.add(NavScreen.AddRack) },
+                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                    )
+                }
+                entry<NavScreen.AddItemAtSlot> { screen ->
                     AddItemScreen(
                         initialRackId = screen.rackId,
-                        initialSlotId = screen.slotId,
-                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                        addItemSlot = AddItemSlotVo(
+                            id = screen.slotId,
+                            placementType = SlotPlacementType.EXISTING,
+                        ),
                         onNavigateToAddRack = { backStack.add(NavScreen.AddRack) },
+                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                    )
+                }
+                entry<NavScreen.AddItemAtDraftSlot> { screen ->
+                    AddItemScreen(
+                        initialRackId = screen.rackId,
+                        addItemSlot = AddItemSlotVo(
+                            id = screen.slotId,
+                            placementType = SlotPlacementType.DRAFT,
+                            xRel = screen.slotXRel,
+                            yRel = screen.slotYRel,
+                        ),
+                        onNavigateToAddRack = { backStack.add(NavScreen.AddRack) },
+                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                     )
                 }
             },
@@ -141,7 +174,7 @@ private fun RackListNavContent(
         onRackSelected = rackListViewModel()::onRackSelected,
         onNavigateToAddRack = { backStack.add(NavScreen.AddRack) },
         onNavigateToRackDetail = { id -> backStack.add(NavScreen.RackDetail(id)) },
-        onNavigateToAddItem = { backStack.add(NavScreen.AddItem()) },
+        onNavigateToAddItem = { backStack.add(NavScreen.AddItem) },
         onNavigateToSearch = { backStack.add(NavScreen.Search) },
     )
 }

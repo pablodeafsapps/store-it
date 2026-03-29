@@ -2,6 +2,7 @@ package org.deafsapps.storeit.presentation.item.model
 
 import androidx.compose.runtime.Immutable
 import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 
 @Immutable
 data class AddItemUiState(
@@ -14,6 +15,9 @@ data class AddItemUiState(
     val photoUri: String?,
     val selectedRackId: String?,
     val selectedSlotId: String?,
+    val selectedSlotPlacementType: SlotPlacementType?,
+    val selectedSlotXRel: Float?,
+    val selectedSlotYRel: Float?,
     val racks: List<Rack>,
     val step: AddItemStep,
     val isLoading: Boolean,
@@ -23,7 +27,7 @@ data class AddItemUiState(
     companion object {
         fun getDefault(
             initialRackId: String? = null,
-            initialSlotId: String? = null,
+            addItemSlot: AddItemSlotVo = AddItemSlotVo.None,
         ): AddItemUiState = AddItemUiState(
             name = "",
             description = "",
@@ -33,7 +37,10 @@ data class AddItemUiState(
             tagInput = "",
             photoUri = null,
             selectedRackId = initialRackId,
-            selectedSlotId = initialSlotId,
+            selectedSlotId = addItemSlot.id,
+            selectedSlotPlacementType = addItemSlot.placementType,
+            selectedSlotXRel = addItemSlot.xRel,
+            selectedSlotYRel = addItemSlot.yRel,
             racks = emptyList(),
             step = AddItemStep.FORM,
             isLoading = false,

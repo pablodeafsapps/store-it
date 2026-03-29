@@ -1,9 +1,9 @@
 package org.deafsapps.storeit.presentation.rack.model
 
-import androidx.compose.runtime.Stable
+import androidx.compose.runtime.Immutable
 
-@Stable
-data class RackDetailSlotVo(
+@Immutable
+data class RackSlotMarkerVo(
     val id: String,
     val xRel: Float,
     val yRel: Float,

@@ -10,7 +10,6 @@ import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeDeleteRackUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeGetRackDataByRackIdUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeSaveRackUseCase
-import org.deafsapps.storeit.androidapp.fake.FakeSaveSlotUseCase
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
@@ -34,7 +33,6 @@ internal class RackDetailViewModelTest {
 
     private lateinit var sut: RackDetailViewModel
     private lateinit var fakeGetRackDataByRackId: FakeGetRackDataByRackIdUseCase
-    private lateinit var fakeSaveSlot: FakeSaveSlotUseCase
     private lateinit var fakeSaveRack: FakeSaveRackUseCase
     private lateinit var fakeDeleteRack: FakeDeleteRackUseCase
     private val testDispatcher = StandardTestDispatcher()
@@ -45,7 +43,6 @@ internal class RackDetailViewModelTest {
     @BeforeEach
     fun setUp() {
         fakeGetRackDataByRackId = FakeGetRackDataByRackIdUseCase()
-        fakeSaveSlot = FakeSaveSlotUseCase()
         fakeSaveRack = FakeSaveRackUseCase()
         fakeDeleteRack = FakeDeleteRackUseCase()
     }
@@ -257,7 +254,7 @@ internal class RackDetailViewModelTest {
         }
 
     @Test
-    fun `GIVEN rack loaded and saveSlot succeeds WHEN onImageTap THEN uiState has new slot and slot selected`() =
+    fun `GIVEN rack loaded WHEN onImageTap on empty spot THEN NavigateToAddItemDraft emitted`() =
         runTest(testDispatcher) {
             fakeGetRackDataByRackId.invokeResult = RackData(
                 id = dummyRackId,
@@ -265,12 +262,7 @@ internal class RackDetailViewModelTest {
                 shelfSlots = emptyList(),
                 items = emptyList(),
             ).ok()
-            val savedSlot = ShelfSlot(id = "saved-1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.3f, 0.4f))
-            fakeSaveSlot.invokeResult = savedSlot.ok()
             sut = getDummyRackDetailViewModel()
-            val collectedStates = mutableListOf<RackDetailUiState>()
-            val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
-            advanceUntilIdle()
             val collectedEvents = mutableListOf<RackDetailUiEvent?>()
             val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
             advanceUntilIdle()
@@ -278,13 +270,11 @@ internal class RackDetailViewModelTest {
             sut.onImageTap(xRel = 0.3f, yRel = 0.4f)
             advanceUntilIdle()
 
-            val state = collectedStates.last()
-            assertEquals(dummyRack, state.rack)
-            assertEquals(1, state.slots.size)
-            assertEquals(0.3f, state.slots.first().xRel)
-            assertEquals(0.4f, state.slots.first().yRel)
-            assertEquals("saved-1", state.selectedSlot?.id)
-            stateCollectJob.cancel()
+            val draftNav = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.NavigateToAddItemDraft>().single()
+            assertEquals(dummyRackId, draftNav.rackId)
+            assertTrue(draftNav.slotId.isNotBlank())
+            assertEquals(0.3f, draftNav.slotXRel)
+            assertEquals(0.4f, draftNav.slotYRel)
             eventCollectJob.cancel()
         }
 
@@ -347,7 +337,7 @@ internal class RackDetailViewModelTest {
     }
 
     @Test
-    fun `GIVEN existing slot WHEN onImageTap nearby and not placement THEN NavigateToSlotItems emitted and saveSlot not called`() =
+    fun `GIVEN existing slot WHEN onImageTap nearby THEN NavigateToSlotItems emitted`() =
         runTest(testDispatcher) {
             val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
             fakeGetRackDataByRackId.invokeResult = RackData(
@@ -362,50 +352,24 @@ internal class RackDetailViewModelTest {
             val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
             advanceUntilIdle()
 
-            sut.onImageTap(xRel = 0.52f, yRel = 0.52f, forItemPlacement = false)
+            sut.onImageTap(xRel = 0.52f, yRel = 0.52f)
             advanceUntilIdle()
 
-            assertEquals(0, fakeSaveSlot.invokeCount)
             val nav = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.NavigateToSlotItems>().single()
             assertEquals(dummyRackId, nav.rackId)
             assertEquals("s1", nav.slotId)
-            assertEquals("s1", sut.uiState.value.selectedSlot?.id)
             eventCollectJob.cancel()
         }
 
     @Test
-    fun `GIVEN existing slot WHEN onImageTap nearby and forItemPlacement THEN slot selected without save`() =
-        runTest(testDispatcher) {
-            val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.3f, 0.4f))
-            fakeGetRackDataByRackId.invokeResult = RackData(
-                id = dummyRackId,
-                rack = dummyRack,
-                shelfSlots = listOf(slot),
-                items = emptyList(),
-            ).ok()
-            sut = getDummyRackDetailViewModel()
-            advanceUntilIdle()
-
-            sut.onImageTap(xRel = 0.31f, yRel = 0.41f, forItemPlacement = true)
-            advanceUntilIdle()
-
-            assertEquals(0, fakeSaveSlot.invokeCount)
-            assertEquals("s1", sut.uiState.value.selectedSlot?.id)
-        }
-
-    @Test
-    fun `GIVEN saveSlot would fail WHEN onImageTap THEN uiEvent ShowError emitted`() = runTest(testDispatcher) {
+    fun `GIVEN no matching slot WHEN onImageTap THEN draft add-item navigation emitted`() = runTest(testDispatcher) {
         fakeGetRackDataByRackId.invokeResult = RackData(
             id = dummyRackId,
             rack = dummyRack,
             shelfSlots = emptyList(),
             items = emptyList(),
         ).ok()
-        fakeSaveSlot.invokeResult = DomainError.ValidationError(reason = "Invalid position").err()
         sut = getDummyRackDetailViewModel()
-        val collectedStates = mutableListOf<RackDetailUiState>()
-        val stateCollectJob: Job = launch { sut.uiState.collect { collectedStates.add(it) } }
-        advanceUntilIdle()
         val collectedEvents = mutableListOf<RackDetailUiEvent?>()
         val eventCollectJob: Job = launch { sut.uiEvent.collect { collectedEvents.add(it) } }
         advanceUntilIdle()
@@ -413,11 +377,8 @@ internal class RackDetailViewModelTest {
         sut.onImageTap(xRel = 0.5f, yRel = 0.5f)
         advanceUntilIdle()
 
-        assertTrue(collectedStates.last().slots.isEmpty())
-        val showErrors = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.ShowError>()
-        assertTrue(showErrors.isNotEmpty())
-        assertTrue(showErrors.single().message.contains("Invalid position"))
-        stateCollectJob.cancel()
+        val draftNav = collectedEvents.filterNotNull().filterIsInstance<RackDetailUiEvent.NavigateToAddItemDraft>().single()
+        assertEquals(dummyRackId, draftNav.rackId)
         eventCollectJob.cancel()
     }
 
@@ -426,7 +387,6 @@ internal class RackDetailViewModelTest {
             coroutineScope = testScope,
             rackId = dummyRackId,
             getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
-            saveSlotUseCase = fakeSaveSlot,
             saveRackUseCase = fakeSaveRack,
             deleteRackUseCase = fakeDeleteRack,
         )

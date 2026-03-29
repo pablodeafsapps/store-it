@@ -20,7 +20,9 @@ struct ContentView: View {
                         Spacer()
                         HStack {
                             Spacer()
-                            Button(action: { path.append(.addItem(initialRackId: nil, initialSlotId: nil)) }) {
+                            Button(action: {
+                                path.append(.addItem)
+                            }) {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.system(size: 28))
                             }
@@ -57,19 +59,45 @@ struct ContentView: View {
             AddRackView(
                 onNavigateBack: { popRoute() }
             )
-        case .addItem(let initialRackId, let initialSlotId):
+        case .addItem:
+            AddItemScreen(
+                initialRackId: nil,
+                addItemSlot: AddItemSlotVoFromRoute.empty,
+                onNavigateToAddRack: { path.append(.addRack) },
+                onNavigateBack: { popRoute() }
+            )
+        case .addItemAtSlot(let initialRackId, let initialSlotId):
             AddItemScreen(
                 initialRackId: initialRackId,
-                initialSlotId: initialSlotId,
+                addItemSlot: AddItemSlotVoFromRoute.existing(slotId: initialSlotId),
+                onNavigateToAddRack: { path.append(.addRack) },
+                onNavigateBack: { popRoute() }
+            )
+        case .addItemAtDraftSlot(let initialRackId, let initialSlotId, let initialSlotXRel, let initialSlotYRel):
+            AddItemScreen(
+                initialRackId: initialRackId,
+                addItemSlot: AddItemSlotVoFromRoute.draft(
+                    slotId: initialSlotId,
+                    xRel: initialSlotXRel,
+                    yRel: initialSlotYRel
+                ),
                 onNavigateToAddRack: { path.append(.addRack) },
                 onNavigateBack: { popRoute() }
             )
         case .rackDetail(let rackId):
             RackDetailView(
+                navigationPath: $path,
                 rackId: rackId,
                 onNavigateBack: { popRoute() },
-                onAddItemHere: { initialRackId, initialSlotId in
-                    path.append(.addItem(initialRackId: initialRackId, initialSlotId: initialSlotId))
+                onAddItemHere: { initialRackId, initialSlotId, initialSlotXRel, initialSlotYRel in
+                    path.append(
+                        .addItemAtDraftSlot(
+                            initialRackId: initialRackId,
+                            initialSlotId: initialSlotId,
+                            initialSlotXRel: initialSlotXRel,
+                            initialSlotYRel: initialSlotYRel
+                        )
+                    )
                 },
                 onNavigateToSlotItems: { r, s in
                     path.append(.slotItems(rackId: r, slotId: s))
@@ -80,7 +108,7 @@ struct ContentView: View {
                 rackId: rackId,
                 slotId: slotId,
                 onAddItem: { r, s in
-                    path.append(.addItem(initialRackId: r, initialSlotId: s))
+                    path.append(.addItemAtSlot(initialRackId: r, initialSlotId: s))
                 },
                 onItemSelected: { itemId in
                     path.append(.itemDetail(itemId: itemId))
@@ -136,12 +164,17 @@ private struct AddItemScreen: View {
 
     init(
         initialRackId: String?,
-        initialSlotId: String?,
+        addItemSlot: AddItemSlotVo,
         onNavigateToAddRack: @escaping () -> Void,
         onNavigateBack: @escaping () -> Void
     ) {
         _addItemViewModel = StateObject(
-            wrappedValue: ViewModelHolder(IosKoinHelper().getAddItemViewModel(initialRackId: initialRackId, initialSlotId: initialSlotId))
+            wrappedValue: ViewModelHolder(
+                IosKoinHelper().getAddItemViewModel(
+                    initialRackId: initialRackId,
+                    addItemSlot: addItemSlot
+                )
+            )
         )
         self.onNavigateToAddRack = onNavigateToAddRack
         self.onNavigateBack = onNavigateBack
@@ -170,7 +203,9 @@ private struct AddItemScreen: View {
                 onRackSelected: addItemViewModel.sharedVm.onRackSelected,
                 onBackFromSelectRack: addItemViewModel.sharedVm.onBackFromSelectRack,
                 onBackFromSelectSlot: addItemViewModel.sharedVm.onBackFromSelectSlot,
-                onSlotSelectedForItem: addItemViewModel.sharedVm.onSlotSelectedForItem,
+                onSlotSelectedForItem: { rackId, slot in
+                    addItemViewModel.sharedVm.onSlotSelectedForItem(rackId: rackId, slot: slot)
+                },
                 onNavigateToAddRack: onNavigateToAddRack,
                 onNavigateBack: onNavigateBack
             )

@@ -54,13 +54,15 @@ import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.androidapp.design.backArrowIcon
 import org.deafsapps.storeit.androidapp.design.closeIcon
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.ImagePickerDialog
-import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackDetailScreen
+import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackSlotPickerScreen
 import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.item.model.AddItemStep
 import org.deafsapps.storeit.presentation.item.model.AddItemUiEvent
 import org.deafsapps.storeit.presentation.item.model.AddItemUiState
+import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.item.viewmodel.AddItemViewModel
+import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -68,9 +70,9 @@ import org.koin.core.parameter.parametersOf
 @Composable
 internal fun AddItemScreen(
     initialRackId: String?,
-    initialSlotId: String?,
-    onNavigateBack: () -> Unit,
+    addItemSlot: AddItemSlotVo,
     onNavigateToAddRack: () -> Unit = {},
+    onNavigateBack: () -> Unit,
 ) {
     val viewModelStoreOwner = remember {
         object : ViewModelStoreOwner {
@@ -79,7 +81,7 @@ internal fun AddItemScreen(
     }
     val viewModel: AddItemViewModel = koinViewModel(
         viewModelStoreOwner = viewModelStoreOwner,
-        parameters = { parametersOf(initialRackId, initialSlotId) },
+        parameters = { parametersOf(initialRackId, addItemSlot) },
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -104,7 +106,6 @@ internal fun AddItemScreen(
 
     AddItemScreenContent(
         uiState = uiState,
-        onNavigateBack = onNavigateBack,
         onNavigateToAddRack = onNavigateToAddRack,
         onUpdateName = viewModel::onUpdateName,
         onUpdateDescription = viewModel::onUpdateDescription,
@@ -120,13 +121,13 @@ internal fun AddItemScreen(
         onBackFromSelectRack = viewModel::onBackFromSelectRack,
         onBackFromSelectSlot = viewModel::onBackFromSelectSlot,
         onSlotSelectedForItem = viewModel::onSlotSelectedForItem,
+        onNavigateBack = onNavigateBack,
     )
 }
 
 @Composable
 private fun AddItemScreenContent(
     uiState: AddItemUiState,
-    onNavigateBack: () -> Unit,
     onNavigateToAddRack: () -> Unit = {},
     onUpdateName: (String) -> Unit,
     onUpdateDescription: (String) -> Unit,
@@ -141,12 +142,12 @@ private fun AddItemScreenContent(
     onRackSelected: (Rack) -> Unit,
     onBackFromSelectRack: () -> Unit,
     onBackFromSelectSlot: () -> Unit,
-    onSlotSelectedForItem: (rackId: String, slotId: String) -> Unit,
+    onSlotSelectedForItem: (rackId: String, slot: AddItemSlotVo) -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     when (uiState.step) {
         AddItemStep.FORM -> AddItemForm(
             uiState = uiState,
-            onNavigateBack = onNavigateBack,
             onUpdateName = onUpdateName,
             onUpdateDescription = onUpdateDescription,
             onUpdateQuantity = onUpdateQuantity,
@@ -157,6 +158,7 @@ private fun AddItemScreenContent(
             onUpdatePhotoUri = onUpdatePhotoUri,
             onSelectRackAndSlotSelect = onSelectRackAndSlotSelect,
             onSaveItem = onSaveItem,
+            onNavigateBack = onNavigateBack,
         )
         AddItemStep.SELECT_RACK -> SelectRackContent(
             uiState = uiState,
@@ -166,11 +168,10 @@ private fun AddItemScreenContent(
         )
         AddItemStep.SELECT_SLOT -> {
             val rackId = uiState.selectedRackId ?: return
-            RackDetailScreen(
+            RackSlotPickerScreen(
                 rackId = rackId,
-                onNavigateBack = onBackFromSelectSlot,
-                forItemPlacement = true,
                 onSlotSelectedForItem = onSlotSelectedForItem,
+                onNavigateBack = onBackFromSelectSlot,
             )
         }
     }
@@ -180,7 +181,6 @@ private fun AddItemScreenContent(
 @Composable
 private fun AddItemForm(
     uiState: AddItemUiState,
-    onNavigateBack: () -> Unit,
     onUpdateName: (String) -> Unit,
     onUpdateDescription: (String) -> Unit,
     onUpdateQuantity: (Int?) -> Unit,
@@ -191,6 +191,7 @@ private fun AddItemForm(
     onUpdatePhotoUri: (String?) -> Unit,
     onSelectRackAndSlotSelect: () -> Unit,
     onSaveItem: () -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     var showImagePicker by remember { mutableStateOf(false) }
 
@@ -532,13 +533,15 @@ private fun AddItemScreenPreview() {
                 photoUri = null,
                 selectedRackId = "1",
                 selectedSlotId = "A1",
+                selectedSlotPlacementType = SlotPlacementType.EXISTING,
+                selectedSlotXRel = null,
+                selectedSlotYRel = null,
                 racks = emptyList(),
                 step = AddItemStep.FORM,
                 isLoading = false,
                 error = null,
                 isSuccess = false,
             ),
-            onNavigateBack = {},
             onNavigateToAddRack = {},
             onUpdateName = {},
             onUpdateDescription = {},
@@ -554,6 +557,7 @@ private fun AddItemScreenPreview() {
             onBackFromSelectRack = {},
             onBackFromSelectSlot = {},
             onSlotSelectedForItem = { _, _ -> },
+            onNavigateBack = {},
         )
     }
 }
@@ -570,7 +574,6 @@ private fun AddItemScreenSelectRackPreview() {
                     Rack(id = "2", name = "Kitchen Shelf", location = "Kitchen"),
                 )
             ),
-            onNavigateBack = {},
             onNavigateToAddRack = {},
             onUpdateName = {},
             onUpdateDescription = {},
@@ -586,6 +589,7 @@ private fun AddItemScreenSelectRackPreview() {
             onBackFromSelectRack = {},
             onBackFromSelectSlot = {},
             onSlotSelectedForItem = { _, _ -> },
+            onNavigateBack = {},
         )
     }
 }

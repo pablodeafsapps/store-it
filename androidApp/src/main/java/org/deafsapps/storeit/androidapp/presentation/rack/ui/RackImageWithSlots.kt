@@ -1,0 +1,97 @@
+package org.deafsapps.storeit.androidapp.presentation.rack.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import coil.compose.AsyncImage
+import org.deafsapps.storeit.androidapp.R
+import org.deafsapps.storeit.androidapp.design.Dimens
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.setValue
+import org.deafsapps.storeit.presentation.rack.model.RackSlotMarkerVo
+
+@Composable
+internal fun RackImageWithSlots(
+    photoUri: String?,
+    slots: List<RackSlotMarkerVo>,
+    selectedSlot: RackSlotMarkerVo?,
+    onTap: (xRel: Float, yRel: Float) -> Unit,
+) {
+    var imageSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onSizeChanged { imageSize = it },
+    ) {
+        if (photoUri != null) {
+            AsyncImage(
+                model = photoUri,
+                contentDescription = stringResource(R.string.rack_photo_content_description),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium),
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .size(Dimens.rackDetailPlaceholderHeight)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(stringResource(R.string.rack_no_photo), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .testTag("rackDetailImageOverlay")
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        val w = imageSize.width.toFloat().coerceAtLeast(1f)
+                        val h = imageSize.height.toFloat().coerceAtLeast(1f)
+                        onTap((offset.x / w).coerceIn(0f, 1f), (offset.y / h).coerceIn(0f, 1f))
+                    }
+                },
+        )
+        slots.forEach { slot ->
+            val isSelected = selectedSlot?.id == slot.id
+            val color: Color =
+                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
+            with(density) {
+                val halfPx = Dimens.rackDetailSlotMarkerHalfSize.toPx()
+                val xPx = (slot.xRel * imageSize.width - halfPx).toInt()
+                val yPx = (slot.yRel * imageSize.height - halfPx).toInt()
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .offset { IntOffset(xPx, yPx) }
+                        .size(Dimens.rackDetailSlotMarkerSize)
+                        .background(color = color, shape = CircleShape),
+                )
+            }
+        }
+    }
+}
