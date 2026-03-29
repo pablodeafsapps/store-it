@@ -29,5 +29,19 @@ internal sealed interface NavScreen : NavKey {
     ) : NavScreen
 
     @Serializable
-    data class AddItem(val rackId: String? = null, val slotId: String? = null) : NavScreen
+    data object AddItem : NavScreen
+
+    @Serializable
+    data class AddItemAtSlot(
+        val rackId: String,
+        val slotId: String,
+    ) : NavScreen
+
+    @Serializable
+    data class AddItemAtDraftSlot(
+        val rackId: String,
+        val slotId: String,
+        val slotXRel: Float,
+        val slotYRel: Float,
+    ) : NavScreen
 }

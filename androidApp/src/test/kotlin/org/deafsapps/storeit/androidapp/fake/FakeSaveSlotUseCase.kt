@@ -9,9 +9,11 @@ import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
 internal class FakeSaveSlotUseCase : SaveSlotUseCaseType {
     var invokeResult: Result<DomainError, ShelfSlot>? = null
     var invokeCount: Int = 0
+    var lastSlot: ShelfSlot? = null
 
     override suspend fun invoke(input: ShelfSlot): Result<DomainError, ShelfSlot> {
         invokeCount++
+        lastSlot = input
         return invokeResult ?: input.ok()
     }
 }
