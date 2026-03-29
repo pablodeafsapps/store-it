@@ -17,7 +17,7 @@ struct AddItemView: View {
     let onRackSelected: (Rack) -> Void
     let onBackFromSelectRack: () -> Void
     let onBackFromSelectSlot: () -> Void
-    let onSlotSelectedForItem: (String, String) -> Void
+    let onSlotSelectedForItem: (String, AddItemSlotVo) -> Void
     let onNavigateToAddRack: () -> Void
     let onNavigateBack: () -> Void
 
@@ -262,12 +262,11 @@ struct AddItemView: View {
         }
 
         return AnyView(
-            RackDetailView(
+            RackSlotPickerView(
                 rackId: rackId,
                 onNavigateBack: { onBackFromSelectSlot() },
-                forItemPlacement: true,
-                onSlotSelectedForItem: { selectedRackId, slotId in
-                    onSlotSelectedForItem(selectedRackId, slotId)
+                onSlotSelectedForItem: { selectedRackId, slot in
+                    onSlotSelectedForItem(selectedRackId, slot)
                 }
             )
         )
