@@ -1,11 +1,13 @@
 package org.deafsapps.storeit.di
 
+import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.item.viewmodel.AddItemViewModel
 import org.deafsapps.storeit.presentation.item.viewmodel.ItemDetailViewModel
 import org.deafsapps.storeit.presentation.item.viewmodel.SlotItemsViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
+import org.deafsapps.storeit.presentation.rack.viewmodel.RackSlotPickerViewModel
 import org.deafsapps.storeit.presentation.search.viewmodel.SearchViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
@@ -20,8 +22,15 @@ object IosKoinHelper : KoinComponent {
     fun getRackDetailViewModel(rackId: String): RackDetailViewModel =
         get(parameters = { parametersOf(rackId) })
 
-    fun getAddItemViewModel(initialRackId: String?, initialSlotId: String?): AddItemViewModel =
-        get(parameters = { parametersOf(initialRackId, initialSlotId) })
+    fun getRackSlotPickerViewModel(rackId: String): RackSlotPickerViewModel =
+        get(parameters = { parametersOf(rackId) })
+
+    fun getAddItemViewModel(
+        initialRackId: String?,
+        addItemSlot: AddItemSlotVo,
+    ): AddItemViewModel = get(
+        parameters = { parametersOf(initialRackId, addItemSlot) },
+    )
 
     fun getSlotItemsViewModel(rackId: String, slotId: String): SlotItemsViewModel =
         get(parameters = { parametersOf(rackId, slotId) })

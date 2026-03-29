@@ -20,12 +20,17 @@ import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.domain.model.ShelfSlot
+import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.domain.usecase.AddItemUseCaseType
 import org.deafsapps.storeit.domain.usecase.GetRacksFlowUseCaseType
+import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.item.model.AddItemStep
 import org.deafsapps.storeit.presentation.item.model.AddItemUiEvent
 import org.deafsapps.storeit.presentation.item.model.AddItemUiState
+import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
+import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
 import kotlin.uuid.ExperimentalUuidApi
@@ -37,20 +42,27 @@ private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 @Factory
 class AddItemViewModel(
     @InjectedParam private val initialRackId: String?,
-    @InjectedParam private val initialSlotId: String?,
+    @InjectedParam private val addItemSlot: AddItemSlotVo,
     coroutineScope: CoroutineScope?,
     private val addItemUseCase: AddItemUseCaseType,
     private val getRacksFlowUseCase: GetRacksFlowUseCaseType,
+    private val saveSlotUseCase: SaveSlotUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 
-    private val _uiState = MutableStateFlow(
-        AddItemUiState.getDefault(initialRackId = initialRackId, initialSlotId = initialSlotId)
+    private val _uiState: MutableStateFlow<AddItemUiState> = MutableStateFlow(
+        AddItemUiState.getDefault(
+            initialRackId = initialRackId,
+            addItemSlot = addItemSlot,
+        ),
     )
     val uiState: StateFlow<AddItemUiState> = _uiState.asStateFlow()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
-            initialValue = AddItemUiState.getDefault(initialRackId = initialRackId, initialSlotId = initialSlotId),
+            initialValue = AddItemUiState.getDefault(
+                initialRackId = initialRackId,
+                addItemSlot = addItemSlot,
+            ),
         )
     private val _uiEvent = MutableSharedFlow<AddItemUiEvent?>()
     val uiEvent: SharedFlow<AddItemUiEvent?> = _uiEvent.asSharedFlow()
@@ -65,13 +77,16 @@ class AddItemViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun startRacksFlowWhenSelectingRack() {
-            getRacksFlowUseCase(input = Unit)
-                .mapLatest { result ->
-                    result.fold(ifErr = { error ->
+        getRacksFlowUseCase(input = Unit)
+            .mapLatest { result ->
+                result.fold(
+                    ifErr = { error ->
                         _uiState.value.copy(racks = emptyList(), error = error.toErrorCause())
-                    }, ifOk = { racks ->
+                    },
+                    ifOk = { racks ->
                         _uiState.value.copy(racks = racks, error = null)
-                    })
+                    },
+                )
             }.onEach { newState ->
                 _uiState.update { state ->
                     state.copy(racks = newState.racks, error = newState.error ?: state.error)
@@ -126,12 +141,15 @@ class AddItemViewModel(
         _uiState.update { state -> state.copy(step = AddItemStep.SELECT_SLOT, selectedRackId = rack.id) }
     }
 
-    fun onSlotSelectedForItem(rackId: String, slotId: String) {
+    fun onSlotSelectedForItem(rackId: String, slot: AddItemSlotVo) {
         _uiState.update { state ->
             state.copy(
                 step = AddItemStep.FORM,
                 selectedRackId = rackId,
-                selectedSlotId = slotId,
+                selectedSlotId = slot.id,
+                selectedSlotPlacementType = slot.placementType,
+                selectedSlotXRel = slot.xRel,
+                selectedSlotYRel = slot.yRel,
             )
         }
     }
@@ -150,7 +168,7 @@ class AddItemViewModel(
         val rackId = state.selectedRackId
         val slotId = state.selectedSlotId
         if (rackId.isNullOrBlank() || slotId.isNullOrBlank()) {
-            _uiState.update { state -> state.copy(error = "Select a rack and slot to place the item") }
+            _uiState.update { s -> s.copy(error = "Select a rack and slot to place the item") }
             return
         }
 
@@ -168,25 +186,48 @@ class AddItemViewModel(
                 owner = state.owner.trim(),
                 tags = state.tags,
             )
-
-            addItemUseCase(item).fold(
-                ifErr = { error: DomainError ->
-                    val message = when (error) {
-                        is DomainError.ValidationError -> error.reason
-                        is DomainError.NotFound -> "Not found"
-                        is DomainError.Unknown -> "An unknown error occurred"
-                    }
-                    _uiState.update { state -> state.copy(isLoading = false, error = message) }
-                },
-                ifOk = {
-                    _uiEvent.emit(AddItemUiEvent.NavigateBack)
-                    _uiState.value = AddItemUiState.getDefault(
-                        initialRackId = initialRackId,
-                        initialSlotId = initialSlotId,
-                    )
-                },
-            )
+            if (state.selectedSlotPlacementType == SlotPlacementType.DRAFT) {
+                val xRel = state.selectedSlotXRel
+                val yRel = state.selectedSlotYRel
+                if (xRel == null || yRel == null) {
+                    _uiState.update { state -> state.copy(isLoading = false, error = "Draft slot position is missing") }
+                    return@launch
+                }
+                val slot = ShelfSlot(
+                    id = slotId,
+                    rackId = rackId,
+                    position = SlotPosition(x = 0f, y = 0f, xRel = xRel, yRel = yRel),
+                )
+                saveSlotUseCase(input = slot).fold(
+                    ifErr = { error ->
+                        _uiState.update { state -> state.copy(isLoading = false, error = error.toErrorCause()) }
+                    },
+                    ifOk = { saveItemAndReset(item = item) },
+                )
+            } else {
+                saveItemAndReset(item = item)
+            }
         }
+    }
+
+    private suspend fun saveItemAndReset(item: Item) {
+        addItemUseCase(item).fold(
+            ifErr = { error: DomainError ->
+                val message = when (error) {
+                    is DomainError.ValidationError -> error.reason
+                    is DomainError.NotFound -> "Not found"
+                    is DomainError.Unknown -> "An unknown error occurred"
+                }
+                _uiState.update { state -> state.copy(isLoading = false, error = message) }
+            },
+            ifOk = {
+                _uiEvent.emit(AddItemUiEvent.NavigateBack)
+                _uiState.value = AddItemUiState.getDefault(
+                    initialRackId = initialRackId,
+                    addItemSlot = addItemSlot,
+                )
+            },
+        )
     }
 }
 

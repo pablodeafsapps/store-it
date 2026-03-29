@@ -2,12 +2,12 @@ package org.deafsapps.storeit.presentation.rack.model
 
 import androidx.compose.runtime.Immutable
 import org.deafsapps.storeit.domain.model.Rack
+import kotlin.collections.emptyList
 
 @Immutable
 data class RackDetailUiState(
     val rack: Rack?,
-    val slots: List<RackDetailSlotVo>,
-    val selectedSlot: RackDetailSlotVo?,
+    val slots: List<RackSlotMarkerVo>,
     val isLoading: Boolean,
     val error: String?,
     val showEditDialog: Boolean,
@@ -20,7 +20,6 @@ data class RackDetailUiState(
         fun getDefault(): RackDetailUiState = RackDetailUiState(
             rack = null,
             slots = emptyList(),
-            selectedSlot = null,
             isLoading = false,
             error = null,
             showEditDialog = false,
@@ -35,6 +34,11 @@ data class RackDetailUiState(
 sealed interface RackDetailUiEvent {
     data object NavigateBack : RackDetailUiEvent
     data class ShowError(val message: String) : RackDetailUiEvent
-    data class SlotSelected(val rackId: String, val slotId: String) : RackDetailUiEvent
+    data class NavigateToAddItemDraft(
+        val rackId: String,
+        val slotId: String,
+        val slotXRel: Float,
+        val slotYRel: Float,
+    ) : RackDetailUiEvent
     data class NavigateToSlotItems(val rackId: String, val slotId: String) : RackDetailUiEvent
 }
