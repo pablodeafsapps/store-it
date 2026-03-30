@@ -3,11 +3,7 @@ package org.deafsapps.storeit.domain.usecase
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.UseCase
 import org.deafsapps.storeit.base.err
-import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.fold
-import org.deafsapps.storeit.base.getOrNull
-import org.deafsapps.storeit.base.map
-import org.deafsapps.storeit.base.mapLeft
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.base.suspendFlatMap
 import org.deafsapps.storeit.domain.model.DomainError
@@ -22,9 +18,9 @@ interface SearchItemsUseCaseType : UseCase<String, Result<DomainError, List<Item
 
 @Factory(binds = [SearchItemsUseCaseType::class])
 internal class SearchItemsUseCase(
-    private val itemRepository: ItemRepository,
     private val getRackByIdUseCase: GetRackByIdUseCaseType,
     private val getSlotsByRackIdUseCase: GetSlotsByRackIdUseCaseType,
+    private val itemRepository: ItemRepository,
 ) : SearchItemsUseCaseType {
     override suspend fun invoke(input: String): Result<DomainError, List<ItemWithPlacement>> =
         itemRepository.searchItems(query = input)

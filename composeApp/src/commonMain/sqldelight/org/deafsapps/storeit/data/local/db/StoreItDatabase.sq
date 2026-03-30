@@ -1,0 +1,37 @@
+CREATE TABLE racks (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    location TEXT NOT NULL,
+    photo_uri TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER
+);
+
+CREATE TABLE shelf_slots (
+    id TEXT NOT NULL PRIMARY KEY,
+    rack_id TEXT NOT NULL REFERENCES racks(id) ON DELETE CASCADE,
+    x REAL NOT NULL,
+    y REAL NOT NULL,
+    x_rel REAL NOT NULL,
+    y_rel REAL NOT NULL
+);
+
+CREATE INDEX shelf_slots_rack_id_idx ON shelf_slots(rack_id);
+
+CREATE TABLE items (
+    id TEXT NOT NULL PRIMARY KEY,
+    rack_id TEXT NOT NULL REFERENCES racks(id) ON DELETE CASCADE,
+    slot_id TEXT NOT NULL REFERENCES shelf_slots(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    photo_uri TEXT,
+    quantity INTEGER,
+    owner TEXT NOT NULL,
+    tags_json TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER
+);
+
+CREATE INDEX items_rack_id_idx ON items(rack_id);
+CREATE INDEX items_rack_slot_id_idx ON items(rack_id, slot_id);

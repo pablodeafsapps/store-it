@@ -26,13 +26,13 @@ internal class SearchItemsUseCaseTest {
 
     @BeforeTest
     fun setUp() {
-        fakeItemRepository = FakeItemRepository()
         fakeRackRepository = FakeRackRepository()
         fakeSlotRepository = FakeSlotRepository()
+        fakeItemRepository = FakeItemRepository()
         sut = SearchItemsUseCase(
-            itemRepository = fakeItemRepository,
             getRackByIdUseCase = GetRackByIdUseCase(rackRepository = fakeRackRepository),
             getSlotsByRackIdUseCase = GetSlotsByRackIdUseCase(slotRepository = fakeSlotRepository),
+            itemRepository = fakeItemRepository,
         )
     }
 
