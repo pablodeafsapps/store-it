@@ -1,4 +1,4 @@
-package org.deafsapps.storeit.data.local.db
+package org.deafsapps.storeit.data.database
 
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import app.cash.sqldelight.db.SqlDriver

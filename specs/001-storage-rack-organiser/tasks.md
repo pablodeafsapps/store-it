@@ -109,6 +109,7 @@
 - [ ] T024 [P] Introduce RemoteRackSource and RemoteItemSource interfaces (or equivalent) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/` with no-op/stub implementations; document where Firebase will plug in (research.md, contracts/)
 - [ ] T025 [P] Add KDoc to public APIs (domain entities, repository interfaces, use cases) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/`; update README and `specs/001-storage-rack-organiser/quickstart.md` with build/run/test instructions
 - [ ] T026 Run quickstart.md validation: build Android and composeApp tests, confirm mock data visible in debug build
+- [X] T036 [Data] Koin wiring: switch default repository bindings from in-memory to SQLDelight implementations; keep in-memory repos for tests/debug; add mapper/codec tests; validate Android and iOS builds
 
 ---
 

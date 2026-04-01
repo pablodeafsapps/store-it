@@ -5,12 +5,10 @@ import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.repository.SlotRepository
-import org.koin.core.annotation.Single
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.deafsapps.storeit.base.Result
 
-@Single(binds = [SlotRepository::class])
 internal class InMemorySlotRepository : SlotRepository {
     private val slots = mutableMapOf<String, ShelfSlot>()
     private val mutex = Mutex()

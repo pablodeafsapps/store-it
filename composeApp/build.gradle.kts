@@ -65,7 +65,7 @@ kotlin {
 sqldelight {
     databases {
         create("StoreItDatabase") {
-            packageName.set("org.deafsapps.storeit.data.local.db")
+            packageName.set("org.deafsapps.storeit.data.database")
             verifyMigrations.set(true)
         }
     }

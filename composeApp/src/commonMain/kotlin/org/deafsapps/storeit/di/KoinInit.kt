@@ -1,6 +1,6 @@
 package org.deafsapps.storeit.di
 
-import org.deafsapps.storeit.data.local.db.StoreItDatabaseProvider
+import org.deafsapps.storeit.data.database.StoreItDatabaseProvider
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.ksp.generated.module
