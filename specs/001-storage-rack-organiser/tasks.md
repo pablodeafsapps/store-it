@@ -110,6 +110,7 @@
 - [ ] T025 [P] Add KDoc to public APIs (domain entities, repository interfaces, use cases) in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/`; update README and `specs/001-storage-rack-organiser/quickstart.md` with build/run/test instructions
 - [ ] T026 Run quickstart.md validation: build Android and composeApp tests, confirm mock data visible in debug build
 - [X] T036 [Data] Koin wiring: switch default repository bindings from in-memory to SQLDelight implementations; keep in-memory repos for tests/debug; add mapper/codec tests; validate Android and iOS builds
+- [X] T037 [Data] SQLDelight-backed Rack / Slot / Item repositories (`SqlDelightRackDataSource`, `SqlDelightSlotDataSource`, `SqlDelightItemDataSource` + repository facades; schema `StoreItDatabase.sq`; FK cascade + platform foreign-key enablement; see research.md §7)
 
 ---
 
