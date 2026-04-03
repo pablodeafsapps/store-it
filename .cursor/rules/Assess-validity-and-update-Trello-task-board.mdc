@@ -1,15 +1,6 @@
 ---
-description: Validates changes and updates the associated Trello work board if available
+description: Delegates feature-work lifecycle (Trello + verification builds) to the store-it-delivery-workflow skill
 alwaysApply: true
 ---
 
-# Recent changes validation and work update on Trello
-
-Every time some work is started:
-
-- Use the Trello MCP to move any related card to the "Doing" column. Feel free to update any related task card with proper comments to best explain what's going on.
-- Then, undertake the required work, adding comments to any related task card that needs them.
-- Once done, build the project for both Android and iOS to check that the application is still functional.
-- Finally, use the Trello MCP to move any related task card to the "AI-Implemented" column. Feel free to update any related task card with proper comments to best explain what's going on. In this last stage, changed files must be ready to be committed with a descriptive message. 
-
-The user is responsible for making the commit (or commits) and pushing it/them to the remote, and moving the task card to the "Done" column in the Trello board.
+When starting or finishing substantive work in this repository, read and follow `.cursor/skills/store-it-delivery-workflow/SKILL.md` (Trello MCP columns Doing → AI-Implemented, Gradle verification, iOS build when relevant, commit-ready handoff).
