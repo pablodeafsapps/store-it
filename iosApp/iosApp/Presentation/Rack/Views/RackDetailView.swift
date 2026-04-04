@@ -75,8 +75,19 @@ private struct RackDetailScreen: View {
                 onUpdateEditLocation: rackDetailViewModel.sharedVm.onUpdateEditLocation,
                 onSaveRackEdits: rackDetailViewModel.sharedVm.onSaveRackEdits,
                 onDismissDeleteConfirm: rackDetailViewModel.sharedVm.onDismissDeleteConfirm,
-                onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack
+                onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack,
+                onSlotMarkerDrag: { slotId, xRel, yRel, commit in
+                    rackDetailViewModel.sharedVm.onSlotMarkerDrag(
+                        slotId: slotId,
+                        xRel: xRel,
+                        yRel: yRel,
+                        commit: commit
+                    )
+                }
             )
+        }
+        .onAppear {
+            rackDetailViewModel.sharedVm.reloadRackDetail()
         }
         .task {
             for await event in rackDetailViewModel.sharedVm.uiEvent {
@@ -112,6 +123,9 @@ private struct RackDetailContent: View {
     let onSaveRackEdits: () -> Void
     let onDismissDeleteConfirm: () -> Void
     let onConfirmDeleteRack: () -> Void
+    let onSlotMarkerDrag: (String, Float, Float, Bool) -> Void
+    @State private var pendingDragConfirmation: PendingDragConfirmation?
+    @State private var showSlotMoveConfirm = false
 
     var body: some View {
         ZStack {
@@ -124,7 +138,20 @@ private struct RackDetailContent: View {
                             photoUri: rack.photoUri,
                             slots: state.slots,
                             selectedSlotId: nil,
-                            onTap: onImageTap
+                            onTap: onImageTap,
+                            onSlotDrag: { slotId, xRel, yRel in
+                                onSlotMarkerDrag(slotId, xRel, yRel, false)
+                            },
+                            onSlotDragFinished: { slotId, initialXRel, initialYRel, finalXRel, finalYRel in
+                                pendingDragConfirmation = PendingDragConfirmation(
+                                    slotId: slotId,
+                                    initialXRel: initialXRel,
+                                    initialYRel: initialYRel,
+                                    finalXRel: finalXRel,
+                                    finalYRel: finalYRel
+                                )
+                                showSlotMoveConfirm = true
+                            }
                         )
                         if !rack.description_.isEmpty {
                             Text(rack.description_).font(.body)
@@ -182,6 +209,32 @@ private struct RackDetailContent: View {
         } message: {
             Text("rack_remove_confirm_message")
         }
+        .alert("rack_slot_move_confirm_title", isPresented: $showSlotMoveConfirm) {
+            Button("common_cancel", role: .cancel) {
+                if let pendingDragConfirmation {
+                    onSlotMarkerDrag(
+                        pendingDragConfirmation.slotId,
+                        pendingDragConfirmation.initialXRel,
+                        pendingDragConfirmation.initialYRel,
+                        false
+                    )
+                }
+                pendingDragConfirmation = nil
+            }
+            Button("common_save") {
+                if let pendingDragConfirmation {
+                    onSlotMarkerDrag(
+                        pendingDragConfirmation.slotId,
+                        pendingDragConfirmation.finalXRel,
+                        pendingDragConfirmation.finalYRel,
+                        true
+                    )
+                }
+                pendingDragConfirmation = nil
+            }
+        } message: {
+            Text("rack_slot_move_confirm_message")
+        }
     }
 }
 
@@ -190,6 +243,8 @@ private struct RackImageView: View {
     let slots: [RackSlotMarkerVo]
     let selectedSlotId: String?
     let onTap: (Float, Float) -> Void
+    let onSlotDrag: (String, Float, Float) -> Void
+    let onSlotDragFinished: (String, Float, Float, Float, Float) -> Void
 
     var body: some View {
         Group {
@@ -220,22 +275,70 @@ private struct RackImageView: View {
         GeometryReader { geo in
             let w = max(geo.size.width, 1)
             let h = max(geo.size.height, 1)
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture(coordinateSpace: .local) { location in
-                    let xRel = Float((location.x / w).clamped(to: 0...1))
-                    let yRel = Float((location.y / h).clamped(to: 0...1))
-                    onTap(xRel, yRel)
+            ZStack(alignment: .topLeading) {
+                Color.clear
+                    .frame(width: w, height: h)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        let xRel = Float((location.x / w).clamped(to: 0...1))
+                        let yRel = Float((location.y / h).clamped(to: 0...1))
+                        onTap(xRel, yRel)
+                    }
+                ForEach(slots, id: \.id) { slot in
+                    slotMarker(slot: slot, width: w, height: h)
                 }
-            ForEach(slots, id: \.id) { slot in
-                Circle()
-                    .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
-                    .frame(width: 24, height: 24)
-                    .position(x: CGFloat(slot.xRel) * geo.size.width, y: CGFloat(slot.yRel) * geo.size.height)
-                    .allowsHitTesting(false)
             }
+            .frame(width: w, height: h)
+            .coordinateSpace(name: "rackImage")
         }
     }
+
+    @ViewBuilder
+    private func slotMarker(slot: RackSlotMarkerVo, width w: CGFloat, height h: CGFloat) -> some View {
+        let startX = slot.xRel
+        let startY = slot.yRel
+        Circle()
+            .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
+            .frame(width: 24, height: 24)
+            .position(x: CGFloat(slot.xRel) * w, y: CGFloat(slot.yRel) * h)
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    onTap(slot.xRel, slot.yRel)
+                }
+            )
+            .gesture(
+                LongPressGesture(minimumDuration: 0.35)
+                    .sequenced(before: DragGesture(coordinateSpace: .named("rackImage")))
+                    .onChanged { value in
+                        switch value {
+                        case .second(true, let drag?):
+                            let xRel = Float((drag.location.x / w).clamped(to: 0...1))
+                            let yRel = Float((drag.location.y / h).clamped(to: 0...1))
+                            onSlotDrag(slot.id, xRel, yRel)
+                        default:
+                            break
+                        }
+                    }
+                    .onEnded { value in
+                        switch value {
+                        case .second(true, let drag?):
+                            let xRel = Float((drag.location.x / w).clamped(to: 0...1))
+                            let yRel = Float((drag.location.y / h).clamped(to: 0...1))
+                            onSlotDragFinished(slot.id, startX, startY, xRel, yRel)
+                        default:
+                            break
+                        }
+                    }
+            )
+    }
+}
+
+private struct PendingDragConfirmation {
+    let slotId: String
+    let initialXRel: Float
+    let initialYRel: Float
+    let finalXRel: Float
+    let finalYRel: Float
 }
 
 extension Comparable {

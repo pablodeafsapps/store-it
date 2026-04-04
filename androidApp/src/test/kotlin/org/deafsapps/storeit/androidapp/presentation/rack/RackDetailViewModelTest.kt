@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeDeleteRackUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeGetRackDataByRackIdUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeSaveRackUseCase
+import org.deafsapps.storeit.androidapp.fake.FakeSaveSlotUseCase
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
@@ -35,6 +36,7 @@ internal class RackDetailViewModelTest {
     private lateinit var fakeGetRackDataByRackId: FakeGetRackDataByRackIdUseCase
     private lateinit var fakeSaveRack: FakeSaveRackUseCase
     private lateinit var fakeDeleteRack: FakeDeleteRackUseCase
+    private lateinit var fakeSaveSlot: FakeSaveSlotUseCase
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val dummyRackId = "rack-1"
@@ -45,6 +47,7 @@ internal class RackDetailViewModelTest {
         fakeGetRackDataByRackId = FakeGetRackDataByRackIdUseCase()
         fakeSaveRack = FakeSaveRackUseCase()
         fakeDeleteRack = FakeDeleteRackUseCase()
+        fakeSaveSlot = FakeSaveSlotUseCase()
     }
 
     @Test
@@ -382,6 +385,30 @@ internal class RackDetailViewModelTest {
         eventCollectJob.cancel()
     }
 
+    @Test
+    fun `GIVEN existing slot WHEN onSlotMarkerDrag with commit THEN slot moves and persists`() =
+        runTest(testDispatcher) {
+            val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = listOf(slot),
+                items = emptyList(),
+            ).ok()
+            sut = getDummyRackDetailViewModel()
+            advanceUntilIdle()
+
+            sut.onSlotMarkerDrag(slotId = "s1", xRel = 0.8f, yRel = 0.3f, commit = true)
+            advanceUntilIdle()
+
+            assertEquals(0.8f, sut.uiState.value.slots.single().xRel)
+            assertEquals(0.3f, sut.uiState.value.slots.single().yRel)
+            assertEquals(1, fakeSaveSlot.invokeCount)
+            assertEquals("s1", fakeSaveSlot.lastSlot?.id)
+            assertEquals(0.8f, fakeSaveSlot.lastSlot?.position?.xRel)
+            assertEquals(0.3f, fakeSaveSlot.lastSlot?.position?.yRel)
+        }
+
     private fun getDummyRackDetailViewModel(): RackDetailViewModel =
         RackDetailViewModel(
             coroutineScope = testScope,
@@ -389,5 +416,6 @@ internal class RackDetailViewModelTest {
             getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
             saveRackUseCase = fakeSaveRack,
             deleteRackUseCase = fakeDeleteRack,
+            saveSlotUseCase = fakeSaveSlot,
         )
 }

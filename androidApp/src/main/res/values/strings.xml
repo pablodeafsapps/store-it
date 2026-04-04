@@ -46,6 +46,8 @@
     <string name="rack_edit_location_label">Location</string>
     <string name="rack_remove_confirm_title">Remove rack?</string>
     <string name="rack_remove_confirm_body">This will delete the rack and all its slots and items. This cannot be undone.</string>
+    <string name="rack_slot_move_confirm_title">Move slot marker?</string>
+    <string name="rack_slot_move_confirm_body">Confirm the new slot marker position.</string>
     <string name="rack_detail_placeholder_title">Rack detail</string>
     <string name="rack_detail_placeholder_body">Rack: %1$s (detail screen coming in T014)</string>
 

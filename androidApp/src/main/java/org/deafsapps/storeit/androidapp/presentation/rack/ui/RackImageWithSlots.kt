@@ -1,7 +1,10 @@
 package org.deafsapps.storeit.androidapp.presentation.rack.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -16,12 +19,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.compose.foundation.shape.CircleShape
@@ -36,9 +41,18 @@ internal fun RackImageWithSlots(
     slots: List<RackSlotMarkerVo>,
     selectedSlot: RackSlotMarkerVo?,
     onTap: (xRel: Float, yRel: Float) -> Unit,
+    onSlotMarkerDrag: (slotId: String, xRel: Float, yRel: Float) -> Unit,
+    onSlotMarkerDragFinished: (
+        slotId: String,
+        initialXRel: Float,
+        initialYRel: Float,
+        finalXRel: Float,
+        finalYRel: Float,
+    ) -> Unit,
 ) {
     var imageSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
@@ -47,7 +61,11 @@ internal fun RackImageWithSlots(
     ) {
         if (photoUri != null) {
             AsyncImage(
-                model = photoUri,
+                model = ImageRequest.Builder(context)
+                    .data(photoUri)
+                    .memoryCacheKey(photoUri)
+                    .diskCacheKey(photoUri)
+                    .build(),
                 contentDescription = stringResource(R.string.rack_photo_content_description),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -89,7 +107,35 @@ internal fun RackImageWithSlots(
                         .align(Alignment.TopStart)
                         .offset { IntOffset(xPx, yPx) }
                         .size(Dimens.rackDetailSlotMarkerSize)
-                        .background(color = color, shape = CircleShape),
+                        .background(color = color, shape = CircleShape)
+                        .clickable(
+                            interactionSource = remember(slot.id) { MutableInteractionSource() },
+                            indication = null,
+                        ) { onTap(slot.xRel, slot.yRel) }
+                        .pointerInput(slot.id, slot.xRel, slot.yRel, imageSize) {
+                            var dragXRel = slot.xRel
+                            var dragYRel = slot.yRel
+                            val initialXRel = slot.xRel
+                            val initialYRel = slot.yRel
+                            detectDragGesturesAfterLongPress(
+                                onDrag = { change, dragAmount ->
+                                    val w = imageSize.width.toFloat().coerceAtLeast(1f)
+                                    val h = imageSize.height.toFloat().coerceAtLeast(1f)
+                                    dragXRel = (dragXRel + dragAmount.x / w).coerceIn(0f, 1f)
+                                    dragYRel = (dragYRel + dragAmount.y / h).coerceIn(0f, 1f)
+                                    onSlotMarkerDrag(slot.id, dragXRel, dragYRel)
+                                },
+                                onDragEnd = {
+                                    onSlotMarkerDragFinished(
+                                        slot.id,
+                                        initialXRel,
+                                        initialYRel,
+                                        dragXRel,
+                                        dragYRel,
+                                    )
+                                },
+                            )
+                        },
                 )
             }
         }

@@ -28,6 +28,8 @@
 "rack_remove_button" = "Remove rack";
 "rack_remove_confirm_title" = "Remove rack?";
 "rack_remove_confirm_message" = "This will delete the rack and all its slots and items. This cannot be undone.";
+"rack_slot_move_confirm_title" = "Move slot marker?";
+"rack_slot_move_confirm_message" = "Confirm the new slot marker position.";
 "rack_edit_title" = "Edit rack";
 
 "search_title" = "Search items";

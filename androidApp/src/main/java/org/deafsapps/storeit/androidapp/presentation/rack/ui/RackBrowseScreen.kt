@@ -87,6 +87,7 @@ internal fun RackBrowseScreen(
         onSaveRackEdits = viewModel::onSaveRackEdits,
         onDismissDeleteConfirm = viewModel::onDismissDeleteConfirm,
         onConfirmDeleteRack = viewModel::onConfirmDeleteRack,
+        onSlotMarkerDrag = viewModel::onSlotMarkerDrag,
     )
 }
 
@@ -105,7 +106,9 @@ private fun RackBrowseContent(
     onSaveRackEdits: () -> Unit,
     onDismissDeleteConfirm: () -> Unit,
     onConfirmDeleteRack: () -> Unit,
+    onSlotMarkerDrag: (slotId: String, xRel: Float, yRel: Float, commit: Boolean) -> Unit,
 ) {
+    var pendingDragConfirmation by remember { mutableStateOf<PendingDragConfirmation?>(null) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -160,6 +163,18 @@ private fun RackBrowseContent(
                         slots = uiState.slots,
                         selectedSlot = null,
                         onTap = onImageTap,
+                        onSlotMarkerDrag = { slotId, xRel, yRel ->
+                            onSlotMarkerDrag(slotId, xRel, yRel, false)
+                        },
+                        onSlotMarkerDragFinished = { slotId, initialXRel, initialYRel, finalXRel, finalYRel ->
+                            pendingDragConfirmation = PendingDragConfirmation(
+                                slotId = slotId,
+                                initialXRel = initialXRel,
+                                initialYRel = initialYRel,
+                                finalXRel = finalXRel,
+                                finalYRel = finalYRel,
+                            )
+                        },
                     )
                 }
             }
@@ -208,4 +223,42 @@ private fun RackBrowseContent(
             },
         )
     }
+    pendingDragConfirmation?.let { pending ->
+        AlertDialog(
+            onDismissRequest = {
+                onSlotMarkerDrag(pending.slotId, pending.initialXRel, pending.initialYRel, false)
+                pendingDragConfirmation = null
+            },
+            title = { Text(stringResource(R.string.rack_slot_move_confirm_title)) },
+            text = { Text(stringResource(R.string.rack_slot_move_confirm_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onSlotMarkerDrag(pending.slotId, pending.finalXRel, pending.finalYRel, true)
+                        pendingDragConfirmation = null
+                    },
+                ) {
+                    Text(stringResource(R.string.common_save))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onSlotMarkerDrag(pending.slotId, pending.initialXRel, pending.initialYRel, false)
+                        pendingDragConfirmation = null
+                    },
+                ) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
 }
+
+private data class PendingDragConfirmation(
+    val slotId: String,
+    val initialXRel: Float,
+    val initialYRel: Float,
+    val finalXRel: Float,
+    val finalYRel: Float,
+)

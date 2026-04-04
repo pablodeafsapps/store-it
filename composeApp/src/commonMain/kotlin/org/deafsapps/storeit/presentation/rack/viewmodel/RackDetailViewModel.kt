@@ -14,9 +14,12 @@ import kotlinx.coroutines.launch
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.domain.model.ShelfSlot
+import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.domain.usecase.DeleteRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.GetRackDataByRackIdUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
+import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.mapper.toRackSlotMarkerVos
 import org.deafsapps.storeit.presentation.rack.model.RackSlotMarkerVo
@@ -37,6 +40,7 @@ class RackDetailViewModel(
     private val getRackDataByRackIdUseCase: GetRackDataByRackIdUseCaseType,
     private val saveRackUseCase: SaveRackUseCaseType,
     private val deleteRackUseCase: DeleteRackUseCaseType,
+    private val saveSlotUseCase: SaveSlotUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 
     private val _uiState = MutableStateFlow(RackDetailUiState.getDefault())
@@ -71,6 +75,41 @@ class RackDetailViewModel(
             } ?: run {
                 navigateToAddItemWithDraftSlot(rack = rack, xRel = xRel, yRel = yRel)
             }
+        }
+    }
+
+    fun onSlotMarkerDrag(slotId: String, xRel: Float, yRel: Float, commit: Boolean) {
+        val rack = _uiState.value.rack ?: return
+        val boundedXRel = xRel.coerceIn(0f, 1f)
+        val boundedYRel = yRel.coerceIn(0f, 1f)
+        _uiState.update { state ->
+            state.copy(
+                slots = state.slots.map { slot ->
+                    if (slot.id == slotId) {
+                        slot.copy(xRel = boundedXRel, yRel = boundedYRel)
+                    } else {
+                        slot
+                    }
+                },
+            )
+        }
+        if (!commit) return
+        viewModelScope.launch {
+            saveSlotUseCase(
+                input = ShelfSlot(
+                    id = slotId,
+                    rackId = rack.id,
+                    position = SlotPosition(
+                        x = boundedXRel,
+                        y = boundedYRel,
+                        xRel = boundedXRel,
+                        yRel = boundedYRel,
+                    ),
+                ),
+            ).fold(
+                ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(message = error.toErrorCause())) },
+                ifOk = { },
+            )
         }
     }
 
