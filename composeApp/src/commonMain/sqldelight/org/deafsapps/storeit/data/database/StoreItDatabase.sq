@@ -44,7 +44,7 @@ SELECT * FROM racks
 WHERE id = ?;
 
 upsertRack:
-INSERT OR REPLACE INTO racks(
+INSERT INTO racks(
     id,
     name,
     description,
@@ -52,7 +52,14 @@ INSERT OR REPLACE INTO racks(
     photo_uri,
     created_at,
     updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?);
+) VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name,
+    description = excluded.description,
+    location = excluded.location,
+    photo_uri = excluded.photo_uri,
+    created_at = excluded.created_at,
+    updated_at = excluded.updated_at;
 
 deleteRackById:
 DELETE FROM racks
@@ -66,14 +73,20 @@ SELECT * FROM shelf_slots
 WHERE rack_id = ?;
 
 upsertSlot:
-INSERT OR REPLACE INTO shelf_slots(
+INSERT INTO shelf_slots(
     id,
     rack_id,
     x,
     y,
     x_rel,
     y_rel
-) VALUES (?, ?, ?, ?, ?, ?);
+) VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO UPDATE SET
+    rack_id = excluded.rack_id,
+    x = excluded.x,
+    y = excluded.y,
+    x_rel = excluded.x_rel,
+    y_rel = excluded.y_rel;
 
 deleteSlotsByRack:
 DELETE FROM shelf_slots

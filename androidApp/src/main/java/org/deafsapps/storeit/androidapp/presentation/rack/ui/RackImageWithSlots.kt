@@ -95,9 +95,11 @@ internal fun RackImageWithSlots(
                 },
         )
         slots.forEach { slot ->
+            var markerSize by remember { mutableStateOf(Dimens.rackDetailSlotMarkerSize) }
             val isSelected = selectedSlot?.id == slot.id
             val color: Color =
                 if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
+            var markerColor by remember { mutableStateOf(color) }
             with(density) {
                 val halfPx = Dimens.rackDetailSlotMarkerHalfSize.toPx()
                 val xPx = (slot.xRel * imageSize.width - halfPx).toInt()
@@ -106,19 +108,27 @@ internal fun RackImageWithSlots(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .offset { IntOffset(xPx, yPx) }
-                        .size(Dimens.rackDetailSlotMarkerSize)
-                        .background(color = color, shape = CircleShape)
+                        .size(markerSize)
+                        .background(color = markerColor, shape = CircleShape)
                         .clickable(
                             interactionSource = remember(slot.id) { MutableInteractionSource() },
                             indication = null,
                         ) { onTap(slot.xRel, slot.yRel) }
-                        .pointerInput(slot.id, slot.xRel, slot.yRel, imageSize) {
-                            var dragXRel = slot.xRel
-                            var dragYRel = slot.yRel
-                            val initialXRel = slot.xRel
-                            val initialYRel = slot.yRel
+                        .pointerInput(slot.id, imageSize) {
+                            var dragXRel = 0f
+                            var dragYRel = 0f
+                            var initialXRel = 0f
+                            var initialYRel = 0f
                             detectDragGesturesAfterLongPress(
-                                onDrag = { change, dragAmount ->
+                                onDragStart = {
+                                    markerSize = Dimens.rackDetailDraggingSlotMarkerSize
+                                    markerColor = Color.DarkGray
+                                    initialXRel = slot.xRel
+                                    initialYRel = slot.yRel
+                                    dragXRel = initialXRel
+                                    dragYRel = initialYRel
+                                },
+                                onDrag = { _, dragAmount ->
                                     val w = imageSize.width.toFloat().coerceAtLeast(1f)
                                     val h = imageSize.height.toFloat().coerceAtLeast(1f)
                                     dragXRel = (dragXRel + dragAmount.x / w).coerceIn(0f, 1f)
@@ -126,6 +136,8 @@ internal fun RackImageWithSlots(
                                     onSlotMarkerDrag(slot.id, dragXRel, dragYRel)
                                 },
                                 onDragEnd = {
+                                    markerSize = Dimens.rackDetailSlotMarkerSize
+                                    markerColor = color
                                     onSlotMarkerDragFinished(
                                         slot.id,
                                         initialXRel,
@@ -133,6 +145,9 @@ internal fun RackImageWithSlots(
                                         dragXRel,
                                         dragYRel,
                                     )
+                                },
+                                onDragCancel = {
+                                    onSlotMarkerDrag(slot.id, initialXRel, initialYRel)
                                 },
                             )
                         },

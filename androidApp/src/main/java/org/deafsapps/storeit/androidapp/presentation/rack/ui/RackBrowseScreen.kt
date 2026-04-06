@@ -88,6 +88,7 @@ internal fun RackBrowseScreen(
         onDismissDeleteConfirm = viewModel::onDismissDeleteConfirm,
         onConfirmDeleteRack = viewModel::onConfirmDeleteRack,
         onSlotMarkerDrag = viewModel::onSlotMarkerDrag,
+        onSaveSlotMarkerPosition = viewModel::onSaveSlotMarkerPosition,
     )
 }
 
@@ -106,7 +107,8 @@ private fun RackBrowseContent(
     onSaveRackEdits: () -> Unit,
     onDismissDeleteConfirm: () -> Unit,
     onConfirmDeleteRack: () -> Unit,
-    onSlotMarkerDrag: (slotId: String, xRel: Float, yRel: Float, commit: Boolean) -> Unit,
+    onSlotMarkerDrag: (slotId: String, xRel: Float, yRel: Float) -> Unit,
+    onSaveSlotMarkerPosition: (slotId: String, xRel: Float, yRel: Float) -> Unit,
 ) {
     var pendingDragConfirmation by remember { mutableStateOf<PendingDragConfirmation?>(null) }
     Scaffold(
@@ -163,9 +165,7 @@ private fun RackBrowseContent(
                         slots = uiState.slots,
                         selectedSlot = null,
                         onTap = onImageTap,
-                        onSlotMarkerDrag = { slotId, xRel, yRel ->
-                            onSlotMarkerDrag(slotId, xRel, yRel, false)
-                        },
+                        onSlotMarkerDrag = onSlotMarkerDrag,
                         onSlotMarkerDragFinished = { slotId, initialXRel, initialYRel, finalXRel, finalYRel ->
                             pendingDragConfirmation = PendingDragConfirmation(
                                 slotId = slotId,
@@ -226,7 +226,7 @@ private fun RackBrowseContent(
     pendingDragConfirmation?.let { pending ->
         AlertDialog(
             onDismissRequest = {
-                onSlotMarkerDrag(pending.slotId, pending.initialXRel, pending.initialYRel, false)
+                onSlotMarkerDrag(pending.slotId, pending.initialXRel, pending.initialYRel)
                 pendingDragConfirmation = null
             },
             title = { Text(stringResource(R.string.rack_slot_move_confirm_title)) },
@@ -234,7 +234,7 @@ private fun RackBrowseContent(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onSlotMarkerDrag(pending.slotId, pending.finalXRel, pending.finalYRel, true)
+                        onSaveSlotMarkerPosition(pending.slotId, pending.finalXRel, pending.finalYRel)
                         pendingDragConfirmation = null
                     },
                 ) {
@@ -244,7 +244,7 @@ private fun RackBrowseContent(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        onSlotMarkerDrag(pending.slotId, pending.initialXRel, pending.initialYRel, false)
+                        onSlotMarkerDrag(pending.slotId, pending.initialXRel, pending.initialYRel)
                         pendingDragConfirmation = null
                     },
                 ) {

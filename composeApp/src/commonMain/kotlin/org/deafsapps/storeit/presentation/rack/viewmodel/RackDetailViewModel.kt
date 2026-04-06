@@ -78,22 +78,14 @@ class RackDetailViewModel(
         }
     }
 
-    fun onSlotMarkerDrag(slotId: String, xRel: Float, yRel: Float, commit: Boolean) {
+    fun onSlotMarkerDrag(slotId: String, xRel: Float, yRel: Float) {
+        applySlotMarkerPosition(slotId = slotId, xRel = xRel, yRel = yRel)
+    }
+
+    fun onSaveSlotMarkerPosition(slotId: String, xRel: Float, yRel: Float) {
         val rack = _uiState.value.rack ?: return
-        val boundedXRel = xRel.coerceIn(0f, 1f)
-        val boundedYRel = yRel.coerceIn(0f, 1f)
-        _uiState.update { state ->
-            state.copy(
-                slots = state.slots.map { slot ->
-                    if (slot.id == slotId) {
-                        slot.copy(xRel = boundedXRel, yRel = boundedYRel)
-                    } else {
-                        slot
-                    }
-                },
-            )
-        }
-        if (!commit) return
+        val (boundedXRel, boundedYRel) =
+            applySlotMarkerPosition(slotId = slotId, xRel = xRel, yRel = yRel) ?: return
         viewModelScope.launch {
             saveSlotUseCase(
                 input = ShelfSlot(
@@ -111,6 +103,24 @@ class RackDetailViewModel(
                 ifOk = { },
             )
         }
+    }
+
+    private fun applySlotMarkerPosition(slotId: String, xRel: Float, yRel: Float): Pair<Float, Float>? {
+        if (_uiState.value.rack == null) return null
+        val boundedXRel = xRel.coerceIn(0f, 1f)
+        val boundedYRel = yRel.coerceIn(0f, 1f)
+        _uiState.update { state ->
+            state.copy(
+                slots = state.slots.map { slot ->
+                    if (slot.id == slotId) {
+                        slot.copy(xRel = boundedXRel, yRel = boundedYRel)
+                    } else {
+                        slot
+                    }
+                },
+            )
+        }
+        return boundedXRel to boundedYRel
     }
 
     fun onEditSelected() {

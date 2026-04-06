@@ -386,7 +386,7 @@ internal class RackDetailViewModelTest {
     }
 
     @Test
-    fun `GIVEN existing slot WHEN onSlotMarkerDrag with commit THEN slot moves and persists`() =
+    fun `GIVEN existing slot WHEN onSaveSlotMarkerPosition THEN slot moves and persists`() =
         runTest(testDispatcher) {
             val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
             fakeGetRackDataByRackId.invokeResult = RackData(
@@ -398,7 +398,7 @@ internal class RackDetailViewModelTest {
             sut = getDummyRackDetailViewModel()
             advanceUntilIdle()
 
-            sut.onSlotMarkerDrag(slotId = "s1", xRel = 0.8f, yRel = 0.3f, commit = true)
+            sut.onSaveSlotMarkerPosition(slotId = "s1", xRel = 0.8f, yRel = 0.3f)
             advanceUntilIdle()
 
             assertEquals(0.8f, sut.uiState.value.slots.single().xRel)
@@ -407,6 +407,27 @@ internal class RackDetailViewModelTest {
             assertEquals("s1", fakeSaveSlot.lastSlot?.id)
             assertEquals(0.8f, fakeSaveSlot.lastSlot?.position?.xRel)
             assertEquals(0.3f, fakeSaveSlot.lastSlot?.position?.yRel)
+        }
+
+    @Test
+    fun `GIVEN existing slot WHEN onSlotMarkerDrag THEN slot moves in UI without persisting`() =
+        runTest(testDispatcher) {
+            val slot = ShelfSlot(id = "s1", rackId = dummyRackId, position = SlotPosition(0f, 0f, 0.5f, 0.5f))
+            fakeGetRackDataByRackId.invokeResult = RackData(
+                id = dummyRackId,
+                rack = dummyRack,
+                shelfSlots = listOf(slot),
+                items = emptyList(),
+            ).ok()
+            sut = getDummyRackDetailViewModel()
+            advanceUntilIdle()
+
+            sut.onSlotMarkerDrag(slotId = "s1", xRel = 0.2f, yRel = 0.4f)
+            advanceUntilIdle()
+
+            assertEquals(0.2f, sut.uiState.value.slots.single().xRel)
+            assertEquals(0.4f, sut.uiState.value.slots.single().yRel)
+            assertEquals(0, fakeSaveSlot.invokeCount)
         }
 
     private fun getDummyRackDetailViewModel(): RackDetailViewModel =

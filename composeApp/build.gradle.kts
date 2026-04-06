@@ -67,6 +67,7 @@ sqldelight {
         create("StoreItDatabase") {
             packageName.set("org.deafsapps.storeit.data.database")
             verifyMigrations.set(true)
+            dialect(libs.sqldelight.sqlite.dialect)
         }
     }
 }
