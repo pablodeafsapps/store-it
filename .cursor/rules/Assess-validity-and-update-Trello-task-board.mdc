@@ -3,4 +3,4 @@ description: Delegates feature-work lifecycle (Trello + verification builds) to 
 alwaysApply: true
 ---
 
-When starting or finishing substantive work in this repository, read and follow `.cursor/skills/store-it-delivery-workflow/SKILL.md` (Trello MCP columns Doing → AI-Implemented, Gradle verification, iOS build when relevant, commit-ready handoff).
+When starting or finishing substantive work in this repository, read and follow `.cursor/skills/store-it-delivery-workflow/SKILL.md` or `/Users/pablo/.codex/skills/store-it-delivery-workflow/SKILL.md` (Trello MCP columns Doing → AI-Implemented, Gradle verification, iOS build when relevant, commit-ready handoff).
