@@ -306,6 +306,11 @@ private struct RackImageView: View {
 }
 
 private struct RackSlotMarkerView: View {
+    private static let markerSizeRest: CGFloat = 24
+    private static let markerSizeDragging: CGFloat = 28
+    /// Full pulse period (s); half ≈ 0.32 s to align with Android `tween(320ms)`.
+    private static let flashPeriod: TimeInterval = 0.64
+
     let slot: RackSlotMarkerVo
     let selectedSlotId: String?
     let width: CGFloat
@@ -316,52 +321,69 @@ private struct RackSlotMarkerView: View {
 
     @State private var dragStartX: Float?
     @State private var dragStartY: Float?
+    @State private var isDragVisualActive = false
 
     var body: some View {
-        Circle()
-            .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
-            .frame(width: 24, height: 24)
-            .position(x: CGFloat(slot.xRel) * width, y: CGFloat(slot.yRel) * height)
-            .simultaneousGesture(
-                TapGesture().onEnded {
-                    onTap(slot.xRel, slot.yRel)
+        Group {
+            if isDragVisualActive {
+                TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { context in
+                    let t = context.date.timeIntervalSinceReferenceDate
+                    let s = sin(t * 2 * .pi / Self.flashPeriod)
+                    let alpha = 0.4 + 0.6 * (0.5 + 0.5 * s)
+                    Circle()
+                        .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
+                        .frame(width: Self.markerSizeDragging, height: Self.markerSizeDragging)
+                        .opacity(alpha)
                 }
-            )
-            .highPriorityGesture(
-                LongPressGesture(minimumDuration: 0.35)
-                    .sequenced(before: DragGesture(coordinateSpace: .named("rackImage")))
-                    .onChanged { value in
-                        switch value {
-                        case .first(true):
-                            if dragStartX == nil {
-                                dragStartX = slot.xRel
-                                dragStartY = slot.yRel
-                            }
-                        case .second(true, let drag?):
-                            let xRel = Float((drag.location.x / width).clamped(to: 0...1))
-                            let yRel = Float((drag.location.y / height).clamped(to: 0...1))
-                            onSlotDrag(slot.id, xRel, yRel)
-                        default:
-                            break
+            } else {
+                Circle()
+                    .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
+                    .frame(width: Self.markerSizeRest, height: Self.markerSizeRest)
+            }
+        }
+        .position(x: CGFloat(slot.xRel) * width, y: CGFloat(slot.yRel) * height)
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                onTap(slot.xRel, slot.yRel)
+            }
+        )
+        .highPriorityGesture(
+            LongPressGesture(minimumDuration: 0.35)
+                .sequenced(before: DragGesture(coordinateSpace: .named("rackImage")))
+                .onChanged { value in
+                    switch value {
+                    case .first(true):
+                        isDragVisualActive = true
+                        if dragStartX == nil {
+                            dragStartX = slot.xRel
+                            dragStartY = slot.yRel
                         }
+                    case .second(true, let drag?):
+                        let xRel = Float((drag.location.x / width).clamped(to: 0...1))
+                        let yRel = Float((drag.location.y / height).clamped(to: 0...1))
+                        onSlotDrag(slot.id, xRel, yRel)
+                    default:
+                        break
                     }
-                    .onEnded { value in
-                        defer {
-                            dragStartX = nil
-                            dragStartY = nil
-                        }
-                        switch value {
-                        case .second(true, let drag?):
-                            let xRel = Float((drag.location.x / width).clamped(to: 0...1))
-                            let yRel = Float((drag.location.y / height).clamped(to: 0...1))
-                            let ix = dragStartX ?? slot.xRel
-                            let iy = dragStartY ?? slot.yRel
-                            onSlotDragFinished(slot.id, ix, iy, xRel, yRel)
-                        default:
-                            break
-                        }
+                }
+                .onEnded { value in
+                    isDragVisualActive = false
+                    defer {
+                        dragStartX = nil
+                        dragStartY = nil
                     }
-            )
+                    switch value {
+                    case .second(true, let drag?):
+                        let xRel = Float((drag.location.x / width).clamped(to: 0...1))
+                        let yRel = Float((drag.location.y / height).clamped(to: 0...1))
+                        let ix = dragStartX ?? slot.xRel
+                        let iy = dragStartY ?? slot.yRel
+                        onSlotDragFinished(slot.id, ix, iy, xRel, yRel)
+                    default:
+                        break
+                    }
+                }
+        )
     }
 }
 

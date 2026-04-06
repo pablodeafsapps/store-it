@@ -1,9 +1,15 @@
 package org.deafsapps.storeit.androidapp.presentation.rack.ui
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,8 +21,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +39,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
 import org.deafsapps.storeit.presentation.rack.model.RackSlotMarkerVo
 
 @Composable
@@ -95,11 +102,12 @@ internal fun RackImageWithSlots(
                 },
         )
         slots.forEach { slot ->
-            var markerSize by remember { mutableStateOf(Dimens.rackDetailSlotMarkerSize) }
+            var markerSize by remember(slot.id) { mutableStateOf(Dimens.rackDetailSlotMarkerSize) }
+            var isDragging by remember(slot.id) { mutableStateOf(false) }
             val isSelected = selectedSlot?.id == slot.id
-            val color: Color =
+            val markerColor =
                 if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
-            var markerColor by remember { mutableStateOf(color) }
+            val dragDrawAlpha = if (isDragging) getFlashAlpha() else 1f
             with(density) {
                 val halfPx = Dimens.rackDetailSlotMarkerHalfSize.toPx()
                 val xPx = (slot.xRel * imageSize.width - halfPx).toInt()
@@ -109,6 +117,7 @@ internal fun RackImageWithSlots(
                         .align(Alignment.TopStart)
                         .offset { IntOffset(xPx, yPx) }
                         .size(markerSize)
+                        .graphicsLayer(alpha = dragDrawAlpha)
                         .background(color = markerColor, shape = CircleShape)
                         .clickable(
                             interactionSource = remember(slot.id) { MutableInteractionSource() },
@@ -121,8 +130,8 @@ internal fun RackImageWithSlots(
                             var initialYRel = 0f
                             detectDragGesturesAfterLongPress(
                                 onDragStart = {
+                                    isDragging = true
                                     markerSize = Dimens.rackDetailDraggingSlotMarkerSize
-                                    markerColor = Color.DarkGray
                                     initialXRel = slot.xRel
                                     initialYRel = slot.yRel
                                     dragXRel = initialXRel
@@ -136,8 +145,8 @@ internal fun RackImageWithSlots(
                                     onSlotMarkerDrag(slot.id, dragXRel, dragYRel)
                                 },
                                 onDragEnd = {
+                                    isDragging = false
                                     markerSize = Dimens.rackDetailSlotMarkerSize
-                                    markerColor = color
                                     onSlotMarkerDragFinished(
                                         slot.id,
                                         initialXRel,
@@ -147,6 +156,8 @@ internal fun RackImageWithSlots(
                                     )
                                 },
                                 onDragCancel = {
+                                    isDragging = false
+                                    markerSize = Dimens.rackDetailSlotMarkerSize
                                     onSlotMarkerDrag(slot.id, initialXRel, initialYRel)
                                 },
                             )
@@ -155,4 +166,18 @@ internal fun RackImageWithSlots(
             }
         }
     }
+}
+
+@Composable
+private fun getFlashAlpha(): Float {
+    val flashTransition = rememberInfiniteTransition(label = "slotMarkerDrag")
+    return flashTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 320, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "slotMarkerFlashAlpha",
+    ).value
 }
