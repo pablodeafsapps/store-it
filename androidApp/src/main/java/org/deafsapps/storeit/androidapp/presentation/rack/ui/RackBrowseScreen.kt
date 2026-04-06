@@ -2,7 +2,10 @@ package org.deafsapps.storeit.androidapp.presentation.rack.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -175,6 +178,19 @@ private fun RackBrowseContent(
                                 finalYRel = finalYRel,
                             )
                         },
+                    )
+                    Spacer(modifier = Modifier.height(Dimens.spacingSmall))
+                    Text(
+                        text = if (uiState.slots.isEmpty()) {
+                            stringResource(R.string.rack_browse_hint_no_slots)
+                        } else {
+                            stringResource(R.string.rack_browse_hint_with_slots)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("rackBrowseSlotHint"),
                     )
                 }
             }

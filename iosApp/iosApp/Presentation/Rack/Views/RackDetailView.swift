@@ -157,6 +157,11 @@ private struct RackDetailContent: View {
                                 showSlotMoveConfirm = true
                             }
                         )
+                        Text(state.slots.isEmpty ? "rack_browse_hint_no_slots" : "rack_browse_hint_with_slots")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("rackBrowseSlotHint")
                         if !rack.description_.isEmpty {
                             Text(rack.description_).font(.body)
                         }
