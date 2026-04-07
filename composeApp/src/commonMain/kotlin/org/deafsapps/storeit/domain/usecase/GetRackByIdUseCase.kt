@@ -7,6 +7,9 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Loads a single rack by identifier.
+ */
 interface GetRackByIdUseCaseType : UseCase<String, Result<DomainError, Rack>>
 
 @Factory(binds = [GetRackByIdUseCaseType::class])

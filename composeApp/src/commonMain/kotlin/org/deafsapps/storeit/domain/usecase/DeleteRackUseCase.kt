@@ -8,6 +8,9 @@ import org.deafsapps.storeit.domain.repository.RackRepository
 import org.deafsapps.storeit.domain.repository.SlotRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Deletes a rack together with its dependent slots and items.
+ */
 interface DeleteRackUseCaseType : UseCase<String, Result<DomainError, Unit>>
 
 @Factory(binds = [DeleteRackUseCaseType::class])

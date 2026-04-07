@@ -1,5 +1,8 @@
 package org.deafsapps.storeit.domain.model
 
+/**
+ * Describes a slot position using absolute and relative coordinates inside a rack image.
+ */
 interface SlotPosition {
     val x: Float
     val y: Float
@@ -14,6 +17,9 @@ internal data class SlotPositionModel(
     override val yRel: Float,
 ) : SlotPosition
 
+/**
+ * Creates a public [SlotPosition] value for rack-slot mapping.
+ */
 fun SlotPosition(
     x: Float,
     y: Float,

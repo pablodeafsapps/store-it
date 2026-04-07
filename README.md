@@ -1,32 +1,55 @@
-This is a Kotlin Multiplatform project targeting Android and iOS.
+# Store it!
 
-**Important (AGP 9.0 migration):** The project no longer has a separate `:shared` module. All shared logic and the Android app live in the **`:composeApp`** module.
+Kotlin Multiplatform project targeting Android and iOS.
 
-* **[composeApp](./composeApp/src)** — KMP app module containing both shared and Android code:
-  - **[commonMain](./composeApp/src/commonMain/kotlin)** — code common to all targets (domain, data, use cases).
-  - **[androidMain](./composeApp/src/androidMain/kotlin)** — Android-only code (Activities, Compose UI, platform services).
-  - Other source sets (e.g. [iosMain](./composeApp/src/iosMain/kotlin), [jvmMain](./composeApp/src/jvmMain/kotlin)) for platform-specific code when present.
-  For example, [iosMain](./composeApp/src/iosMain/kotlin) is for iOS-specific Kotlin; [jvmMain](./composeApp/src/jvmMain/kotlin) for Desktop/JVM if used.
+## Structure
 
-* **[iosApp](./iosApp/iosApp)** — iOS application entry. Use this for SwiftUI and for running the iOS app, even when sharing UI with Compose Multiplatform.
+- **`:composeApp`** contains all shared business logic plus the Android app shell.
+- **`composeApp/src/commonMain`** contains domain, data, use cases, DI, and shared presentation logic.
+- **`composeApp/src/androidMain`** contains Android-specific integrations and UI.
+- **`composeApp/src/iosMain`** contains iOS-specific Kotlin actuals and integrations.
+- **`iosApp/`** contains the SwiftUI iOS application entry point.
 
-### Build and Run Android Application
+## Prerequisites
 
-From the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
-Or use the run configuration from the IDE run widget.
+- JDK 17
+- Android SDK
+- Xcode and an iOS Simulator runtime for iOS builds
 
-### Build and Run iOS Application
+## Build
 
-Use the run configuration from the IDE, or open [/iosApp](./iosApp) in Xcode and run the iOS app target.
+```bash
+./gradlew :androidApp:assembleDebug
+```
 
----
+## Test
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html).
+```bash
+./gradlew :composeApp:allTests :androidApp:testDebugUnitTest
+```
+
+## Verify
+
+Use the same verification command that CI and local delivery use:
+
+```bash
+./gradlew detekt :composeApp:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
+```
+
+## Run
+
+Android:
+
+```bash
+./gradlew :androidApp:installDebug
+```
+
+iOS:
+
+Open `iosApp/iosApp.xcodeproj` in Xcode and run the `iosApp` scheme on an available simulator.
+
+## Feature docs
+
+- [Feature spec](./specs/001-storage-rack-organiser/spec.md)
+- [Implementation plan](./specs/001-storage-rack-organiser/plan.md)
+- [Quickstart](./specs/001-storage-rack-organiser/quickstart.md)

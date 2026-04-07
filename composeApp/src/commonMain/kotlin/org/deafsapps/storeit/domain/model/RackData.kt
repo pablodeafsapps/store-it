@@ -1,5 +1,8 @@
 package org.deafsapps.storeit.domain.model
 
+/**
+ * Aggregates a rack with its slots and placed items for detail screens.
+ */
 interface RackData {
     val id: String
     val rack: Rack
@@ -14,6 +17,9 @@ internal data class RackDataModel(
     override val items: List<Item>,
 ) : RackData
 
+/**
+ * Creates a public [RackData] aggregate from the rack detail graph.
+ */
 fun RackData(
     id: String,
     rack: Rack,

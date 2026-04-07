@@ -6,6 +6,9 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Deletes an item by identifier.
+ */
 interface DeleteItemUseCaseType : UseCase<String, Result<DomainError, Unit>>
 
 @Factory(binds = [DeleteItemUseCaseType::class])

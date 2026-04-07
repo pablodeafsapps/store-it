@@ -2,6 +2,9 @@ package org.deafsapps.storeit.domain.model
 
 import kotlin.time.Clock
 
+/**
+ * Represents a storage rack and its editable metadata.
+ */
 interface Rack {
     val id: String
     val name: String
@@ -22,6 +25,9 @@ internal data class RackModel(
     override val updatedAt: Long? = null,
 ) : Rack
 
+/**
+ * Creates a public [Rack] instance while keeping the concrete implementation internal to the module.
+ */
 fun Rack(
     id: String,
     name: String,

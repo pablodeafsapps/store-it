@@ -11,6 +11,9 @@ import org.koin.core.annotation.Factory
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+/**
+ * Builds the full rack detail aggregate used by rack detail and slot selection flows.
+ */
 interface GetRackDataByRackIdUseCaseType : UseCase<String, Result<DomainError, RackData>>
 
 @Factory(binds = [GetRackDataByRackIdUseCaseType::class])

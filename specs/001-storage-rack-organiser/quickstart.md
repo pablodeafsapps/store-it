@@ -15,34 +15,36 @@
 ### Android
 
 ```bash
-./gradlew :composeApp:assembleDebug
+./gradlew :androidApp:assembleDebug
 # Run from IDE or:
-./gradlew :composeApp:installDebug
+./gradlew :androidApp:installDebug
 ```
 
 ### iOS
 
 Open `iosApp/iosApp.xcodeproj` in Xcode and run the iOS app target, or use the run configuration from the IDE.
 
-### Tests (composeApp; no separate :shared module)
+### Tests
 
 ```bash
-./gradlew :composeApp:testDebugUnitTest
-# Or all tests:
-./gradlew test
+./gradlew :composeApp:allTests :androidApp:testDebugUnitTest
 ```
 
 ## Linting (Detekt)
-
-When Detekt is configured:
 
 ```bash
 ./gradlew detekt
 ```
 
+## Full verification
+
+```bash
+./gradlew detekt :composeApp:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
+```
+
 ## CI (GitHub Actions)
 
-After workflows are added: push to the branch to trigger build and test. Check `.github/workflows/` for job definitions.
+Push to the feature branch to trigger build and test. Check `.github/workflows/build-and-test.yml` for the current job definitions.
 
 ## Feature docs
 

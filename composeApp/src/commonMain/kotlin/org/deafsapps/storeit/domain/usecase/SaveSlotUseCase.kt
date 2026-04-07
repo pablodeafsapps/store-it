@@ -7,6 +7,9 @@ import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.repository.SlotRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Saves a slot definition for a rack image.
+ */
 interface SaveSlotUseCaseType : UseCase<ShelfSlot, Result<DomainError, ShelfSlot>>
 
 @Factory(binds = [SaveSlotUseCaseType::class])

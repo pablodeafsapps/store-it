@@ -3,6 +3,9 @@ package org.deafsapps.storeit.domain.model
 import androidx.compose.runtime.Stable
 
 @Stable
+/**
+ * Combines an [Item] with the rack and slot information needed by search results.
+ */
 interface ItemWithPlacement {
     val item: Item
     val rackName: String
@@ -15,6 +18,9 @@ internal data class ItemWithPlacementModel(
     override val slotSummary: String,
 ) : ItemWithPlacement
 
+/**
+ * Creates a public [ItemWithPlacement] projection for search and navigation flows.
+ */
 fun ItemWithPlacement(
     item: Item,
     rackName: String,

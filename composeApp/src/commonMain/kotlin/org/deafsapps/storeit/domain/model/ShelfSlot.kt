@@ -1,5 +1,8 @@
 package org.deafsapps.storeit.domain.model
 
+/**
+ * Represents a tappable storage position inside a rack image.
+ */
 interface ShelfSlot {
     val id: String
     val rackId: String
@@ -12,6 +15,9 @@ internal data class ShelfSlotModel(
     override val position: SlotPosition,
 ) : ShelfSlot
 
+/**
+ * Creates a public [ShelfSlot] instance for rack mapping and placement flows.
+ */
 fun ShelfSlot(
     id: String,
     rackId: String,

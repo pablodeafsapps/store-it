@@ -7,6 +7,9 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Saves a new or updated rack in the repository layer.
+ */
 interface SaveRackUseCaseType : UseCase<Rack, Result<DomainError, Rack>>
 
 @Factory(binds = [SaveRackUseCaseType::class])

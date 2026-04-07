@@ -7,6 +7,9 @@ import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Saves a new or updated item in the repository layer.
+ */
 interface AddItemUseCaseType : UseCase<Item, Result<DomainError, Item>>
 
 @Factory(binds = [AddItemUseCaseType::class])

@@ -7,6 +7,9 @@ import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Loads a single item by identifier.
+ */
 interface GetItemByIdUseCaseType : UseCase<String, Result<DomainError, Item>>
 
 @Factory(binds = [GetItemByIdUseCaseType::class])

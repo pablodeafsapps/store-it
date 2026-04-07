@@ -4,6 +4,9 @@ import androidx.compose.runtime.Stable
 import kotlin.time.Clock
 
 @Stable
+/**
+ * Represents an item stored in a rack slot.
+ */
 interface Item {
     val id: String
     val rackId: String
@@ -33,6 +36,9 @@ internal data class ItemModel(
     override val updatedAt: Long? = null,
 ) : Item
 
+/**
+ * Creates a public [Item] instance while keeping the concrete implementation internal to the module.
+ */
 fun Item(
     id: String,
     rackId: String,

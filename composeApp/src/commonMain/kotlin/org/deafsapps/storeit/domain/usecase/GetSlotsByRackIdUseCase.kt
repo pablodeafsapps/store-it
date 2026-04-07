@@ -7,6 +7,9 @@ import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.repository.SlotRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Loads every slot defined for a rack.
+ */
 interface GetSlotsByRackIdUseCaseType : UseCase<String, Result<DomainError, List<ShelfSlot>>>
 
 @Factory(binds = [GetSlotsByRackIdUseCaseType::class])

@@ -8,6 +8,9 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Observes the current rack collection.
+ */
 interface GetRacksFlowUseCaseType : FlowUseCase<Unit, Result<DomainError, List<Rack>>>
 
 @Factory(binds = [GetRacksFlowUseCaseType::class])

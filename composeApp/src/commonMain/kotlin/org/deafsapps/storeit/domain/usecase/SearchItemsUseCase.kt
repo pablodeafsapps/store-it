@@ -14,6 +14,9 @@ import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Searches items and enriches each result with the rack and slot context needed by the UI.
+ */
 interface SearchItemsUseCaseType : UseCase<String, Result<DomainError, List<ItemWithPlacement>>>
 
 @Factory(binds = [SearchItemsUseCaseType::class])

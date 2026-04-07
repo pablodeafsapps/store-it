@@ -7,8 +7,14 @@ import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.koin.core.annotation.Factory
 
+/**
+ * Input for loading the items assigned to a specific slot.
+ */
 data class GetItemsBySlotInput(val rackId: String, val slotId: String)
 
+/**
+ * Loads all items assigned to a rack slot.
+ */
 interface GetItemsBySlotUseCaseType : UseCase<GetItemsBySlotInput, Result<DomainError, List<Item>>>
 
 @Factory(binds = [GetItemsBySlotUseCaseType::class])
