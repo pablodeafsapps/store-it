@@ -51,6 +51,20 @@ This includes:
 - Keep scope aligned with acceptance criteria, edge cases, and observable outcomes.
 - Run the relevant verification suite before handoff and keep changes commit-ready.
 
+## Speckit Artifacts
+
+- Project-wide Speckit governance files live under `.specify/`.
+- `/speckit.constitution` reads and writes `.specify/memory/constitution.md`.
+- Feature-scoped Speckit artifacts live under `specs/<NNN-feature-name>/`.
+- `/speckit.specify` creates the feature folder and writes `spec.md`.
+- `/speckit.plan` writes `plan.md` and supporting design artifacts such as `research.md`, `data-model.md`, `quickstart.md`, and `contracts/`.
+- `/speckit.tasks` writes `tasks.md`.
+- `/speckit.clarify` updates the existing feature `spec.md`.
+- `/speckit.analyze` reads `spec.md`, `plan.md`, `tasks.md`, and `.specify/memory/constitution.md`; if you persist its output, keep it in the same feature folder.
+- `/speckit.implement` reads the feature artifacts and mainly produces code changes rather than a required markdown file.
+- `/speckit.checklist` outputs checklist markdown under `specs/<NNN-feature-name>/checklists/`.
+- `/speckit.taskstoissues` uses `tasks.md` as input and primarily produces GitHub issues rather than markdown output.
+
 ## Kotlin encapsulation
 
 For all new and modified Kotlin files in this project:

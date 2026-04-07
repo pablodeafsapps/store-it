@@ -110,6 +110,20 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 - **iosApp** (Swift): SwiftUI UI; `ViewModelHolder<T: StoreItViewModel>` holds the KMP ViewModel and calls `clear()` in `deinit`. ViewModels are obtained from **IosKoinHelper** (no scope passed; scope comes from **StoreItViewModel** iOS actual).
 - **commonTest**: Shared unit tests for common code; no platform APIs.
 
+### 3.1.1 Speckit Artifact Locations
+
+- Store project-wide Speckit governance and templates under `.specify/`.
+- `/speckit.constitution` updates `.specify/memory/constitution.md`.
+- Store feature-scoped Speckit artifacts under `specs/<NNN-feature-name>/`.
+- `/speckit.specify` creates the feature folder and writes `spec.md`.
+- `/speckit.plan` writes `plan.md` plus supporting design artifacts such as `research.md`, `data-model.md`, `quickstart.md`, and `contracts/`.
+- `/speckit.tasks` writes `tasks.md`.
+- `/speckit.clarify` updates the feature `spec.md`.
+- `/speckit.checklist` writes markdown under `specs/<NNN-feature-name>/checklists/`.
+- `/speckit.analyze` is primarily read/report oriented; if its output is persisted, keep it in the same feature folder.
+- `/speckit.implement` primarily consumes feature artifacts and produces code changes rather than a required markdown file.
+- `/speckit.taskstoissues` consumes `tasks.md` and primarily produces GitHub issues rather than markdown output.
+
 ### 3.2 Platform DI and linking (post–breaking change)
 
 - **Android**: Koin is started from **StoreItApplication** (`:androidApp`) with `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this) }`. `AndroidModule` includes `AppModule`; the app module owns the composition root. Shared ViewModels are resolved via Koin’s ViewModel support; they extend **StoreItViewModel** (actual in androidMain extends AndroidX `ViewModel`).
