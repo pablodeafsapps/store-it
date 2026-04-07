@@ -35,9 +35,11 @@
 
 ## 6. Firebase placeholder
 
-- **Decision**: Introduce a small abstraction layer for “remote storage” (e.g. `RemoteRackSource` / `RemoteItemSource` or repository interface) with a no-op or stub implementation. Document where Firebase (or alternative) will be wired later. Do not add Firebase SDK or real backend in MVP.
+- **Decision**: Reuse the existing `RackDataSource` and `ItemDataSource` contracts and add Firebase placeholder implementations behind those interfaces. Document where Firebase (or alternative) will be wired later. Do not add Firebase SDK or real backend in MVP.
 - **Rationale**: Prompt: “Initially the back-end will be hosted in Firebase, so leave some placeholders… may change in the future, so keep things as flexible as possible.”
 - **Alternatives considered**: Full Firebase in MVP — out of scope; no placeholder — would make future migration harder.
+- **Implementation note**: The placeholder seam lives in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/`. `FirebaseRackDataSource` and `FirebaseItemDataSource` are stub implementations of the existing datasource interfaces and are not yet wired into production DI.
+- **Integration point**: `SqlDelightRackRepository` and `SqlDelightItemRepository` remain the local-first repository facades. When Firebase sync is added, the repositories can switch datasource implementations or coordinate between the SQLDelight and Firebase datasources without changing domain contracts.
 
 ## 7. SQLDelight local persistence (T037)
 
