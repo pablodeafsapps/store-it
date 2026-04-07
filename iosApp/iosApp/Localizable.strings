@@ -5,6 +5,9 @@
 "common_add" = "Add";
 
 "racks_title" = "Racks";
+"rack_list_more_options" = "More options";
+"rack_list_switch_dark_mode" = "Switch to dark mode";
+"rack_list_switch_light_mode" = "Switch to light mode";
 "rack_search_placeholder" = "Search items by name or description";
 "rack_list_empty_title" = "No racks yet";
 "rack_list_empty_subtitle" = "Add your first storage rack to get started";
@@ -69,4 +72,3 @@
 
 "add_item_hint_add_rack_first" = "Add a rack first to place items";
 "add_item_hint_add_item" = "Add item";
-

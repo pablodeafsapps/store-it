@@ -12,6 +12,8 @@
     <string name="rack_list_title">Racks</string>
     <string name="rack_list_overflow_menu">More options</string>
     <string name="rack_list_overflow_add_item">Add item</string>
+    <string name="rack_list_overflow_dark_mode">Switch to dark mode</string>
+    <string name="rack_list_overflow_light_mode">Switch to light mode</string>
     <string name="rack_list_search_placeholder">Search items by name or description</string>
     <string name="rack_list_empty_title">No racks yet</string>
     <string name="rack_list_empty_subtitle">Add your first storage rack to get started</string>
