@@ -38,6 +38,8 @@ internal fun StoreItNavDisplay(
     backStack: NavBackStack<NavKey>,
     onRootBack: () -> Unit,
     rackListViewModel: () -> RackListViewModel,
+    isDarkModeEnabled: Boolean,
+    onThemeModeToggle: () -> Unit,
 ) {
     BackHandler {
         if (backStack.size > 1) {
@@ -69,6 +71,8 @@ internal fun StoreItNavDisplay(
                     RackListNavContent(
                         backStack = backStack,
                         rackListViewModel = rackListViewModel,
+                        isDarkModeEnabled = isDarkModeEnabled,
+                        onThemeModeToggle = onThemeModeToggle,
                     )
                 }
                 entry<NavScreen.Search> {
@@ -165,6 +169,8 @@ internal fun StoreItNavDisplay(
 private fun RackListNavContent(
     backStack: NavBackStack<NavKey>,
     rackListViewModel: () -> RackListViewModel,
+    isDarkModeEnabled: Boolean,
+    onThemeModeToggle: () -> Unit,
 ) {
     val uiState by rackListViewModel().uiState.collectAsStateWithLifecycle()
     RackListScreen(
@@ -176,6 +182,8 @@ private fun RackListNavContent(
         onNavigateToRackDetail = { id -> backStack.add(NavScreen.RackDetail(id)) },
         onNavigateToAddItem = { backStack.add(NavScreen.AddItem) },
         onNavigateToSearch = { backStack.add(NavScreen.Search) },
+        isDarkModeEnabled = isDarkModeEnabled,
+        onThemeModeToggle = onThemeModeToggle,
     )
 }
 

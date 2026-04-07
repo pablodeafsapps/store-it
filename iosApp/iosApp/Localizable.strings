@@ -5,6 +5,9 @@
 "common_add" = "Add";
 
 "racks_title" = "Racks";
+"rack_list_more_options" = "More options";
+"rack_list_switch_dark_mode" = "Switch to dark mode";
+"rack_list_switch_light_mode" = "Switch to light mode";
 "rack_search_placeholder" = "Search items by name or description";
 "rack_list_empty_title" = "No racks yet";
 "rack_list_empty_subtitle" = "Add your first storage rack to get started";
@@ -28,6 +31,10 @@
 "rack_remove_button" = "Remove rack";
 "rack_remove_confirm_title" = "Remove rack?";
 "rack_remove_confirm_message" = "This will delete the rack and all its slots and items. This cannot be undone.";
+"rack_slot_move_confirm_title" = "Move slot marker?";
+"rack_slot_move_confirm_message" = "Confirm the new slot marker position.";
+"rack_browse_hint_no_slots" = "Tap the photo where a shelf should be to add a slot and start placing an item.";
+"rack_browse_hint_with_slots" = "Tap empty space on the photo to add another slot. Tap a marker to open that shelf. Long-tap a marker to move it.";
 "rack_edit_title" = "Edit rack";
 
 "search_title" = "Search items";
@@ -65,4 +72,3 @@
 
 "add_item_hint_add_rack_first" = "Add a rack first to place items";
 "add_item_hint_add_item" = "Add item";
-

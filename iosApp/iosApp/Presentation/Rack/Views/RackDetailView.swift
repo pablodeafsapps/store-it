@@ -1,5 +1,6 @@
 import SwiftUI
 import ComposeApp
+import UIKit
 
 struct RackDetailView: View {
     @State private var viewModelSessionId = UUID()
@@ -75,7 +76,21 @@ private struct RackDetailScreen: View {
                 onUpdateEditLocation: rackDetailViewModel.sharedVm.onUpdateEditLocation,
                 onSaveRackEdits: rackDetailViewModel.sharedVm.onSaveRackEdits,
                 onDismissDeleteConfirm: rackDetailViewModel.sharedVm.onDismissDeleteConfirm,
-                onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack
+                onConfirmDeleteRack: rackDetailViewModel.sharedVm.onConfirmDeleteRack,
+                onSlotMarkerDrag: { slotId, xRel, yRel in
+                    rackDetailViewModel.sharedVm.onSlotMarkerDrag(
+                        slotId: slotId,
+                        xRel: xRel,
+                        yRel: yRel,
+                    )
+                },
+                onSaveSlotMarkerPosition: { slotId, xRel, yRel in
+                    rackDetailViewModel.sharedVm.onSaveSlotMarkerPosition(
+                        slotId: slotId,
+                        xRel: xRel,
+                        yRel: yRel,
+                    )
+                }
             )
         }
         .task {
@@ -92,7 +107,7 @@ private struct RackDetailScreen: View {
                         add.rackId,
                         add.slotId,
                         String(add.slotXRel),
-                        String(add.slotYRel)
+                        String(add.slotYRel),
                     )
                 }
             }
@@ -112,6 +127,10 @@ private struct RackDetailContent: View {
     let onSaveRackEdits: () -> Void
     let onDismissDeleteConfirm: () -> Void
     let onConfirmDeleteRack: () -> Void
+    let onSlotMarkerDrag: (String, Float, Float) -> Void
+    let onSaveSlotMarkerPosition: (String, Float, Float) -> Void
+    @State private var pendingDragConfirmation: PendingDragConfirmation?
+    @State private var showSlotMoveConfirm = false
 
     var body: some View {
         ZStack {
@@ -124,8 +143,26 @@ private struct RackDetailContent: View {
                             photoUri: rack.photoUri,
                             slots: state.slots,
                             selectedSlotId: nil,
-                            onTap: onImageTap
+                            onTap: onImageTap,
+                            onSlotDrag: { slotId, xRel, yRel in
+                                onSlotMarkerDrag(slotId, xRel, yRel)
+                            },
+                            onSlotDragFinished: { slotId, initialXRel, initialYRel, finalXRel, finalYRel in
+                                pendingDragConfirmation = PendingDragConfirmation(
+                                    slotId: slotId,
+                                    initialXRel: initialXRel,
+                                    initialYRel: initialYRel,
+                                    finalXRel: finalXRel,
+                                    finalYRel: finalYRel
+                                )
+                                showSlotMoveConfirm = true
+                            }
                         )
+                        Text(state.slots.isEmpty ? "rack_browse_hint_no_slots" : "rack_browse_hint_with_slots")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("rackBrowseSlotHint")
                         if !rack.description_.isEmpty {
                             Text(rack.description_).font(.body)
                         }
@@ -182,6 +219,30 @@ private struct RackDetailContent: View {
         } message: {
             Text("rack_remove_confirm_message")
         }
+        .alert("rack_slot_move_confirm_title", isPresented: $showSlotMoveConfirm) {
+            Button("common_cancel", role: .cancel) {
+                if let pendingDragConfirmation {
+                    onSlotMarkerDrag(
+                        pendingDragConfirmation.slotId,
+                        pendingDragConfirmation.initialXRel,
+                        pendingDragConfirmation.initialYRel
+                    )
+                }
+                pendingDragConfirmation = nil
+            }
+            Button("common_save") {
+                if let pendingDragConfirmation {
+                    onSaveSlotMarkerPosition(
+                        pendingDragConfirmation.slotId,
+                        pendingDragConfirmation.finalXRel,
+                        pendingDragConfirmation.finalYRel
+                    )
+                }
+                pendingDragConfirmation = nil
+            }
+        } message: {
+            Text("rack_slot_move_confirm_message")
+        }
     }
 }
 
@@ -190,6 +251,8 @@ private struct RackImageView: View {
     let slots: [RackSlotMarkerVo]
     let selectedSlotId: String?
     let onTap: (Float, Float) -> Void
+    let onSlotDrag: (String, Float, Float) -> Void
+    let onSlotDragFinished: (String, Float, Float, Float, Float) -> Void
 
     var body: some View {
         Group {
@@ -220,22 +283,274 @@ private struct RackImageView: View {
         GeometryReader { geo in
             let w = max(geo.size.width, 1)
             let h = max(geo.size.height, 1)
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture(coordinateSpace: .local) { location in
-                    let xRel = Float((location.x / w).clamped(to: 0...1))
-                    let yRel = Float((location.y / h).clamped(to: 0...1))
-                    onTap(xRel, yRel)
+            ZStack(alignment: .topLeading) {
+                Color.clear
+                    .frame(width: w, height: h)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        let xRel = Float((location.x / w).clamped(to: 0...1))
+                        let yRel = Float((location.y / h).clamped(to: 0...1))
+                        onTap(xRel, yRel)
+                    }
+                ForEach(slots, id: \.id) { slot in
+                    RackSlotMarkerView(
+                        slot: slot,
+                        selectedSlotId: selectedSlotId,
+                        width: w,
+                        height: h,
+                        onTap: onTap,
+                        onSlotDrag: onSlotDrag,
+                        onSlotDragFinished: onSlotDragFinished
+                    )
                 }
-            ForEach(slots, id: \.id) { slot in
-                Circle()
-                    .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
-                    .frame(width: 24, height: 24)
-                    .position(x: CGFloat(slot.xRel) * geo.size.width, y: CGFloat(slot.yRel) * geo.size.height)
-                    .allowsHitTesting(false)
             }
+            .frame(width: w, height: h)
+            .coordinateSpace(name: "rackImage")
         }
     }
+
+}
+
+private struct RackSlotMarkerView: View {
+    private static let markerSizeRest: CGFloat = 24
+    private static let markerSizeDragging: CGFloat = 28
+    private static let longPressDuration: TimeInterval = 0.35
+    private static let positionChangeTolerance: Float = 0.001
+    /// Full pulse period (s); half ≈ 0.32 s to align with Android `tween(320ms)`.
+    private static let flashPeriod: TimeInterval = 0.64
+
+    let slot: RackSlotMarkerVo
+    let selectedSlotId: String?
+    let width: CGFloat
+    let height: CGFloat
+    let onTap: (Float, Float) -> Void
+    let onSlotDrag: (String, Float, Float) -> Void
+    let onSlotDragFinished: (String, Float, Float, Float, Float) -> Void
+
+    @State private var isDragVisualActive = false
+
+    var body: some View {
+        ZStack {
+            if isDragVisualActive {
+                TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { context in
+                    let t = context.date.timeIntervalSinceReferenceDate
+                    let s = sin(t * 2 * .pi / Self.flashPeriod)
+                    let alpha = 0.4 + 0.6 * (0.5 + 0.5 * s)
+                    Circle()
+                        .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
+                        .frame(width: Self.markerSizeDragging, height: Self.markerSizeDragging)
+                        .opacity(alpha)
+                }
+            } else {
+                Circle()
+                    .fill(selectedSlotId == slot.id ? Color.accentColor : Color.accentColor.opacity(0.6))
+                    .frame(width: Self.markerSizeRest, height: Self.markerSizeRest)
+            }
+
+            RackSlotMarkerGestureOverlay(
+                slot: slot,
+                rackWidth: width,
+                rackHeight: height,
+                longPressDuration: Self.longPressDuration,
+                onTap: {
+                    onTap(slot.xRel, slot.yRel)
+                },
+                onDragBegan: {
+                    isDragVisualActive = true
+                },
+                onDragChanged: { xRel, yRel in
+                    onSlotDrag(slot.id, xRel, yRel)
+                },
+                onDragEnded: { initialXRel, initialYRel, finalXRel, finalYRel in
+                    isDragVisualActive = false
+
+                    guard hasMeaningfulPositionChange(
+                        initialXRel: initialXRel,
+                        initialYRel: initialYRel,
+                        finalXRel: finalXRel,
+                        finalYRel: finalYRel,
+                    ) else {
+                        onSlotDrag(slot.id, initialXRel, initialYRel)
+                        return
+                    }
+
+                    onSlotDragFinished(
+                        slot.id,
+                        initialXRel,
+                        initialYRel,
+                        finalXRel,
+                        finalYRel,
+                    )
+                },
+                onDragCancelled: { initialXRel, initialYRel in
+                    isDragVisualActive = false
+                    onSlotDrag(slot.id, initialXRel, initialYRel)
+                },
+            )
+            .frame(width: Self.markerSizeDragging, height: Self.markerSizeDragging)
+        }
+        .position(x: CGFloat(slot.xRel) * width, y: CGFloat(slot.yRel) * height)
+    }
+
+    private func hasMeaningfulPositionChange(
+        initialXRel: Float,
+        initialYRel: Float,
+        finalXRel: Float,
+        finalYRel: Float,
+    ) -> Bool {
+        abs(initialXRel - finalXRel) > Self.positionChangeTolerance ||
+            abs(initialYRel - finalYRel) > Self.positionChangeTolerance
+    }
+}
+
+private struct RackSlotMarkerGestureOverlay: UIViewRepresentable {
+    let slot: RackSlotMarkerVo
+    let rackWidth: CGFloat
+    let rackHeight: CGFloat
+    let longPressDuration: TimeInterval
+    let onTap: () -> Void
+    let onDragBegan: () -> Void
+    let onDragChanged: (Float, Float) -> Void
+    let onDragEnded: (Float, Float, Float, Float) -> Void
+    let onDragCancelled: (Float, Float) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.backgroundColor = .clear
+        view.isOpaque = false
+
+        let tapRecognizer = UITapGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.handleTap),
+        )
+
+        let longPressRecognizer = UILongPressGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.handleLongPress(_:)),
+        )
+        longPressRecognizer.minimumPressDuration = longPressDuration
+        longPressRecognizer.allowableMovement = .greatestFiniteMagnitude
+        tapRecognizer.require(toFail: longPressRecognizer)
+
+        view.addGestureRecognizer(tapRecognizer)
+        view.addGestureRecognizer(longPressRecognizer)
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        context.coordinator.parent = self
+    }
+
+    final class Coordinator: NSObject {
+        var parent: RackSlotMarkerGestureOverlay
+        private var dragStartXRel: Float?
+        private var dragStartYRel: Float?
+        private var dragStartLocation: CGPoint?
+
+        init(parent: RackSlotMarkerGestureOverlay) {
+            self.parent = parent
+        }
+
+        @objc func handleTap() {
+            parent.onTap()
+        }
+
+        @objc func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
+            let location = recognizer.location(in: recognizer.view)
+
+            switch recognizer.state {
+            case .began:
+                dragStartXRel = parent.slot.xRel
+                dragStartYRel = parent.slot.yRel
+                dragStartLocation = location
+                parent.onDragBegan()
+                parent.onDragChanged(parent.slot.xRel, parent.slot.yRel)
+            case .changed:
+                guard let dragStartXRel, let dragStartYRel, let dragStartLocation else {
+                    return
+                }
+
+                let translationX = location.x - dragStartLocation.x
+                let translationY = location.y - dragStartLocation.y
+                let xRel = translatedX(
+                    initialXRel: dragStartXRel,
+                    translationX: translationX,
+                    width: parent.rackWidth,
+                )
+                let yRel = translatedY(
+                    initialYRel: dragStartYRel,
+                    translationY: translationY,
+                    height: parent.rackHeight,
+                )
+                parent.onDragChanged(xRel, yRel)
+            case .ended:
+                guard let dragStartXRel, let dragStartYRel, let dragStartLocation else {
+                    return
+                }
+
+                let translationX = location.x - dragStartLocation.x
+                let translationY = location.y - dragStartLocation.y
+                let finalXRel = translatedX(
+                    initialXRel: dragStartXRel,
+                    translationX: translationX,
+                    width: parent.rackWidth,
+                )
+                let finalYRel = translatedY(
+                    initialYRel: dragStartYRel,
+                    translationY: translationY,
+                    height: parent.rackHeight,
+                )
+
+                parent.onDragEnded(dragStartXRel, dragStartYRel, finalXRel, finalYRel)
+                reset()
+            case .cancelled, .failed:
+                guard let dragStartXRel, let dragStartYRel else {
+                    return
+                }
+
+                parent.onDragCancelled(dragStartXRel, dragStartYRel)
+                reset()
+            default:
+                break
+            }
+        }
+
+        private func reset() {
+            dragStartXRel = nil
+            dragStartYRel = nil
+            dragStartLocation = nil
+        }
+
+        private func translatedX(
+            initialXRel: Float,
+            translationX: CGFloat,
+            width: CGFloat,
+        ) -> Float {
+            let delta = Float(translationX / max(width, 1))
+            return (initialXRel + delta).clamped(to: 0...1)
+        }
+
+        private func translatedY(
+            initialYRel: Float,
+            translationY: CGFloat,
+            height: CGFloat,
+        ) -> Float {
+            let delta = Float(translationY / max(height, 1))
+            return (initialYRel + delta).clamped(to: 0...1)
+        }
+    }
+}
+
+private struct PendingDragConfirmation {
+    let slotId: String
+    let initialXRel: Float
+    let initialYRel: Float
+    let finalXRel: Float
+    let finalYRel: Float
 }
 
 extension Comparable {

@@ -5,13 +5,11 @@ import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.repository.ItemRepository
-import org.koin.core.annotation.Single
 import kotlin.time.Clock
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.deafsapps.storeit.base.Result
 
-@Single(binds = [ItemRepository::class])
 internal class InMemoryItemRepository : ItemRepository {
     private val items = mutableMapOf<String, Item>()
     private val mutex = Mutex()

@@ -6,6 +6,8 @@ struct RackListView: View {
     let onAddRackSelected: () -> Void
     let onRackSelected: (Rack) -> Void
     let onNavigateToSearch: () -> Void
+    let isDarkModeEnabled: Bool
+    let onThemeModeToggle: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -33,6 +35,18 @@ struct RackListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("racksListScreen")
         .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button(
+                        isDarkModeEnabled ? "rack_list_switch_light_mode" : "rack_list_switch_dark_mode",
+                        action: onThemeModeToggle,
+                    )
+                    .accessibilityIdentifier("rackListThemeMenuItem")
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityIdentifier("rackListOverflowMenuButton")
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: onAddRackSelected) {
                     Image(systemName: "plus")

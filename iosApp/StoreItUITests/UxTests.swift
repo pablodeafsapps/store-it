@@ -250,4 +250,59 @@ final class UxTests: XCTestCase {
         XCTAssertTrue(backFromSlotItems.waitForExistence(timeout: 5))
         backFromSlotItems.tap()
     }
+
+    @MainActor
+    func testRackDetailLongPressAndDragSlotShowsMoveConfirmation() {
+        let addRackButton = app.buttons["Add Rack"]
+        XCTAssertTrue(addRackButton.waitForExistence(timeout: 5))
+        addRackButton.tap()
+
+        let nameField = app.textFields["Name *"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText("Slot Drag Rack")
+
+        let saveButton = app.buttons["Save Rack"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
+        saveButton.tap()
+
+        let rackCell = app.buttons["rackRowViewButton"]
+        XCTAssertTrue(rackCell.waitForExistence(timeout: 5))
+        rackCell.tap()
+
+        let detailTitle = app.navigationBars["Slot Drag Rack"]
+        XCTAssertTrue(detailTitle.waitForExistence(timeout: 10))
+
+        let imageArea = rackDetailImageArea()
+        XCTAssertTrue(imageArea.waitForExistence(timeout: 10))
+
+        let slotStart = imageArea.coordinate(withNormalizedOffset: CGVector(dx: 0.30, dy: 0.35))
+        slotStart.tap()
+
+        let cancelAddItem = app.buttons["Cancel"]
+        XCTAssertTrue(cancelAddItem.waitForExistence(timeout: 5))
+        cancelAddItem.tap()
+
+        XCTAssertTrue(detailTitle.waitForExistence(timeout: 5))
+
+        let slotDragEnd = imageArea.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.55))
+        slotStart.press(forDuration: 0.6, thenDragTo: slotDragEnd)
+
+        let moveAlert = app.alerts["Move slot marker?"]
+        XCTAssertTrue(moveAlert.waitForExistence(timeout: 5))
+
+        let cancelMoveButton = moveAlert.buttons["Cancel"]
+        XCTAssertTrue(cancelMoveButton.waitForExistence(timeout: 5))
+        cancelMoveButton.tap()
+    }
+
+    @MainActor
+    private func rackDetailImageArea() -> XCUIElement {
+        let imageArea = app.otherElements["rackDetailImageArea"]
+        if imageArea.exists {
+            return imageArea
+        }
+
+        return app.images["rackDetailImageArea"]
+    }
 }

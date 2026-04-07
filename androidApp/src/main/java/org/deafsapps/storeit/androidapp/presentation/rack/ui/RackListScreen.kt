@@ -64,6 +64,8 @@ internal fun RackListScreen(
     onNavigateToRackDetail: (String) -> Unit,
     onNavigateToAddItem: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    isDarkModeEnabled: Boolean = false,
+    onThemeModeToggle: () -> Unit = {},
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
@@ -101,6 +103,24 @@ internal fun RackListScreen(
                             onClick = {
                                 showMenu = false
                                 onNavigateToAddItem()
+                            },
+                        )
+                        DropdownMenuItem(
+                            modifier = Modifier.testTag("rackListThemeMenuItem"),
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (isDarkModeEnabled) {
+                                            R.string.rack_list_overflow_light_mode
+                                        } else {
+                                            R.string.rack_list_overflow_dark_mode
+                                        }
+                                    )
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onThemeModeToggle()
                             },
                         )
                     }
@@ -298,6 +318,8 @@ private fun RackListScreenPreview() {
             onNavigateToRackDetail = {},
             onNavigateToAddItem = {},
             onNavigateToSearch = {},
+            isDarkModeEnabled = false,
+            onThemeModeToggle = {},
         )
     }
 }
@@ -319,6 +341,8 @@ private fun RackListScreenEmptyPreview() {
             onNavigateToRackDetail = {},
             onNavigateToAddItem = {},
             onNavigateToSearch = {},
+            isDarkModeEnabled = false,
+            onThemeModeToggle = {},
         )
     }
 }
@@ -340,6 +364,8 @@ private fun RackListScreenLoadingPreview() {
             onNavigateToRackDetail = {},
             onNavigateToAddItem = {},
             onNavigateToSearch = {},
+            isDarkModeEnabled = false,
+            onThemeModeToggle = {},
         )
     }
 }

@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.skie)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -32,9 +33,11 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.koin.androidx.compose)
+            implementation(libs.sqldelight.android.driver)
         }
         iosMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.sqldelight.native.driver)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -48,11 +51,23 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.viewmodel)
             api(libs.koin.annotations)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines.extensions)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.coroutines.test)
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        create("StoreItDatabase") {
+            packageName.set("org.deafsapps.storeit.data.database")
+            verifyMigrations.set(true)
+            dialect(libs.sqldelight.sqlite.dialect)
         }
     }
 }

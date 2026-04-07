@@ -115,6 +115,8 @@ internal fun RackSlotPickerScreen(
                         slots = uiState.slots,
                         selectedSlot = uiState.selectedSlot,
                         onTap = viewModel::onImageTap,
+                        onSlotMarkerDrag = { _, _, _ -> },
+                        onSlotMarkerDragFinished = { _, _, _, _, _ -> },
                     )
                 }
             }

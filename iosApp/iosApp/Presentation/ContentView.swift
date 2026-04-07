@@ -4,6 +4,7 @@ import ComposeApp
 struct ContentView: View {
     @StateObject private var rackListViewModel: ViewModelHolder<RackListViewModel> = ViewModelHolder(IosKoinHelper().getRackListViewModel())
     @State private var path: [AppRoute] = []
+    @AppStorage("isDarkModeEnabled") private var isDarkModeEnabled = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -13,7 +14,9 @@ struct ContentView: View {
                         uiState: state,
                         onAddRackSelected: { rackListViewModel.sharedVm.onAddRackSelected() },
                         onRackSelected: { rack in rackListViewModel.sharedVm.onRackSelected(rack: rack) },
-                        onNavigateToSearch: { path.append(.search) }
+                        onNavigateToSearch: { path.append(.search) },
+                        isDarkModeEnabled: isDarkModeEnabled,
+                        onThemeModeToggle: { isDarkModeEnabled.toggle() }
                     )
 
                     VStack {
@@ -44,6 +47,7 @@ struct ContentView: View {
                 routeDestination(route)
             }
         }
+        .preferredColorScheme(isDarkModeEnabled ? .dark : .light)
     }
 
     @ViewBuilder

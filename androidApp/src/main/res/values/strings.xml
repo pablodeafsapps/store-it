@@ -12,6 +12,8 @@
     <string name="rack_list_title">Racks</string>
     <string name="rack_list_overflow_menu">More options</string>
     <string name="rack_list_overflow_add_item">Add item</string>
+    <string name="rack_list_overflow_dark_mode">Switch to dark mode</string>
+    <string name="rack_list_overflow_light_mode">Switch to light mode</string>
     <string name="rack_list_search_placeholder">Search items by name or description</string>
     <string name="rack_list_empty_title">No racks yet</string>
     <string name="rack_list_empty_subtitle">Add your first storage rack to get started</string>
@@ -46,6 +48,10 @@
     <string name="rack_edit_location_label">Location</string>
     <string name="rack_remove_confirm_title">Remove rack?</string>
     <string name="rack_remove_confirm_body">This will delete the rack and all its slots and items. This cannot be undone.</string>
+    <string name="rack_slot_move_confirm_title">Move slot marker?</string>
+    <string name="rack_slot_move_confirm_body">Confirm the new slot marker position.</string>
+    <string name="rack_browse_hint_no_slots">Tap the photo where a shelf should be to add a slot and start placing an item.</string>
+    <string name="rack_browse_hint_with_slots">Tap empty space on the photo to add another slot. Tap a marker to open that shelf. Long-tap a marker to move it.</string>
     <string name="rack_detail_placeholder_title">Rack detail</string>
     <string name="rack_detail_placeholder_body">Rack: %1$s (detail screen coming in T014)</string>
 

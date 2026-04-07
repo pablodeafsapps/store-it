@@ -38,3 +38,12 @@
 - **Decision**: Introduce a small abstraction layer for “remote storage” (e.g. `RemoteRackSource` / `RemoteItemSource` or repository interface) with a no-op or stub implementation. Document where Firebase (or alternative) will be wired later. Do not add Firebase SDK or real backend in MVP.
 - **Rationale**: Prompt: “Initially the back-end will be hosted in Firebase, so leave some placeholders… may change in the future, so keep things as flexible as possible.”
 - **Alternatives considered**: Full Firebase in MVP — out of scope; no placeholder — would make future migration harder.
+
+## 7. SQLDelight local persistence (T037)
+
+- **Schema**: `racks`, `shelf_slots` (FK to `racks` `ON DELETE CASCADE`), `items` (FK to `racks` and `shelf_slots` `ON DELETE CASCADE`). Android enables `setForeignKeyConstraintsEnabled(true)` on open; iOS uses Sqliter `extendedConfig.foreignKeyConstraints = true` so cascade and FK checks apply.
+- **Tags**: Stored in `items.tags_json` as a single TEXT column using an internal delimiter codec (`encodeTags` / `decodeTags` in `SqlDelightCodec.kt`), not a join table — sufficient for MVP; FTS or normalized tags can follow if needed.
+- **Search**: `searchItems` uses SQLite `LIKE` on lowercased `name` / `description` (see `searchItemsByQuery` in `StoreItDatabase.sq`).
+- **Timestamps**: `created_at` / `updated_at` as INTEGER epoch millis; repositories persist values supplied by domain (`Clock` / UI).
+- **photoUri**: Stored as nullable TEXT (platform path or URI string). Copies vs `content://` handling are a future concern if remote sync or strict lifecycle requires it.
+- **Layering**: SQL runs only in `SqlDelight*DataSource` implementations; `SqlDelight*Repository` classes delegate to those sources and keep `Result` / `Flow` domain contracts.

@@ -38,5 +38,6 @@ data object Dimens {
     val rackDetailImageVerticalPadding: Dp = 8.dp
     val rackDetailPlaceholderHeight: Dp = 200.dp
     val rackDetailSlotMarkerSize: Dp = 24.dp
+    val rackDetailDraggingSlotMarkerSize: Dp = 28.dp
     val rackDetailSlotMarkerHalfSize: Dp = 12.dp
 }

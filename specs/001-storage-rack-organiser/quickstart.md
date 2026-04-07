@@ -55,3 +55,12 @@ After workflows are added: push to the branch to trigger build and test. Check `
 ## Mock data
 
 Debug builds should include 1–5 mock records (at least one rack and some items). Toggle or preload per FR-011; no mock data in production builds.
+
+## Local DB (SQLDelight)
+
+- SQLDelight schema files live in `composeApp/src/commonMain/sqldelight/`.
+- The current schema is generated from `StoreItDatabase.sq` (v1 baseline).
+- Runtime DB file name is `storeit.db`:
+  - Android: app database directory via `AndroidSqliteDriver`.
+  - iOS: app sandbox via `NativeSqliteDriver`.
+- Migration strategy: add incremental `*.sqm` migration files in the same SQLDelight folder for future schema versions; keep `verifyMigrations` enabled in Gradle.
