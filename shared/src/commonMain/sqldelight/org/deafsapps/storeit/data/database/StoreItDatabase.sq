@@ -37,7 +37,8 @@ CREATE INDEX items_rack_id_idx ON items(rack_id);
 CREATE INDEX items_rack_slot_id_idx ON items(rack_id, slot_id);
 
 selectAllRacks:
-SELECT * FROM racks;
+SELECT * FROM racks
+ORDER BY COALESCE(updated_at, created_at) DESC, name COLLATE NOCASE ASC;
 
 selectRackById:
 SELECT * FROM racks
@@ -110,7 +111,14 @@ WHERE id = ?;
 searchItemsByQuery:
 SELECT * FROM items
 WHERE lower(name) LIKE '%' || lower(?) || '%'
-   OR lower(description) LIKE '%' || lower(?) || '%';
+   OR lower(description) LIKE '%' || lower(?) || '%'
+ORDER BY
+    CASE
+        WHEN lower(name) LIKE '%' || lower(?) || '%' THEN 0
+        ELSE 1
+    END ASC,
+    COALESCE(updated_at, created_at) DESC,
+    name COLLATE NOCASE ASC;
 
 upsertItem:
 INSERT OR REPLACE INTO items(

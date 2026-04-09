@@ -12,6 +12,12 @@
 
 ## Build & run
 
+Project modules:
+
+- `:shared` for shared Kotlin Multiplatform logic and SQLDelight
+- `:androidApp` for the Android application shell and Compose UI
+- `iosApp/` for the SwiftUI iOS application
+
 ### Android
 
 ```bash
@@ -45,6 +51,12 @@ Open `iosApp/iosApp.xcodeproj` in Xcode and run the iOS app target, or use the r
 ## CI (GitHub Actions)
 
 Push to the feature branch to trigger build and test. Check `.github/workflows/build-and-test.yml` for the current job definitions.
+
+The current CI verification flow is:
+
+```bash
+./gradlew detekt :shared:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
+```
 
 ## Feature docs
 

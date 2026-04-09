@@ -4,11 +4,12 @@ Kotlin Multiplatform project targeting Android and iOS.
 
 ## Structure
 
-- **`:shared`** contains all shared business logic plus the Android app shell.
-- **`shared/src/commonMain`** contains domain, data, use cases, DI, and shared presentation logic.
-- **`shared/src/androidMain`** contains Android-specific integrations and UI.
-- **`shared/src/iosMain`** contains iOS-specific Kotlin actuals and integrations.
-- **`iosApp/`** contains the SwiftUI iOS application entry point.
+- **`:shared`** is the Kotlin Multiplatform module for shared domain, data, SQLDelight, DI, and shared presentation logic.
+- **`shared/src/commonMain`** contains business logic, repositories, use cases, and shared presentation state.
+- **`shared/src/androidMain`** contains Android-specific Kotlin actuals and integrations used by the shared module.
+- **`:androidApp`** contains the Android application entry point, navigation shell, and Android Compose UI.
+- **`shared/src/iosMain`** contains iOS-specific Kotlin actuals and integrations used by the shared module.
+- **`iosApp/`** contains the SwiftUI iOS application.
 
 ## Prerequisites
 
@@ -53,3 +54,4 @@ Open `iosApp/iosApp.xcodeproj` in Xcode and run the `iosApp` scheme on an availa
 - [Feature spec](./specs/001-storage-rack-organiser/spec.md)
 - [Implementation plan](./specs/001-storage-rack-organiser/plan.md)
 - [Quickstart](./specs/001-storage-rack-organiser/quickstart.md)
+- [Research](./specs/001-storage-rack-organiser/research.md)

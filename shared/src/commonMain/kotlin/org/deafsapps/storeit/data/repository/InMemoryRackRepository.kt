@@ -18,7 +18,7 @@ internal class InMemoryRackRepository : RackRepository {
     private val mutex = Mutex()
 
     override fun getAllRacksFlow(): Flow<Result<DomainError, List<Rack>>> =
-        racks.map { m -> m.values.toList().ok() }
+        racks.map { rackMap -> rackMap.values.sortedForDisplay().ok() }
 
     override suspend fun getRackById(id: String): Result<DomainError, Rack> = mutex.withLock {
         when {
@@ -69,6 +69,12 @@ internal class InMemoryRackRepository : RackRepository {
         racks.emit(emptyMap())
     }
 }
+
+private fun Collection<Rack>.sortedForDisplay(): List<Rack> =
+    sortedWith(
+        compareByDescending<Rack> { it.updatedAt ?: it.createdAt }
+            .thenBy { it.name.lowercase() }
+    )
 
 private suspend fun MutableStateFlow<Map<String, Rack>>.updateAndEmit(rackToUpdate: Rack) {
     val updatedMap = value.toMutableMap()

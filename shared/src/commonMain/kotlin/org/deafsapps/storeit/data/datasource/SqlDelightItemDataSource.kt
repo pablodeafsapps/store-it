@@ -52,9 +52,10 @@ internal class SqlDelightItemDataSource(
     override suspend fun searchItems(query: String): Result<DomainError, List<Item>> = try {
         databaseProvider.database.storeItDatabaseQueries
             .searchItemsByQuery(
-                query,
-                query,
-                ::mapItem,
+                `value` = query,
+                value_ = query,
+                value__ = query,
+                mapper = ::mapItem,
             )
             .executeAsList()
             .ok()

@@ -184,8 +184,22 @@ class InMemoryItemRepositoryTest {
 
     @Test
     fun `GIVEN items WHEN searchItems matches both name and description THEN returns all matching items`() = runTest {
-        val item1 = Item(id = "1", rackId = "rack1", slotId = "slot1", name = "Tool", description = "Heavy duty")
-        val item2 = Item(id = "2", rackId = "rack1", slotId = "slot2", name = "Heavy Box", description = "Storage")
+        val item1 = Item(
+            id = "1",
+            rackId = "rack1",
+            slotId = "slot1",
+            name = "Tool",
+            description = "Heavy duty",
+            createdAt = 10L,
+        )
+        val item2 = Item(
+            id = "2",
+            rackId = "rack1",
+            slotId = "slot2",
+            name = "Heavy Box",
+            description = "Storage",
+            createdAt = 5L,
+        )
         sut.saveItem(item =item1)
         sut.saveItem(item =item2)
 
@@ -194,8 +208,34 @@ class InMemoryItemRepositoryTest {
         assertTrue(actual = result.isOk)
         val items: List<Item> = result.getOrNull() ?: emptyList()
         assertEquals(expected = 2, actual = items.size)
-        assertTrue(actual = items.contains(item1))
-        assertTrue(actual = items.contains(item2))
+        assertEquals(expected = listOf("2", "1"), actual = items.map { it.id })
+    }
+
+    @Test
+    fun `GIVEN search hits in name and description WHEN searchItems THEN prioritises name matches`() = runTest {
+        val descriptionMatch = Item(
+            id = "1",
+            rackId = "rack1",
+            slotId = "slot1",
+            name = "Tool",
+            description = "Heavy duty",
+            createdAt = 10L,
+        )
+        val nameMatch = Item(
+            id = "2",
+            rackId = "rack1",
+            slotId = "slot2",
+            name = "Heavy Box",
+            description = "Storage",
+            createdAt = 5L,
+        )
+        sut.saveItem(item = descriptionMatch)
+        sut.saveItem(item = nameMatch)
+
+        val result = sut.searchItems(query = "heavy")
+
+        val items: List<Item> = result.getOrNull() ?: emptyList()
+        assertEquals(expected = listOf("2", "1"), actual = items.map { it.id })
     }
 
     @Test

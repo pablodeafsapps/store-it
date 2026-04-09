@@ -50,6 +50,19 @@ class InMemoryRackRepositoryTest {
     }
 
     @Test
+    fun `GIVEN racks with different recency WHEN getAllRacks THEN returns most recently changed first`() = runTest {
+        val olderRack = Rack(id = "1", name = "Older Rack", createdAt = 10L, updatedAt = null)
+        val newerRack = Rack(id = "2", name = "Newer Rack", createdAt = 20L, updatedAt = null)
+        sut.saveRack(rack = olderRack)
+        sut.saveRack(rack = newerRack)
+
+        result = sut.getAllRacksFlow().first()
+
+        val racks: List<Rack> = result.getOrNull() ?: emptyList()
+        assertEquals(expected = listOf("2", "1"), actual = racks.map { it.id })
+    }
+
+    @Test
     fun `GIVEN saved rack WHEN getRackById with existing id THEN returns rack`() = runTest {
         val rack = Rack(id = "1", name = "Test Rack")
         val saveResult = sut.saveRack(rack = rack)

@@ -47,7 +47,7 @@ internal class InMemoryItemRepository : ItemRepository {
                 items.values.filter { item ->
                     item.name.lowercase().contains(lowerQuery) ||
                         item.description.lowercase().contains(lowerQuery)
-                }.ok()
+                }.sortedForSearch(query = lowerQuery).ok()
             }
         }
     }
@@ -119,3 +119,10 @@ internal class InMemoryItemRepository : ItemRepository {
         items.clear()
     }
 }
+
+private fun Collection<Item>.sortedForSearch(query: String): List<Item> =
+    sortedWith(
+        compareBy<Item> { item -> !item.name.lowercase().contains(query) }
+            .thenByDescending { it.updatedAt ?: it.createdAt }
+            .thenBy { it.name.lowercase() }
+    )

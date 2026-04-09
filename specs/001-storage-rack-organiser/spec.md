@@ -11,6 +11,13 @@
 
 - Q: Should the app include mock/dummy data for debugging and UI assessment? → A: Yes; include 1–5 mock/dummy records (at least one rack and some items) so a rack and items can be initially consulted and the UI duly assessed during development.
 
+### Session 2026-04-09
+
+- Q: What is the MVP default order for racks and search results? → A: Racks are shown with most recently changed first, then by name as a stable tie-breaker. Search results prioritise item-name matches before description-only matches, then use the same recency rule.
+- Q: How is a shelf slot identified in MVP? → A: A single tap creates or selects a slot anchored to the stored tap coordinates on the rack image; the persisted slot record is the source of truth.
+- Q: What happens when camera capture or gallery picking fails or is cancelled? → A: Saving is blocked until the user provides a valid photo, and the UI must show a recoverable validation or picker error state without losing already entered metadata.
+- Q: What is the non-functional stance for MVP? → A: Accessibility and performance are required at a practical MVP level, but no advanced compliance programme or benchmarking beyond the success criteria is part of this feature.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Register a storage rack (Priority: P1)
@@ -26,7 +33,7 @@ The user registers a storage rack so they can later add items to it. The app req
 1. **Given** the user has no racks, **When** they open the option to add a rack and capture (or pick) a photo and enter a name, **Then** a new rack is created and appears in their rack list.
 2. **Given** the user is adding a rack, **When** they optionally add description and location, **Then** that information is stored and shown when viewing the rack.
 3. **Given** at least one rack exists, **When** the user opens a rack, **Then** they see the rack image and can tap on it to define or use shelf slots.
-4. **Given** the user has one or more racks, **When** they view the rack list, **Then** they can open a rack, edit its metadata (name, description, location), or remove a rack (removal requires confirmation and deletes the rack and all its slots and items).
+4. **Given** the user has one or more racks, **When** they view the rack list, **Then** they can open a rack, edit its metadata (name, description, location), or remove a rack after confirmation, and the list is shown with the most recently changed rack first.
 
 ---
 
@@ -61,7 +68,7 @@ The user locates an item by opening a rack, tapping a shelf slot on the rack ima
 1. **Given** a rack with at least one slot that has items, **When** the user opens the rack and taps that slot, **Then** they see the list of items in that slot.
 2. **Given** the user sees the list of items in a slot, **When** they tap an item, **Then** they can view all stored data (name, description, photo, quantity, owner, tags, etc.).
 3. **Given** the user is viewing an item, **When** they choose to edit, **Then** they can change name, description, quantity, owner, tags, and other editable fields.
-4. **Given** the user is anywhere in the app, **When** they use the search box and type text, **Then** matching items (by name and description) are shown, with enough information to identify rack and slot.
+4. **Given** the user is anywhere in the app, **When** they use the search box and type text, **Then** matching items (by name and description) are shown with the rack name and slot identifier or coordinates needed to identify the location.
 5. **Given** the user searched and got results, **When** they tap a result, **Then** they can navigate to that item (and thus its rack and slot).
 
 ---
@@ -74,37 +81,42 @@ The user locates an item by opening a rack, tapping a shelf slot on the rack ima
 - What happens when search returns no results? The system MUST show a clear “no results” state and not imply that data was lost.
 - How does the system handle very long names, descriptions, or many tags? The system MUST accept and display them without data loss; truncation or scrolling is acceptable for display.
 - What happens when the user removes the last item from a slot or deletes a rack? The system MUST update the model and UI so the slot or rack no longer shows that item or rack. When the user deletes a rack, the system MUST ask for confirmation, then delete the rack and all associated slots and items (cascade). Empty racks (no items) are allowed.
+- What happens when camera capture or gallery selection fails, is denied, or is cancelled? The system MUST keep the draft metadata, show a recoverable error or validation state, and prevent saving until a valid photo is attached.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow users to register at least one storage rack with a photo (camera or gallery) and optional name, description, location, and other metadata.
-- **FR-002**: System MUST use the rack photo as an interactive map so users can tap regions (shelf slots) to assign or view items.
+- **FR-001**: System MUST allow users to register at least one storage rack with one required photo (camera or gallery) plus metadata limited to name, description, and location for MVP.
+- **FR-002**: System MUST use the rack photo as an interactive map so users can tap to create or select shelf slots anchored to persisted image coordinates.
 - **FR-003**: System MUST allow multiple items per shelf slot.
-- **FR-004**: System MUST allow users to add an item with a photo (camera or gallery) and optional name, description, quantity, owner, tags, and other metadata, and to place it on a chosen rack and slot (by tapping the rack image).
+- **FR-004**: System MUST allow users to add an item with one required photo (camera or gallery) plus metadata limited to name, description, quantity, owner, and tags for MVP, and to place it on a chosen rack and slot (by tapping the rack image).
 - **FR-005**: System MUST support both flows: “add item then choose rack/slot” and “choose rack/slot then add item”; outcome MUST be equivalent.
 - **FR-006**: System MUST allow users to open a rack, tap a slot, and see the list of items in that slot.
 - **FR-007**: System MUST allow users to tap an item to view and edit its data (name, description, photo, quantity, owner, tags, etc.).
-- **FR-008**: System MUST provide a search box available at all times that searches items by name and description and returns results that allow the user to identify and navigate to the item (and its rack/slot).
+- **FR-008**: System MUST provide a search box available at all times that searches items by name and description and returns results that show rack name plus slot identifier or coordinates; results MUST prioritise name matches before description-only matches.
 - **FR-009**: System MUST persist all data in a way that survives app restart; persistence strategy will be introduced progressively (no persistence in first iteration, then local storage, then remote).
 - **FR-010**: System MUST NOT require login or sign-up for the MVP; user/account association is out of scope for this feature.
-- **FR-011**: System MUST provide or support 1–5 mock/dummy records (at least one rack and some items) for debugging and UI assessment; these MAY be preloaded in non-production builds or toggled for development.
+- **FR-011**: System MUST provide or support 1–5 mock/dummy records (at least one rack and some items) for debugging and UI assessment; these MAY be preloaded in non-production builds or toggled for development, and MUST be excluded from production startup data.
+- **FR-012**: Rack lists MUST default to most recently changed first, with name used as a stable tie-breaker when timestamps are equal.
+- **FR-013**: If photo capture or gallery selection fails, is cancelled, or permission is denied, the system MUST preserve entered metadata, show a recoverable error state, and block saving until a valid photo is present.
 
 ### Key Entities
 
-- **Rack**: A storage unit (e.g. shelf, cabinet) represented by a single photo and metadata (name, description, location, etc.). The photo acts as a map; regions (slots) are defined by user tap positions or similar.
-- **Shelf slot**: A region on a rack’s image (e.g. a shelf) identified by coordinates or a logical position; can hold zero or more items.
+- **Rack**: A storage unit (e.g. shelf, cabinet) represented by a single photo and metadata limited to name, description, and location for MVP. The photo acts as a map for slot placement.
+- **Shelf slot**: A persisted point on a rack image created from a user tap and identified by stored coordinates plus a stable slot id; can hold zero or more items.
 - **Item**: A belonging stored in a specific rack and slot; has a photo and metadata (name, description, quantity, owner, tags, etc.). Same item is not duplicated across slots for MVP (one placement per item).
 
 ## Assumptions
 
-- **Persistence**: First delivery may keep data in memory only; later iterations add local then remote persistence. The spec does not mandate a specific storage technology.
+- **Persistence**: FR-009 is a product requirement. The implementation strategy is progressive persistence: first delivery may keep data in memory only; later iterations add local then remote persistence.
 - **Authentication**: No login/sign-up in MVP; all users are effectively “local single user.” Multi-device or multi-user sync is out of scope for this feature.
 - **Owner field**: “Owner” for an item is a free-text field (e.g. family member name); no separate user or account entity in MVP.
-- **Rack image slots**: Slots are defined by the user tapping on the rack image; the system stores the tap position or a derived slot identifier. Exact UX for drawing or selecting slot boundaries is left to design (tap-to-place is the minimum).
-- **Photo requirements**: Rack and item can have one primary photo; camera and gallery are both supported. Whether photo is mandatory or optional for rack/item is a product decision (recommend mandatory for rack and item in MVP for clarity).
+- **Rack image slots**: Slots are defined by the user tapping on the rack image; the system stores the tap coordinates and a derived slot identifier. Exact UX for drawing or selecting slot boundaries is left to design, but tap-to-place is the MVP minimum.
+- **Photo requirements**: Rack and item each require one primary photo in MVP. Camera and gallery are both supported.
 - **Mock/debug data**: At least one rack and some items (1–5 mock records in total) MUST be available for debugging and UI assessment (e.g. preloaded or toggled in development builds).
+- **Accessibility**: MVP requires clear labels, discoverable actions, and platform-standard accessibility support for primary flows; a formal accessibility audit is out of scope for this feature.
+- **Performance**: MVP performance is measured by SC-001 through SC-003. No separate load-testing or benchmarking programme is required for this feature.
 
 ## Success Criteria *(mandatory)*
 
@@ -113,5 +125,5 @@ The user locates an item by opening a rack, tapping a shelf slot on the rack ima
 - **SC-001**: A user who has never used the app can register their first rack (photo + name) in under two minutes without instructions.
 - **SC-002**: A user can add an item and place it on an existing rack slot in under three minutes.
 - **SC-003**: A user can locate an item by searching by name or description and open its details in under 30 seconds.
-- **SC-004**: At least 90% of users who complete onboarding (one rack, one item) can successfully find that item again via the rack map or search.
+- **SC-004**: At least 90% of users who complete onboarding (one rack, one item) can successfully find that item again via the rack map or search. Sample size and validation method belong to the MVP test plan or validation protocol, not this feature spec.
 - **SC-005**: Data entered by the user (racks, items, metadata) is retained across app restarts once persistence is implemented; until then, in-memory behaviour is acceptable for the first iteration.
