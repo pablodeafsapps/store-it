@@ -1,5 +1,5 @@
 import SwiftUI
-import ComposeApp
+import Shared
 
 struct RackSlotPickerView: View {
     @StateObject private var viewModelHolder: ViewModelHolder<RackSlotPickerViewModel>

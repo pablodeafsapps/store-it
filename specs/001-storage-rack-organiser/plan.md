@@ -13,12 +13,12 @@ Build the Store it! MVP: a KMP (Android + iOS) organiser/locator for belongings.
 **Primary Dependencies**: Kotlin Multiplatform, Jetpack Compose (Android), Compose Multiplatform / SwiftUI (iOS), kotlinx-coroutines, kotlinx-serialization; backend placeholder for Firebase (flexible for future change)  
 **Storage**: In-memory for first iteration; then local (e.g. SQLDelight or Realm KMP); then remote via Firebase (placeholder: interface/abstraction only, no implementation in MVP)  
 **Testing**: JUnit 5, kotlinx-coroutines-test, MockK (or Mockito-Kotlin); Compose UI tests; XCTest for iOS where needed  
-**Target Platform**: Android (minSdk 24+), iOS (latest stable); shared logic in `:composeApp` (commonMain)  
-**Project Type**: Mobile (KMP) — post-AGP 9.0 structure: `composeApp/` (single KMP module, no `:shared`), `iosApp/`  
+**Target Platform**: Android (minSdk 24+), iOS (latest stable); shared logic in `:shared` (commonMain)  
+**Project Type**: Mobile (KMP) — post-AGP 9.0 structure: `shared/`, `iosApp/`  
 **Performance Goals**: First rack in &lt;2 min, add item in &lt;3 min, locate via search in &lt;30 s (per SC-001–SC-003)  
 **Constraints**: No login in MVP; UX easy-to-use; code documented and tested (constitution)  
 **Scale/Scope**: Single user, local-first; 1–5 mock records; progressive persistence  
-**Task list scope**: The tasks in tasks.md target Android first (composeApp); iOS (iosApp) is a later increment.
+**Task list scope**: The tasks in tasks.md target Android first (shared); iOS (iosApp) is a later increment.
 
 **Linting & CI**: Detekt for Kotlin; GitHub Actions for build and test (and optionally lint). Firebase: placeholders only; keep backend abstraction flexible.
 
@@ -51,7 +51,7 @@ specs/001-storage-rack-organiser/
 ### Source Code (repository root)
 
 ```text
-composeApp/                  # Single KMP module (post-AGP 9.0: no separate :shared)
+shared/                  # Single KMP module (post-AGP 9.0: no separate :shared)
 ├── src/
 │   ├── commonMain/kotlin/  # Domain entities, use cases, repo interfaces, DTOs
 │   ├── androidMain/        # Android app: Activities, Compose screens, platform DI
@@ -67,7 +67,7 @@ iosApp/                      # iOS app (SwiftUI)
 .github/workflows/            # CI: build, test, (Detekt)
 ```
 
-**Structure Decision**: Post-AGP 9.0 KMP layout per `.ai/AGENTS.md`. Domain, data, and shared logic in `composeApp` (commonMain); Android UI in `composeApp` (androidMain); iOS UI in `iosApp`. Backend (Firebase) abstracted behind interfaces; placeholders for future setup.
+**Structure Decision**: Post-AGP 9.0 KMP layout per `.ai/AGENTS.md`. Domain, data, and shared logic in `shared` (commonMain); Android UI in `shared` (androidMain); iOS UI in `iosApp`. Backend (Firebase) abstracted behind interfaces; placeholders for future setup.
 
 ## Complexity Tracking
 

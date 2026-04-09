@@ -1,4 +1,4 @@
-import ComposeApp
+import Shared
 
 /// Maps serialized `AppRoute` values into typed `AddItemSlotVo`. String parsing stays at the navigation boundary only.
 enum AddItemSlotVoFromRoute {

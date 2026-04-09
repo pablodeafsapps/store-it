@@ -1,1 +1,1 @@
-./gradlew clean detekt :androidApp:assembleDebug :composeApp:linkDebugFrameworkIosSimulatorArm64 --no-daemon
+./gradlew clean detekt :androidApp:assembleDebug :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon

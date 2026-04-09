@@ -42,7 +42,7 @@ configurations.matching { it.name.contains("androidTest", ignoreCase = true) }.c
 }
 
 dependencies {
-    implementation(projects.composeApp)
+    implementation(projects.shared)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.annotations)
     ksp(libs.koin.ksp.compiler)

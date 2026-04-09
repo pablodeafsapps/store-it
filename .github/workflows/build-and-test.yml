@@ -32,8 +32,8 @@ jobs:
       - name: Run Detekt
         run: ./gradlew detekt --no-daemon
 
-      - name: Run unit tests (composeApp + androidApp)
-        run: ./gradlew :composeApp:allTests :androidApp:testDebugUnitTest --no-daemon
+      - name: Run unit tests (shared + androidApp)
+        run: ./gradlew :shared:allTests :androidApp:testDebugUnitTest --no-daemon
 
       - name: Assemble debug
         run: ./gradlew :androidApp:assembleDebug --no-daemon

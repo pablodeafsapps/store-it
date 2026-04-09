@@ -32,5 +32,7 @@ Contract: “Get items by slot” and “place item on slot” are required; exa
 
 ## Remote backend placeholder
 
-- **Decision**: Do not implement Firebase (or other remote) in MVP. Introduce interfaces such as `RemoteRackSource` / `RemoteItemSource` or extend repository implementations with a “remote” data source that is currently no-op or stub.
+- **Decision**: Do not implement Firebase (or other remote) in MVP. Reuse the existing `RackDataSource` and `ItemDataSource` interfaces and provide Firebase placeholder implementations that are currently no-op or stub.
 - **Future**: When adding Firebase (or alternative), implement these sources and keep repository interface unchanged so domain and UI stay backend-agnostic.
+- **Current placeholder**: `FirebaseRackDataSource` and `FirebaseItemDataSource` live under `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/` and implement the existing datasource contracts with stubbed no-op behavior so the app remains local-first.
+- **Firebase wiring**: Replace the stub logic in those datasource implementations with Firebase-backed logic, or swap the active datasource implementation in DI when remote sync is enabled. Keep `RackRepository` and `ItemRepository` as the stable domain-facing contracts.

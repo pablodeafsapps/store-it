@@ -12,37 +12,51 @@
 
 ## Build & run
 
+Project modules:
+
+- `:shared` for shared Kotlin Multiplatform logic and SQLDelight
+- `:androidApp` for the Android application shell and Compose UI
+- `iosApp/` for the SwiftUI iOS application
+
 ### Android
 
 ```bash
-./gradlew :composeApp:assembleDebug
+./gradlew :androidApp:assembleDebug
 # Run from IDE or:
-./gradlew :composeApp:installDebug
+./gradlew :androidApp:installDebug
 ```
 
 ### iOS
 
 Open `iosApp/iosApp.xcodeproj` in Xcode and run the iOS app target, or use the run configuration from the IDE.
 
-### Tests (composeApp; no separate :shared module)
+### Tests
 
 ```bash
-./gradlew :composeApp:testDebugUnitTest
-# Or all tests:
-./gradlew test
+./gradlew :shared:allTests :androidApp:testDebugUnitTest
 ```
 
 ## Linting (Detekt)
-
-When Detekt is configured:
 
 ```bash
 ./gradlew detekt
 ```
 
+## Full verification
+
+```bash
+./gradlew detekt :shared:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
+```
+
 ## CI (GitHub Actions)
 
-After workflows are added: push to the branch to trigger build and test. Check `.github/workflows/` for job definitions.
+Push to the feature branch to trigger build and test. Check `.github/workflows/build-and-test.yml` for the current job definitions.
+
+The current CI verification flow is:
+
+```bash
+./gradlew detekt :shared:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
+```
 
 ## Feature docs
 
@@ -54,11 +68,15 @@ After workflows are added: push to the branch to trigger build and test. Check `
 
 ## Mock data
 
-Debug builds should include 1–5 mock records (at least one rack and some items). Toggle or preload per FR-011; no mock data in production builds.
+On Android and iOS debug builds, app startup preloads one sample rack and three sample items for validation:
+- Rack list should show `Garage shelf`.
+- Rack detail / slot drill-down should surface `Power drill`, `Paint cans`, and `Toolbox`.
+
+Release builds should not preload mock data.
 
 ## Local DB (SQLDelight)
 
-- SQLDelight schema files live in `composeApp/src/commonMain/sqldelight/`.
+- SQLDelight schema files live in `shared/src/commonMain/sqldelight/`.
 - The current schema is generated from `StoreItDatabase.sq` (v1 baseline).
 - Runtime DB file name is `storeit.db`:
   - Android: app database directory via `AndroidSqliteDriver`.

@@ -1,6 +1,6 @@
 import SwiftUI
 import PhotosUI
-import ComposeApp
+import Shared
 
 struct ItemDetailView: View {
     let uiState: ItemDetailUiState

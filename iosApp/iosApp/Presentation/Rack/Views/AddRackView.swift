@@ -1,6 +1,6 @@
 import SwiftUI
 import UIKit
-import ComposeApp
+import Shared
 import PhotosUI
 
 struct AddRackView: View {

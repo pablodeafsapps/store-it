@@ -4,8 +4,8 @@ Apply these instructions for work in this repository.
 
 ## Architecture
 
-- This is a Kotlin Multiplatform app with `:composeApp` as the shared KMP module and `:androidApp` as the Android app module. There is no separate `:shared` module.
-- Maximise code in `composeApp/src/commonMain`. Keep `androidMain`, `iosMain`, `androidApp`, and `iosApp` thin and limited to platform-specific integration.
+- This is a Kotlin Multiplatform app with `:shared` as the shared KMP module and `:androidApp` as the Android app module. There is no separate `:shared` module.
+- Maximise code in `shared/src/commonMain`. Keep `androidMain`, `iosMain`, `androidApp`, and `iosApp` thin and limited to platform-specific integration.
 - Shared business logic, repositories, use cases, shared presentation state, DI setup, and `expect` declarations belong in `commonMain`.
 - `androidMain` and `iosMain` should only contain `actual` implementations and minimal platform services. Do not put platform UI there.
 - Android UI, app entry, and navigation belong in `:androidApp`. iOS UI belongs in `iosApp`.

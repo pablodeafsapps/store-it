@@ -24,7 +24,7 @@ description: >-
 1. **Build and test** (run from repo root; JDK 17):
 
    ```bash
-   ./gradlew detekt :composeApp:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
+   ./gradlew detekt :shared:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
    ```
 
    Align with CI (`.github/workflows/build-and-test.yml`). Fix failures before handoff.
