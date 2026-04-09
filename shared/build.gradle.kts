@@ -13,16 +13,26 @@ kotlin {
     android {
         compileSdk = 36
         minSdk = 24
-        namespace = "org.deafsapps.storeit.composeapp"
-        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+        namespace = "org.deafsapps.storeit.shared"
+        androidResources.enable = true
+
+        withHostTest {
+            isIncludeAndroidResources = true
+        }
+
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            execution = "HOST"
+        }
     }
 
     listOf(
+        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "ComposeApp"
+            baseName = "Shared"
             isStatic = true
         }
     }

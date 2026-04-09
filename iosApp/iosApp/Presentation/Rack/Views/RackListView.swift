@@ -1,5 +1,5 @@
 import SwiftUI
-import ComposeApp
+import Shared
 
 struct RackListView: View {
     let uiState: RackListUiState

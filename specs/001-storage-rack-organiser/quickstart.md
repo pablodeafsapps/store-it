@@ -27,7 +27,7 @@ Open `iosApp/iosApp.xcodeproj` in Xcode and run the iOS app target, or use the r
 ### Tests
 
 ```bash
-./gradlew :composeApp:allTests :androidApp:testDebugUnitTest
+./gradlew :shared:allTests :androidApp:testDebugUnitTest
 ```
 
 ## Linting (Detekt)
@@ -39,7 +39,7 @@ Open `iosApp/iosApp.xcodeproj` in Xcode and run the iOS app target, or use the r
 ## Full verification
 
 ```bash
-./gradlew detekt :composeApp:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
+./gradlew detekt :shared:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
 ```
 
 ## CI (GitHub Actions)
@@ -64,7 +64,7 @@ Release builds should not preload mock data.
 
 ## Local DB (SQLDelight)
 
-- SQLDelight schema files live in `composeApp/src/commonMain/sqldelight/`.
+- SQLDelight schema files live in `shared/src/commonMain/sqldelight/`.
 - The current schema is generated from `StoreItDatabase.sq` (v1 baseline).
 - Runtime DB file name is `storeit.db`:
   - Android: app database directory via `AndroidSqliteDriver`.

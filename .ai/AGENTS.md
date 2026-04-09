@@ -13,18 +13,18 @@ The target audience is experienced Android engineers building or reviewing a KMP
 
 ## 1. High-Level System Shape
 
-**Post-AGP 9.0 migration:** This project uses a **single KMP app module** (`:composeApp`) and a separate **Android app module** (`:androidApp`). There is no separate `:shared` module.
+**Post-AGP 9.0 migration:** This project uses a **single KMP app module** (`:shared`) and a separate **Android app module** (`:androidApp`).
 
-**Principle:** Maximise code in **commonMain** (`:composeApp`); keep **androidMain**, **iosMain**, and app modules as thin as possible (only what cannot live in commonMain).
+**Principle:** Maximise code in **commonMain** (`:shared`); keep **androidMain**, **iosMain**, and app modules as thin as possible (only what cannot live in commonMain).
 
-- **Compose app module** (`:composeApp`):
+- **Shared logic module** (`:shared`):
   - **commonMain** (and commonTest): Domain, data, and shared presentation (pure Kotlin ViewModels, UI state). Shared across targets; no platform types.
   - **androidMain**: Only `actual` implementations for platform services and Android-specific integrations (HTTP engine, logging, etc.). No Activities, Compose UI, or ViewModel wrappers here.
   - **iosMain** (if present): Only `actual` implementations for platform services; iOS UI lives in `iosApp` (Swift/SwiftUI).
 - **Android app module** (`:androidApp`):
-  - Activities, Compose UI screens, and **AndroidX ViewModel wrappers** that hold the pure ViewModel from commonMain. Depends on `:composeApp`.
+  - Activities, Compose UI screens, and **AndroidX ViewModel wrappers** that hold the pure ViewModel from commonMain. Depends on `:shared`.
 - **iOS app target** (`iosApp`):
-  - Swift/SwiftUI code that consumes the shared framework produced by `:composeApp`; Swift `ObservableObject` wrappers for ViewModels live here.
+  - Swift/SwiftUI code that consumes the shared framework produced by `:shared`; Swift `ObservableObject` wrappers for ViewModels live here.
 
 **Dependency direction**:
 
@@ -42,7 +42,7 @@ A previous approach that tied Android and iOS to shared logic via a single Koin 
   - **ViewModels**: Android uses Koin’s `viewModel()` / `@KoinViewModel` in the app module; the shared pure ViewModels in `commonMain` receive `viewModelScope` from the AndroidX ViewModel wrapper (see §4.7 and §3.1).
 
 - **iOS**
-  - **Entry**: The Swift app entry (e.g. `@main struct iOSApp: App`) calls `KoinInitKt.doInitKoinIos()` in `init()`. That invokes **`initKoinIos()`** in `composeApp` commonMain (`di/KoinInit.kt`), which is `initKoin {}` — i.e. Koin starts with **only** `AppModule().module` and no platform-specific options.
+  - **Entry**: The Swift app entry (e.g. `@main struct iOSApp: App`) calls `KoinInitKt.doInitKoinIos()` in `init()`. That invokes **`initKoinIos()`** in `shared` commonMain (`di/KoinInit.kt`), which is `initKoin {}` — i.e. Koin starts with **only** `AppModule().module` and no platform-specific options.
   - **ViewModels**: iOS does **not** use a single shared `CoroutineScope` for all ViewModels. **`IosKoinHelper`** (commonMain, `di/IosKoinHelper.kt`) is a `KoinComponent` object that exposes typed getters for each shared ViewModel. It resolves ViewModels **without** passing a scope: e.g. `getRackListViewModel(): RackListViewModel = get()`, `getRackDetailViewModel(rackId: String) = get(parameters = { parametersOf(rackId) })`. The **scope** is provided by the **actual** implementation of **`StoreItViewModel`** in **iosMain** (`StoreItViewModel.ios.kt`): when `coroutineScope` is `null`, the iOS actual uses `MainScope()`. So each ViewModel instance gets its own scope from the actual, avoiding a single shared scope that could cause lifecycle/cancellation bugs.
   - **Lifecycle**: Swift **`ViewModelHolder<T: StoreItViewModel>`** (in `iosApp`) holds the KMP ViewModel and calls `sharedVm.clear()` in `deinit`, so when the Swift view is deallocated the ViewModel’s scope is cancelled.
 
@@ -55,15 +55,15 @@ A previous approach that tied Android and iOS to shared logic via a single Koin 
 
 **Relevant files**
 - Android: `androidApp/.../StoreItApplication.kt`, `androidApp/.../di/AndroidModule.kt`, `AndroidManifest.xml` (`android:name=".StoreItApplication"`).
-- Shared: `composeApp/.../di/KoinInit.kt` (`initKoin`, `initKoinIos`), `composeApp/.../di/IosKoinHelper.kt`, `composeApp/.../di/AppModule.kt`.
-- Platform ViewModel base: `composeApp/.../presentation/StoreItViewModel.kt` (expect), `StoreItViewModel.android.kt` (androidMain), `StoreItViewModel.ios.kt` (iosMain).
+- Shared: `shared/.../di/KoinInit.kt` (`initKoin`, `initKoinIos`), `shared/.../di/IosKoinHelper.kt`, `shared/.../di/AppModule.kt`.
+- Platform ViewModel base: `shared/.../presentation/StoreItViewModel.kt` (expect), `StoreItViewModel.android.kt` (androidMain), `StoreItViewModel.ios.kt` (iosMain).
 - iOS: `iosApp/.../iOSApp.swift` (calls `KoinInitKt.doInitKoinIos()`), `iosApp/.../ViewModels/ViewModelHolder.swift` (holds KMP ViewModel, calls `clear()` in `deinit`).
 
 ---
 
-## 2. KMP Module Structure (composeApp)
+## 2. KMP Module Structure (shared)
 
-The multiplatform module (`:composeApp`) is configured roughly as:
+The multiplatform module (`:shared`) is configured roughly as:
 
 - Targets:
   - `jvm("android")`
@@ -78,7 +78,7 @@ The multiplatform module (`:composeApp`) is configured roughly as:
 - **commonMain**:
   - Pure Kotlin, **no platform types**.
   - Contains:
-    - **Domain layer**: entities, value objects, use case interfaces and implementations, domain services, domain-specific errors. **Concrete domain data classes** (e.g. `internal data class …Model` for `Item`, `Rack`, …) are **`internal` to `:composeApp`**; **`androidApp`** and **`iosApp`** must only use **public domain interfaces** and **public factory functions** (see §3.1 and §7.4).
+    - **Domain layer**: entities, value objects, use case interfaces and implementations, domain services, domain-specific errors. **Concrete domain data classes** (e.g. `internal data class …Model` for `Item`, `Rack`, …) are **`internal` to `:shared`**; **`androidApp`** and **`iosApp`** must only use **public domain interfaces** and **public factory functions** (see §3.1 and §7.4).
     - **Data layer contracts**: repository interfaces, common DTOs, mapping logic (when platform-agnostic), simple cache abstractions.
     - **Shared presentation** (optional): shared state holders (e.g. `StateFlow`-based ViewModels) used by both platforms.
     - `expect` declarations for minimal platform services (time, UUID, logging, secure storage, etc.).
@@ -99,7 +99,7 @@ The multiplatform module (`:composeApp`) is configured roughly as:
 
 - **Domain (core)** – in `commonMain`:
   - Business rules and invariants.
-  - **Entities at the module boundary**: public **interfaces** (e.g. `Item`, `Rack`) for types that flow to **`androidApp`** / **`iosApp`** or the exported framework; **`internal`** `data class` implementations (e.g. `ItemModel`, `RackModel`) stay inside **`composeApp`** only. App modules and Swift must not depend on `*Model` types.
+  - **Entities at the module boundary**: public **interfaces** (e.g. `Item`, `Rack`) for types that flow to **`androidApp`** / **`iosApp`** or the exported framework; **`internal`** `data class` implementations (e.g. `ItemModel`, `RackModel`) stay inside **`shared`** only. App modules and Swift must not depend on `*Model` types.
   - Value objects, domain services.
   - Use cases / interactors (`UseCase` classes or functions).
   - Repository interfaces, expressed in domain terms (they use the public domain interfaces, not internal concrete classes).
@@ -126,11 +126,11 @@ The multiplatform module (`:composeApp`) is configured roughly as:
 - Domain depends on **nothing** but Kotlin stdlib and allowed shared libraries.
 - Data depends on Domain and infrastructure abstractions/platform APIs (via `expect` or injected interfaces).
 - Presentation depends on Domain (and optionally Data when the team explicitly decides to collapse them).
-- UI depends only on Presentation and **shared domain types exposed as public interfaces** from `:composeApp` (not internal domain implementations).
+- UI depends only on Presentation and **shared domain types exposed as public interfaces** from `:shared` (not internal domain implementations).
 
 These rules are enforced by:
 
-- Gradle module and source-set boundaries (e.g. `:composeApp` with `commonMain`, `androidMain`, `iosMain`).
+- Gradle module and source-set boundaries (e.g. `:shared` with `commonMain`, `androidMain`, `iosMain`).
 - `sourceSets` dependency configuration (`dependsOn` relationships).
 
 ---
@@ -143,7 +143,7 @@ The following stack is designed to align with official KMP recommendations and c
 
 - **Kotlin**:
   - Latest stable language version supported by the Kotlin Multiplatform Gradle plugin.
-  - `kotlin("multiplatform")` (with Compose Multiplatform) for the `:composeApp` module.
+  - `kotlin("multiplatform")` (with Compose Multiplatform) for the `:shared` module.
   - Gradle Kotlin DSL for build scripts.
 - **Coroutines & Flow**:
   - `kotlinx-coroutines-core` in `commonMain`.
@@ -194,7 +194,7 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 
 - **Module**: A single `@Module` with `@ComponentScan("org.deafsapps.storeit")` in `commonMain` discovers and registers all annotated types. The generated module is loaded via `AppModule().module` in `initKoin()`.
 - **Registration**: Use cases and repositories are registered with `@Factory(binds = [UseCaseType::class])` or `@Single(binds = [Repository::class])`; use a typealias for the use case interface so the implementation binds to it (e.g. `GetRacksUseCaseType`, `SaveRackUseCaseType`).
-- **ViewModels**: Shared presentation uses **pure Kotlin ViewModels** in `commonMain` (see §3.1): annotated with `@Factory`, they receive a `CoroutineScope` via `@Provided` and use cases via constructor. Resolution with a scope is done at the call site: Android wrappers in `:androidApp` pass `viewModelScope` via Koin’s ViewModel machinery; iOS uses **`IosKoinHelper`** getters (e.g. `getRackListViewModel()`, `getRackDetailViewModel(rackId)`) which resolve ViewModels **without** passing a scope — the scope is provided by the **StoreItViewModel** actual in iosMain (e.g. `MainScope()` when `coroutineScope` is null). Platform wrappers live in the **app** modules: AndroidX `ViewModel` in **`:androidApp`** (not in composeApp/androidMain), Swift `ObservableObject` in **`iosApp`**; they own the scope and call `clear()` on the pure ViewModel when the screen is disposed.
+- **ViewModels**: Shared presentation uses **pure Kotlin ViewModels** in `commonMain` (see §3.1): annotated with `@Factory`, they receive a `CoroutineScope` via `@Provided` and use cases via constructor. Resolution with a scope is done at the call site: Android wrappers in `:androidApp` pass `viewModelScope` via Koin’s ViewModel machinery; iOS uses **`IosKoinHelper`** getters (e.g. `getRackListViewModel()`, `getRackDetailViewModel(rackId)`) which resolve ViewModels **without** passing a scope — the scope is provided by the **StoreItViewModel** actual in iosMain (e.g. `MainScope()` when `coroutineScope` is null). Platform wrappers live in the **app** modules: AndroidX `ViewModel` in **`:androidApp`** (not in shared/androidMain), Swift `ObservableObject` in **`iosApp`**; they own the scope and call `clear()` on the pure ViewModel when the screen is disposed.
 - **Initialisation**:
   - **Android**: Use a custom `Application` subclass (**`StoreItApplication`** in `:androidApp`) declared in the manifest. In `onCreate()` call `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this@StoreItApplication) }`. `AndroidModule` includes `AppModule` and provides the composition root.
   - **iOS**: Call `KoinInitKt.doInitKoinIos()` from the Swift app’s `init()` (e.g. in `@main struct iOSApp: App`). This runs `initKoin {}`, which starts Koin with only `AppModule().module` (no platform-specific options).
@@ -203,10 +203,10 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 ### 4.8 UI Technologies
 
 - **Android** (`:androidApp`):
-  - Jetpack Compose for UI, Activities, and AndroidX ViewModel wrappers. All Android UI and ViewModel wrappers live in `:androidApp`; `composeApp/androidMain` does not contain them.
-  - AndroidX libraries for lifecycle, navigation, etc. Koin for DI at the app level; shared code remains in `:composeApp`.
+  - Jetpack Compose for UI, Activities, and AndroidX ViewModel wrappers. All Android UI and ViewModel wrappers live in `:androidApp`; `shared/androidMain` does not contain them.
+  - AndroidX libraries for lifecycle, navigation, etc. Koin for DI at the app level; shared code remains in `:shared`.
 - **iOS**:
-  - SwiftUI as the primary UI framework; all iOS UI lives in the **`iosApp`** target (Swift), not in the KMP module. The shared framework produced by `:composeApp` is consumed as a dependency (`ComposeApp`).
+  - SwiftUI as the primary UI framework; all iOS UI lives in the **`iosApp`** target (Swift), not in the KMP module. The shared framework produced by `:shared` is consumed as a dependency (`Shared`).
   - Integration with shared KMP ViewModels: use **Swift `ObservableObject` wrappers** that obtain the pure Kotlin ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, expose its `uiState` and `uiEvent` to SwiftUI (e.g. via Skie or `Observing`), and call the ViewModel’s `clear()` in `deinit` so the coroutine scope is cancelled when the view is dismissed.
   - Koin is initialised from the iOS app entry point with `KoinInitKt.doInitKoinIos()` so shared dependencies are available.
 
@@ -224,7 +224,7 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 
 ### 5.2 Multiplatform Plugin Configuration
 
-- In the `:composeApp` (KMP) module:
+- In the `:shared` (KMP) module:
   - Configure `kotlin {}` with:
     - Targets: `androidTarget()`, `iosX64()`, `iosArm64()`, `iosSimulatorArm64()` (or `ios()` aggregate).
     - `sourceSets` relationships: `iosMain` depends on individual iOS targets when aggregated.
@@ -239,12 +239,12 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 - Configure:
   - `compileSdk`, `minSdk`, `targetSdk` according to product requirements.
   - Jetpack Compose compiler and BOM (if used).
-  - The `:composeApp` module is the single KMP module (no separate shared library artifact).
+  - The `:shared` module is the single KMP module (no separate shared library artifact).
 - **Instrumented UI tests (`:androidApp`)**: Apply the **`de.mannodermaus.android-junit`** plugin alongside the Android application plugin so **JUnit 5** runs on device/emulator. `androidTestImplementation` dependencies include **`org.junit.jupiter:junit-jupiter-api`**, **`junit-jupiter-engine`** (runtime), **`de.mannodermaus.junit5:android-test-compose`** (Compose **`createAndroidComposeExtension`**, **`ComposeContext`**), and **`androidx.compose.ui:ui-test-junit4`**. Align transitive Compose UI versions with the project if needed (see `androidApp/build.gradle.kts`).
 
 ### 5.4 iOS Integration
 
-- Configure `:composeApp` to export an **XCFramework** (or equivalent) for iOS:
+- Configure `:shared` to export an **XCFramework** (or equivalent) for iOS:
   - Framework name stable and semantic (e.g. `SharedCore`).
   - Exposed APIs stable and idiomatic from Swift.
 - Integrate via:
@@ -260,7 +260,7 @@ This section describes how an engineer (or automation agent) should add or modif
 ### 6.1 Domain First
 
 - **Define domain model(s)** in `commonMain`:
-  - Add a **public interface** for each entity that may cross the **`composeApp`** boundary (UI state, repository contracts, Swift interop).
+  - Add a **public interface** for each entity that may cross the **`shared`** boundary (UI state, repository contracts, Swift interop).
   - Implement it with an **`internal data class`** (suffix **`Model`** in this project) and expose **public factory functions** (e.g. `Item(...)`, `Rack(...)`) so **`androidApp`** / **`iosApp`** never reference concrete implementations. Do not add new public `data class` domain entities unless the team explicitly widens the API.
   - Value objects, domain events if needed.
 - **Define or extend repository interfaces**:
@@ -304,7 +304,7 @@ This section describes how an engineer (or automation agent) should add or modif
 - If using shared presentation:
   - Create or extend **pure Kotlin ViewModels** in `commonMain`: plain classes with `@Factory`, `@Provided CoroutineScope`, use cases, `StateFlow`/`SharedFlow`, and `clear()` that cancels the scope.
   - Expose state as immutable streams (e.g. `StateFlow<UiState>`); route events through explicit functions.
-  - On Android: add an **AndroidX ViewModel wrapper** in **`:androidApp`** (`@KoinViewModel`) that constructs the pure ViewModel with `viewModelScope` and use cases, exposes it to the Activity/Compose screen, and calls `pureViewModel.clear()` in `onCleared()`. Do not put ViewModel wrappers in `composeApp/androidMain`.
+  - On Android: add an **AndroidX ViewModel wrapper** in **`:androidApp`** (`@KoinViewModel`) that constructs the pure ViewModel with `viewModelScope` and use cases, exposes it to the Activity/Compose screen, and calls `pureViewModel.clear()` in `onCleared()`. Do not put ViewModel wrappers in `shared/androidMain`.
   - On iOS: add a **Swift `ObservableObject` wrapper** that gets the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `clear()` in `deinit`.
 - On Android:
   - Bind Compose UI to the **pure ViewModel** held by the wrapper (e.g. `androidRackListViewModel.rackListViewModel`).
@@ -373,7 +373,7 @@ This section describes how an engineer (or automation agent) should add or modif
 ### 7.4 Encapsulation & implementation style
 
 - **Visibility**: Prefer `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Use `internal` on both `expect` and `actual` when the API is only used inside the module.
-- **Domain data models**: Shared logic lives in **`composeApp`**; **domain model implementations** (`internal data class …Model`) are **not** part of the public API for **`androidApp`** or **`iosApp`**. Other modules may import only **public interfaces** and **factories** from `org.deafsapps.storeit.domain.model`. Preserving this boundary keeps platform code from coupling to concrete Kotlin types and leaves room for future persistence/network DTOs named without colliding with domain internals.
+- **Domain data models**: Shared logic lives in **`shared`**; **domain model implementations** (`internal data class …Model`) are **not** part of the public API for **`androidApp`** or **`iosApp`**. Other modules may import only **public interfaces** and **factories** from `org.deafsapps.storeit.domain.model`. Preserving this boundary keeps platform code from coupling to concrete Kotlin types and leaves room for future persistence/network DTOs named without colliding with domain internals.
 - **Expression-bodied functions**: Prefer single-expression function bodies using `= expression` (no `return` keyword) when the logic fits clearly in one expression; use `when`/`if` expressions where appropriate to keep functions as expressions.
 
 ### 7.5 Concurrency & Thread Safety

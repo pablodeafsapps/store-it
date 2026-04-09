@@ -103,7 +103,7 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 3.1 Source Set Layout
 
-- In this project the KMP module is **`:composeApp`** (no separate `:shared` module; post-AGP 9.0 layout). **Principle:** Maximise code in **commonMain**; keep androidMain, iosMain, and app modules as thin as possible.
+- In this project the KMP module is **`:shared`**. **Principle:** Maximise code in **commonMain**; keep androidMain, iosMain, and app modules as thin as possible.
 - **commonMain**: Shared business logic, domain models, use cases, repository interfaces, shared presentation (pure Kotlin ViewModels, UI state), expect declarations, **AppModule**, **KoinInit** (`initKoin` / `initKoinIos`), and **IosKoinHelper**. No platform types.
 - **androidMain** / **iosMain**: Only **actual** implementations for platform services (e.g. **StoreItViewModel** actuals) and minimal platform integrations. No UI, no ViewModel wrappers—those live in the app modules.
 - **androidApp** (separate module): **StoreItApplication** (custom `Application` that initialises Koin with **AndroidModule**), Activities, Compose UI, and use of shared ViewModels via Koin (no wrapper ViewModels; shared ViewModels extend **StoreItViewModel** and are resolved with `viewModelScope` from the AndroidX environment).
@@ -133,7 +133,7 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 - **Prefer `internal` by default**: Use `internal` for classes, interfaces, objects, and top-level functions unless the declaration is intentionally part of the module’s public API (e.g. consumed by another Gradle module). Do not add `internal` to members inside an interface (e.g. sealed subclasses); the containing type’s visibility applies.
 - **Expect/actual**: Use `internal` on both `expect` and `actual` when the API is only used inside the module; use public only for types that other modules or the framework must see.
-- **Domain data models (`:composeApp` only)**: Concrete domain model types (e.g. `internal data class …Model` implementing `Item`, `Rack`, …) live in **`composeApp`** and are **`internal`** so they are **not** visible to **`androidApp`** or **`iosApp`**. Other modules depend on **public interfaces** in `org.deafsapps.storeit.domain.model` (e.g. `Item`, `Rack`) and **public factory functions** with the same names as the former constructors (e.g. `Item(...)`, `Rack(...)`) to construct values. Do not reference `*Model` types from app modules or tests outside `composeApp`.
+- **Domain data models (`:shared` only)**: Concrete domain model types (e.g. `internal data class …Model` implementing `Item`, `Rack`, …) live in **`shared`** and are **`internal`** so they are **not** visible to **`androidApp`** or **`iosApp`**. Other modules depend on **public interfaces** in `org.deafsapps.storeit.domain.model` (e.g. `Item`, `Rack`) and **public factory functions** with the same names as the former constructors (e.g. `Item(...)`, `Rack(...)`) to construct values. Do not reference `*Model` types from app modules or tests outside `shared`.
 
 ### 3.4 Expect / Actual
 
@@ -149,8 +149,8 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 3.6 Shared Models
 
-- **Boundary**: Domain models used across **`androidApp`**, **`iosApp`**, and **`composeApp`** are expressed as **public interfaces** in `commonMain` (e.g. `Item`, `Rack`, `ShelfSlot`). **Implementations** are **`internal data class …Model`** in `:composeApp` only; they must not be imported or referenced from **`androidApp`** or **`iosApp`**.
-- **Construction**: Use **public factory functions** in the same package (e.g. `Item(...)`, `Rack(...)`) so call sites keep a constructor-like API without exposing concrete types. Inside `composeApp`, prefer factories or `asModel()` helpers when you need `data class` features (e.g. replacing former `.copy()` usage).
+- **Boundary**: Domain models used across **`androidApp`**, **`iosApp`**, and **`shared`** are expressed as **public interfaces** in `commonMain` (e.g. `Item`, `Rack`, `ShelfSlot`). **Implementations** are **`internal data class …Model`** in `:shared` only; they must not be imported or referenced from **`androidApp`** or **`iosApp`**.
+- **Construction**: Use **public factory functions** in the same package (e.g. `Item(...)`, `Rack(...)`) so call sites keep a constructor-like API without exposing concrete types. Inside `shared`, prefer factories or `asModel()` helpers when you need `data class` features (e.g. replacing former `.copy()` usage).
 - Prefer immutable values at the interface boundary; in Swift, structs with `let` properties where you mirror types locally.
 - Use a single source of truth for DTOs if you share networking (e.g. kotlinx.serialization); document field names and optionality so iOS can mirror or generate models consistently.
 
@@ -160,7 +160,7 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 
 ### 4.1 Layer Boundaries
 
-- **Domain**: Entities (as public interfaces + internal implementations in `:composeApp`), use case interfaces (and implementations). No framework or platform types; only pure Kotlin (and shared types). Types consumed by **`androidApp`** / **`iosApp`** are the public domain interfaces, not internal `*Model` classes (see §3.6).
+- **Domain**: Entities (as public interfaces + internal implementations in `:shared`), use case interfaces (and implementations). No framework or platform types; only pure Kotlin (and shared types). Types consumed by **`androidApp`** / **`iosApp`** are the public domain interfaces, not internal `*Model` classes (see §3.6).
 - **Data**: Repository implementations, DTOs, mappers, remote/local data sources. Depends only on domain.
 - **Presentation / UI**: ViewModels (or equivalent), UI state, platform UI. Depends on domain (use cases); avoid depending on data layer types in the UI.
 
@@ -174,9 +174,9 @@ Dependency rule: inner layers do not know outer layers. Dependencies point inwar
 
 Use cases sit in domain and orchestrate repository interfaces; they return domain types or simple sealed results (Success / Error).
 
-**Pure Kotlin ViewModels (shared)**: State holders in `composeApp/commonMain` are plain Kotlin classes (no AndroidX `ViewModel` or iOS types). Annotate with `@Factory`; inject a `CoroutineScope` via `@Provided` and use cases via constructor (scope owned by the platform). Expose state via `StateFlow`, events via `SharedFlow`. Implement `clear()` that calls `coroutineScope.cancel()`. Prefer automatic data loading: use `stateIn` or `init { coroutineScope.launch { … } }`; for testability inject a `CoroutineScope` (e.g. `TestScope` from `runTest`).
+**Pure Kotlin ViewModels (shared)**: State holders in `shared/commonMain` are plain Kotlin classes (no AndroidX `ViewModel` or iOS types). Annotate with `@Factory`; inject a `CoroutineScope` via `@Provided` and use cases via constructor (scope owned by the platform). Expose state via `StateFlow`, events via `SharedFlow`. Implement `clear()` that calls `coroutineScope.cancel()`. Prefer automatic data loading: use `stateIn` or `init { coroutineScope.launch { … } }`; for testability inject a `CoroutineScope` (e.g. `TestScope` from `runTest`).
 
-**Platform wrappers**: **Android** (`:androidApp`): AndroidX `ViewModel` with `@KoinViewModel` in the Android app module holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. Do not put ViewModel wrappers in `composeApp/androidMain`. **iOS**: Swift `ObservableObject` in `iosApp` obtains the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
+**Platform wrappers**: **Android** (`:androidApp`): AndroidX `ViewModel` with `@KoinViewModel` in the Android app module holds the pure ViewModel (built with `viewModelScope`), exposes it to the UI, and calls `pureViewModel.clear()` in `onCleared()`. Do not put ViewModel wrappers in `shared/androidMain`. **iOS**: Swift `ObservableObject` in `iosApp` obtains the pure ViewModel from `IosKoinHelper` with `parametersOf(createViewModelScope())`, exposes state/events to SwiftUI, and calls `viewModel.clear()` in `deinit`.
 
 ### 4.3 Dependency Direction
 
@@ -309,7 +309,7 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 ### 8.2 iOS
 
-- All iOS UI lives in the **`iosApp`** Swift target; the shared framework (`ComposeApp`) is consumed as a dependency. Koin is initialised in the app entry with `KoinInitKt.doInitKoinIos()`. Obtain ViewModels from **IosKoinHelper** (e.g. `IosKoinHelper().getRackListViewModel()`, `getRackDetailViewModel(rackId:)`) and wrap them in **ViewModelHolder**; the holder calls `sharedVm.clear()` in `deinit`. Use SwiftUI views that take ViewModel state and event callbacks (e.g. `Observing(… uiState, … uiEvent.withInitialValue(nil)) { state, event in … }`).
+- All iOS UI lives in the **`iosApp`** Swift target; the shared framework (`Shared`) is consumed as a dependency. Koin is initialised in the app entry with `KoinInitKt.doInitKoinIos()`. Obtain ViewModels from **IosKoinHelper** (e.g. `IosKoinHelper().getRackListViewModel()`, `getRackDetailViewModel(rackId:)`) and wrap them in **ViewModelHolder**; the holder calls `sharedVm.clear()` in `deinit`. Use SwiftUI views that take ViewModel state and event callbacks (e.g. `Observing(… uiState, … uiEvent.withInitialValue(nil)) { state, event in … }`).
 - Asset and storyboard names: PascalCase or kebab-case per team choice; be consistent. Swift code references by symbol name.
 
 ### 8.3 Shared Configuration

@@ -1,5 +1,5 @@
 import SwiftUI
-import ComposeApp
+import Shared
 import UIKit
 
 struct RackDetailView: View {

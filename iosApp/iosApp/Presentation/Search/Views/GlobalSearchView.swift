@@ -1,5 +1,5 @@
 import SwiftUI
-import ComposeApp
+import Shared
 
 struct GlobalSearchView: View {
     let uiState: SearchUiState

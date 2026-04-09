@@ -4,10 +4,10 @@ Kotlin Multiplatform project targeting Android and iOS.
 
 ## Structure
 
-- **`:composeApp`** contains all shared business logic plus the Android app shell.
-- **`composeApp/src/commonMain`** contains domain, data, use cases, DI, and shared presentation logic.
-- **`composeApp/src/androidMain`** contains Android-specific integrations and UI.
-- **`composeApp/src/iosMain`** contains iOS-specific Kotlin actuals and integrations.
+- **`:shared`** contains all shared business logic plus the Android app shell.
+- **`shared/src/commonMain`** contains domain, data, use cases, DI, and shared presentation logic.
+- **`shared/src/androidMain`** contains Android-specific integrations and UI.
+- **`shared/src/iosMain`** contains iOS-specific Kotlin actuals and integrations.
 - **`iosApp/`** contains the SwiftUI iOS application entry point.
 
 ## Prerequisites
@@ -25,7 +25,7 @@ Kotlin Multiplatform project targeting Android and iOS.
 ## Test
 
 ```bash
-./gradlew :composeApp:allTests :androidApp:testDebugUnitTest
+./gradlew :shared:allTests :androidApp:testDebugUnitTest
 ```
 
 ## Verify
@@ -33,7 +33,7 @@ Kotlin Multiplatform project targeting Android and iOS.
 Use the same verification command that CI and local delivery use:
 
 ```bash
-./gradlew detekt :composeApp:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
+./gradlew detekt :shared:allTests :androidApp:testDebugUnitTest :androidApp:assembleDebug --no-daemon
 ```
 
 ## Run

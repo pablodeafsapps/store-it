@@ -269,7 +269,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\nif [ \"$PLATFORM_NAME\" = \"iphonesimulator\" ]; then\n  if [ -n \"$NATIVE_ARCH_ACTUAL\" ]; then\n    export ARCHS=\"$NATIVE_ARCH_ACTUAL\"\n  elif echo \"$ARCHS\" | grep -q \"arm64\"; then\n    export ARCHS=\"arm64\"\n  fi\nfi\ncd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode -Pcompose.ios.resources.platform=\"$PLATFORM_NAME\" -Pcompose.ios.resources.archs=\"$ARCHS\"\n";
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\nif [ \"$PLATFORM_NAME\" = \"iphonesimulator\" ]; then\n  if [ -n \"$NATIVE_ARCH_ACTUAL\" ]; then\n    export ARCHS=\"$NATIVE_ARCH_ACTUAL\"\n  elif echo \"$ARCHS\" | grep -q \"arm64\"; then\n    export ARCHS=\"arm64\"\n  fi\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode -Pcompose.ios.resources.platform=\"$PLATFORM_NAME\" -Pcompose.ios.resources.archs=\"$ARCHS\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

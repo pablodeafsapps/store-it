@@ -1,5 +1,5 @@
 import Foundation
-import ComposeApp
+import Shared
 
 class ViewModelHolder <T : StoreItViewModel> : ObservableObject {
     let sharedVm: T

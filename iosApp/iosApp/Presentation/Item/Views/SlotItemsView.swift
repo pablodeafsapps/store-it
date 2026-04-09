@@ -1,5 +1,5 @@
 import SwiftUI
-import ComposeApp
+import Shared
 
 struct SlotItemsView: View {
     @StateObject private var viewModel: ViewModelHolder<SlotItemsViewModel>

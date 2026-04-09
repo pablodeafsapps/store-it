@@ -5,7 +5,7 @@
 
 ## 1. Kotlin Multiplatform (KMP) stack
 
-- **Decision**: Use existing KMP layout: `shared` (commonMain, androidMain, iosMain), `composeApp` (Android), `iosApp` (SwiftUI). Follow `.ai/AGENTS.md` and `.ai/CONVENTIONS.md`.
+- **Decision**: Use existing KMP layout: `shared` (commonMain, androidMain, iosMain), `shared` (Android), `iosApp` (SwiftUI). Follow `.ai/AGENTS.md` and `.ai/CONVENTIONS.md`.
 - **Rationale**: Project already uses KMP; spec targets Android and iOS with shared business logic; Clean Architecture and sum types (Either/Result) keep domain testable and backend-agnostic.
 - **Alternatives considered**: Native-only Android or iOS — rejected; single codebase for domain/data reduces duplication and aligns with prompt.
 
@@ -38,7 +38,7 @@
 - **Decision**: Reuse the existing `RackDataSource` and `ItemDataSource` contracts and add Firebase placeholder implementations behind those interfaces. Document where Firebase (or alternative) will be wired later. Do not add Firebase SDK or real backend in MVP.
 - **Rationale**: Prompt: “Initially the back-end will be hosted in Firebase, so leave some placeholders… may change in the future, so keep things as flexible as possible.”
 - **Alternatives considered**: Full Firebase in MVP — out of scope; no placeholder — would make future migration harder.
-- **Implementation note**: The placeholder seam lives in `composeApp/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/`. `FirebaseRackDataSource` and `FirebaseItemDataSource` are stub implementations of the existing datasource interfaces and are not yet wired into production DI.
+- **Implementation note**: The placeholder seam lives in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/`. `FirebaseRackDataSource` and `FirebaseItemDataSource` are stub implementations of the existing datasource interfaces and are not yet wired into production DI.
 - **Integration point**: `SqlDelightRackRepository` and `SqlDelightItemRepository` remain the local-first repository facades. When Firebase sync is added, the repositories can switch datasource implementations or coordinate between the SQLDelight and Firebase datasources without changing domain contracts.
 
 ## 7. SQLDelight local persistence (T037)

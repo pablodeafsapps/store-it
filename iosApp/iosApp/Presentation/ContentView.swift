@@ -1,5 +1,5 @@
 import SwiftUI
-import ComposeApp
+import Shared
 
 struct ContentView: View {
     @StateObject private var rackListViewModel: ViewModelHolder<RackListViewModel> = ViewModelHolder(IosKoinHelper().getRackListViewModel())
