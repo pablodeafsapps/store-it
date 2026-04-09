@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.androidapp
 
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,15 +11,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation3.runtime.rememberNavBackStack
-import org.deafsapps.storeit.androidapp.design.StoreItTheme
-import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
-import org.koin.androidx.viewmodel.ext.android.viewModel
 import androidx.core.content.edit
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation3.runtime.rememberNavBackStack
+import kotlinx.coroutines.launch
+import org.deafsapps.storeit.androidapp.design.StoreItTheme
+import org.deafsapps.storeit.data.model.DebugMockDataPreloader
+import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
 
     private val rackListViewModel: RackListViewModel by viewModel()
+    private val debugMockDataPreloader: DebugMockDataPreloader by inject()
     private val preferences by lazy { getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE) }
     private var isDarkModeEnabled by mutableStateOf(false)
 
@@ -26,6 +32,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         isDarkModeEnabled = preferences.getBoolean(KEY_DARK_MODE_ENABLED, false)
+        preloadDebugMockDataIfNeeded()
         setContent {
             val backStack = rememberNavBackStack(NavScreen.RackList)
             StoreItTheme(darkTheme = isDarkModeEnabled) {
@@ -46,6 +53,15 @@ class MainActivity : ComponentActivity() {
         isDarkModeEnabled = !isDarkModeEnabled
         preferences.edit {
             putBoolean(KEY_DARK_MODE_ENABLED, isDarkModeEnabled)
+        }
+    }
+
+    private fun preloadDebugMockDataIfNeeded() {
+        val isDebuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        if (!isDebuggable) return
+
+        lifecycleScope.launch {
+            debugMockDataPreloader.preloadIfEmpty()
         }
     }
 

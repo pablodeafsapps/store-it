@@ -396,6 +396,14 @@ android {
         jvmTarget = "1.8"
     }
 }
+
+kotlin {
+    compilerOptions {
+        languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0
+        // Optional: set jvmTarget
+        // jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_11
+    }  
+}
 ```
 
 **app/build.gradle.kts** (using conventions):

@@ -10,6 +10,11 @@ struct iOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task {
+                    #if DEBUG
+                    try? await IosKoinHelper().preloadDebugMockDataIfNeeded(isDebugBuild: true)
+                    #endif
+                }
         }
     }
 }

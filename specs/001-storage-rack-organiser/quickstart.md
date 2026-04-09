@@ -56,7 +56,11 @@ Push to the feature branch to trigger build and test. Check `.github/workflows/b
 
 ## Mock data
 
-Debug builds should include 1–5 mock records (at least one rack and some items). Toggle or preload per FR-011; no mock data in production builds.
+On Android and iOS debug builds, app startup preloads one sample rack and three sample items for validation:
+- Rack list should show `Garage shelf`.
+- Rack detail / slot drill-down should surface `Power drill`, `Paint cans`, and `Toolbox`.
+
+Release builds should not preload mock data.
 
 ## Local DB (SQLDelight)
 

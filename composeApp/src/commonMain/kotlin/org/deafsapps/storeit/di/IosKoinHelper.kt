@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.di
 
+import org.deafsapps.storeit.data.model.DebugMockDataPreloader
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.item.viewmodel.AddItemViewModel
 import org.deafsapps.storeit.presentation.item.viewmodel.ItemDetailViewModel
@@ -14,6 +15,12 @@ import org.koin.core.component.get
 import org.koin.core.parameter.parametersOf
 
 object IosKoinHelper : KoinComponent {
+
+    suspend fun preloadDebugMockDataIfNeeded(isDebugBuild: Boolean) {
+        if (!isDebugBuild) return
+
+        get<DebugMockDataPreloader>().preloadIfEmpty()
+    }
 
     fun getRackListViewModel(): RackListViewModel = get()
 
