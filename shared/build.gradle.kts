@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.androidKmpLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
@@ -61,8 +62,12 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.viewmodel)
             api(libs.koin.annotations)
+            implementation(libs.kotlinx.serialization.json)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines.extensions)
+            implementation(libs.gitlive.firebase.auth)
+            implementation(libs.gitlive.firebase.firestore)
+            implementation(libs.gitlive.firebase.storage)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -114,4 +119,3 @@ detekt {
     config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
     baseline = file("${rootProject.projectDir}/config/detekt/baseline.xml")
 }
-

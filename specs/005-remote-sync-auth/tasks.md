@@ -26,7 +26,7 @@
 
 **Purpose**: Prepare shared dependencies and dependency injection for account-backed sync work.
 
-- [ ] T001 Update remote sync dependencies and source set wiring in `shared/build.gradle.kts`
+- [X] T001 Update remote sync dependencies and source set wiring in `shared/build.gradle.kts`
 - [ ] T002 [P] Reserve shared DI entry points for auth and sync components in `shared/src/commonMain/kotlin/org/deafsapps/storeit/di/AppModule.kt`
 - [ ] T003 [P] Add secure-session and remote-provider abstraction shells in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/auth/RemoteAuthDataSource.kt`
 
