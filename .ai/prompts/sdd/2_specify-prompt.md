@@ -1,5 +1,7 @@
 # Specify (/speckit.specify)
 
+Sample 1
+
 /speckit.specify Develop "Store it!", an organiser/locator platform for individuals' and families' belongings. The application should allow users to register storage racks and fill them with their things or items.
 
 ## User journey
@@ -23,3 +25,11 @@ Furthermore, there should be a search box available at any time, so the user can
 All data must be properly persisted, although this feature will be achieved progressively. There will be no persistency initially. In a new iteration, a local database will be implemented. Finally, remote persistency will kick in.
 
 Ideally, "Store it!" will require users to log-in/sign-up to start working, so their data can be loaded on any device. However, this won't be included in the MVP version, but later.
+
+
+Sample 2
+
+$speckit-specify Allow "Store it!" to connect to a remote infrastructure to provide persistence across sessions.
+
+The idea is that the user can work locally if he/she wants, but also allow him/her to log in/sign up and back-up his/her data using a remote infraestructure. Doing so, there'll always be a source of truth, but also a local
+copy to work with until the next synchronization.

@@ -101,3 +101,10 @@ For all new and modified Kotlin files in this project:
 - `.ai/CONVENTIONS.md`
 - `.ai/WORKFLOW_IMPLEMENT_FEATURE.md`
 - `.ai/WORKFLOW_UNIT_TEST.md`
+
+## Active Technologies
+- Kotlin Multiplatform with Swift app integration; Kotlin current project baseline, Swift 5.x for iOS shell + Kotlin Multiplatform, kotlinx-coroutines, Koin annotations, SQLDelight, Kotlinx Serialization, Firebase Authentication, Firebase Cloud Firestore, Firebase Cloud Storage (005-remote-sync-auth)
+- Local SQLDelight database plus remote account-backed dataset in Firebase; secure local session/token storage via platform-secure facilities behind shared abstractions (005-remote-sync-auth)
+
+## Recent Changes
+- 005-remote-sync-auth: Added Kotlin Multiplatform with Swift app integration; Kotlin current project baseline, Swift 5.x for iOS shell + Kotlin Multiplatform, kotlinx-coroutines, Koin annotations, SQLDelight, Kotlinx Serialization, Firebase Authentication, Firebase Cloud Firestore, Firebase Cloud Storage
