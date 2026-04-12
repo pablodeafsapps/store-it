@@ -7,6 +7,8 @@ Apply these instructions for work in this repository.
 - This is a Kotlin Multiplatform app with `:shared` as the shared KMP module and `:androidApp` as the Android app module. There is no separate `:shared` module.
 - Maximise code in `shared/src/commonMain`. Keep `androidMain`, `iosMain`, `androidApp`, and `iosApp` thin and limited to platform-specific integration.
 - Shared business logic, repositories, use cases, shared presentation state, DI setup, and `expect` declarations belong in `commonMain`.
+- Data-source interfaces and provider/local data-source implementations belong under `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource`.
+- Name data sources with the qualifier immediately before `DataSource`, for example `FirebaseRackDataSource`, `SqlDelightItemDataSource`, `AuthRemoteDataSource`, and `AccountRemoteDataSource`. Do not use names like `RemoteAuthDataSource` where `Remote` appears to qualify the business concept instead of the data source.
 - `androidMain` and `iosMain` should only contain `actual` implementations and minimal platform services. Do not put platform UI there.
 - Android UI, app entry, and navigation belong in `:androidApp`. iOS UI belongs in `iosApp`.
 - Respect dependency direction: UI -> Presentation -> Domain -> Data -> Platform APIs.

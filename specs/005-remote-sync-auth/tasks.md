@@ -27,8 +27,8 @@
 **Purpose**: Prepare shared dependencies and dependency injection for email/password account sync with photo backup.
 
 - [X] T001 Update remote sync dependencies and source set wiring in `shared/build.gradle.kts`
-- [ ] T002 [P] Reserve shared DI entry points for email/password auth, photo backup, and sync components in `shared/src/commonMain/kotlin/org/deafsapps/storeit/di/AppModule.kt`
-- [ ] T003 [P] Add secure-session and remote-provider abstraction shells for email/password auth and dataset/photo sync in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/auth/RemoteAuthDataSource.kt`
+- [X] T002 [P] Reserve shared DI entry points for email/password auth, photo backup, and sync components in `shared/src/commonMain/kotlin/org/deafsapps/storeit/di/AppModule.kt`
+- [X] T003 [P] Add secure-session and remote-provider abstraction shells for email/password auth and dataset/photo sync in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/AuthRemoteDataSource.kt`
 
 ---
 
