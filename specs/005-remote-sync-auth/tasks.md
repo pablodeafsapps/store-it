@@ -24,11 +24,11 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Prepare shared dependencies and dependency injection for account-backed sync work.
+**Purpose**: Prepare shared dependencies and dependency injection for email/password account sync with photo backup.
 
 - [X] T001 Update remote sync dependencies and source set wiring in `shared/build.gradle.kts`
-- [ ] T002 [P] Reserve shared DI entry points for auth and sync components in `shared/src/commonMain/kotlin/org/deafsapps/storeit/di/AppModule.kt`
-- [ ] T003 [P] Add secure-session and remote-provider abstraction shells in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/auth/RemoteAuthDataSource.kt`
+- [ ] T002 [P] Reserve shared DI entry points for email/password auth, photo backup, and sync components in `shared/src/commonMain/kotlin/org/deafsapps/storeit/di/AppModule.kt`
+- [ ] T003 [P] Add secure-session and remote-provider abstraction shells for email/password auth and dataset/photo sync in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/auth/RemoteAuthDataSource.kt`
 
 ---
 
@@ -38,11 +38,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Extend local persistence for account sessions, dataset state, and sync queue metadata in `shared/src/commonMain/sqldelight/org/deafsapps/storeit/data/database/StoreItDatabase.sq`
-- [ ] T005 [P] Create shared account and sync domain models in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/model/AccountSyncModels.kt`
-- [ ] T006 [P] Define account, sync, reconciliation, and session-store contracts in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/repository/AccountSyncRepositories.kt`
+- [ ] T004 Extend local persistence for account sessions, dataset state, photo sync scope, and sync queue metadata in `shared/src/commonMain/sqldelight/org/deafsapps/storeit/data/database/StoreItDatabase.sq`
+- [ ] T005 [P] Create shared account and sync domain models for email/password auth, restore-pending state, and signed-out-with-local-copy mode in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/model/AccountSyncModels.kt`
+- [ ] T006 [P] Define account, sync, reconciliation, photo-backup, and session-store contracts in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/repository/AccountSyncRepositories.kt`
 - [ ] T007 [P] Add SQLDelight-backed sync metadata data sources in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/SqlDelightSyncMetadataDataSource.kt`
-- [ ] T008 Implement shared sync orchestration primitives and error mapping in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncCoordinator.kt`
+- [ ] T008 Implement shared sync orchestration primitives and error mapping for synchronized, pending-upload, pending-restore, failed, and reconciliation-required states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncCoordinator.kt`
 - [ ] T009 Create Android secure session storage actual in `shared/src/androidMain/kotlin/org/deafsapps/storeit/data/auth/SessionCredentialStore.android.kt`
 - [ ] T010 Create iOS secure session storage actual in `shared/src/iosMain/kotlin/org/deafsapps/storeit/data/auth/SessionCredentialStore.ios.kt`
 
@@ -52,24 +52,24 @@
 
 ## Phase 3: User Story 1 - Back Up With An Account (Priority: P1) 🎯 MVP
 
-**Goal**: Let users sign up or sign in, restore their backed-up dataset into the local store, and keep remote data authoritative after successful sync.
+**Goal**: Let users sign up or sign in with email/password, restore their backed-up dataset and photos into the local store, and keep remote data authoritative after successful sync.
 
 **Independent Test**: A user can sign up or sign in, modify organizer data, relaunch the app, and see the same account-backed data restored into the local copy.
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Add sign-up, sign-in, and session-restore use case coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCaseTest.kt`
-- [ ] T012 [P] [US1] Add first-sync restore and remote-authority repository coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/repository/AccountSyncRepositoryTest.kt`
-- [ ] T013 [P] [US1] Add account presentation state coverage for authenticated restore in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/AccountViewModelTest.kt`
+- [ ] T011 [P] [US1] Add email/password sign-up, sign-in, and session-restore use case coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCaseTest.kt`
+- [ ] T012 [P] [US1] Add first-sync dataset-plus-photo restore and remote-authority repository coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/repository/AccountSyncRepositoryTest.kt`
+- [ ] T013 [P] [US1] Add account presentation state coverage for authenticated restore and restore-pending status in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/AccountViewModelTest.kt`
 
 ### Implementation for User Story 1
 
-- [ ] T014 [P] [US1] Implement Firebase-backed account authentication repository in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseAccountRepository.kt`
-- [ ] T015 [P] [US1] Implement remote dataset snapshot fetch and apply pipeline in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseRemoteAccountDataSource.kt`
-- [ ] T016 [US1] Implement sign-up, sign-in, and session-restore use cases in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCases.kt`
-- [ ] T017 [US1] Implement account-backed synchronization bootstrap and restore flow in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/AccountRestoreCoordinator.kt`
-- [ ] T018 [US1] Expose account mode and restore state through shared presentation models in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/model/AccountUiState.kt`
-- [ ] T019 [US1] Implement shared account entry and restore view model in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/viewmodel/AccountViewModel.kt`
+- [ ] T014 [P] [US1] Implement Firebase-backed email/password account authentication repository in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseAccountRepository.kt`
+- [ ] T015 [P] [US1] Implement remote dataset and photo snapshot fetch/apply pipeline in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseRemoteAccountDataSource.kt`
+- [ ] T016 [US1] Implement email/password sign-up, sign-in, and session-restore use cases in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCases.kt`
+- [ ] T017 [US1] Implement account-backed synchronization bootstrap and restore flow with restore-pending handling in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/AccountRestoreCoordinator.kt`
+- [ ] T018 [US1] Expose account mode, synchronized, and restore-pending state through shared presentation models in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/model/AccountUiState.kt`
+- [ ] T019 [US1] Implement shared account entry and restore view model for email/password auth and restore retry in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/viewmodel/AccountViewModel.kt`
 
 **Checkpoint**: User Story 1 should be fully functional and independently testable.
 
@@ -83,18 +83,18 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] Add pending-operation queue and retry coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/sync/SyncCoordinatorTest.kt`
+- [ ] T020 [P] [US2] Add pending-operation queue, restore retry, and sync retry coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/sync/SyncCoordinatorTest.kt`
 - [ ] T021 [P] [US2] Add offline mutation persistence coverage for organizer repositories in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/repository/OfflineMutationQueueTest.kt`
 - [ ] T022 [P] [US2] Add sync-status presentation coverage for pending and failed states in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/sync/SyncStatusViewModelTest.kt`
 
 ### Implementation for User Story 2
 
 - [ ] T023 [P] [US2] Record create, update, and delete sync operations from local organizer writes in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncOperationRecorder.kt`
-- [ ] T024 [P] [US2] Implement pending upload, retry, and failure persistence rules in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/DefaultSyncRepository.kt`
+- [ ] T024 [P] [US2] Implement pending upload, pending restore, retry, and failure persistence rules in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/DefaultSyncRepository.kt`
 - [ ] T025 [US2] Integrate sync operation recording into rack, slot, and item repositories in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/SyncAwareOrganizerRepositories.kt`
 - [ ] T026 [US2] Implement signed-in sync trigger use cases for retry and background catch-up in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/SyncAccountDataUseCases.kt`
-- [ ] T027 [US2] Expose user-visible sync status and recoverable failure messaging in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/sync/model/SyncStatusUiState.kt`
-- [ ] T028 [US2] Implement shared sync status view model for pending, failed, and synchronized states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/sync/viewmodel/SyncStatusViewModel.kt`
+- [ ] T027 [US2] Expose user-visible sync status and recoverable failure messaging for pending upload, pending restore, failed, and synchronized states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/sync/model/SyncStatusUiState.kt`
+- [ ] T028 [US2] Implement shared sync status view model for pending upload, pending restore, failed, and synchronized states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/sync/viewmodel/SyncStatusViewModel.kt`
 
 **Checkpoint**: User Stories 1 and 2 should both work independently.
 
@@ -102,24 +102,24 @@
 
 ## Phase 5: User Story 3 - Stay Local By Choice (Priority: P3)
 
-**Goal**: Preserve local-only mode, let users attach existing local data to an account later, and make sign-out plus reconciliation safe and explicit.
+**Goal**: Preserve local-only mode, let users attach existing local data to an account later, and make sign-out plus reconciliation safe and explicit with only keep-local or keep-remote outcomes.
 
 **Independent Test**: A local-only user can keep using the app without an account, later connect an account without silent data loss, and sign out while still understanding what local data remains.
 
 ### Tests for User Story 3
 
-- [ ] T029 [P] [US3] Add reconciliation decision and conflict-summary coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/ReconcileDatasetsUseCaseTest.kt`
-- [ ] T030 [P] [US3] Add local-only mode and sign-out data-retention coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/repository/LocalModeAccountRepositoryTest.kt`
-- [ ] T031 [P] [US3] Add local-only and reconciliation presentation coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/LocalModeViewModelTest.kt`
+- [ ] T029 [P] [US3] Add keep-local vs keep-remote reconciliation decision and conflict-summary coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/ReconcileDatasetsUseCaseTest.kt`
+- [ ] T030 [P] [US3] Add local-only mode and sign-out-to-local-only data-retention coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/repository/LocalModeAccountRepositoryTest.kt`
+- [ ] T031 [P] [US3] Add local-only, signed-out-with-local-copy, and reconciliation presentation coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/LocalModeViewModelTest.kt`
 
 ### Implementation for User Story 3
 
-- [ ] T032 [P] [US3] Implement reconciliation detection and summary generation in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/DefaultReconciliationRepository.kt`
-- [ ] T033 [P] [US3] Implement reconciliation decision use cases for keep-local, keep-remote, and merge flows in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/ReconcileDatasetsUseCases.kt`
-- [ ] T034 [US3] Implement local-only to account-backed migration flow in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/LocalToAccountMigrationCoordinator.kt`
-- [ ] T035 [US3] Implement sign-out safeguards for pending changes and local data retention in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/SignOutAccountUseCase.kt`
+- [ ] T032 [P] [US3] Implement reconciliation detection and summary generation for explicit keep-local vs keep-remote choice in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/DefaultReconciliationRepository.kt`
+- [ ] T033 [P] [US3] Implement reconciliation decision use cases for keep-local and keep-remote flows in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/ReconcileDatasetsUseCases.kt`
+- [ ] T034 [US3] Implement local-only to account-backed migration flow for empty-remote upload and non-empty-remote reconciliation in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/LocalToAccountMigrationCoordinator.kt`
+- [ ] T035 [US3] Implement sign-out safeguards for pending changes and transition into local-only retained data in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/SignOutAccountUseCase.kt`
 - [ ] T036 [US3] Expose local-only, reconciliation-required, and signed-out-with-local-copy state in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/model/LocalModeUiState.kt`
-- [ ] T037 [US3] Implement shared local-mode and reconciliation view model in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/viewmodel/LocalModeViewModel.kt`
+- [ ] T037 [US3] Implement shared local-mode and reconciliation view model for keep-local vs keep-remote flows in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/viewmodel/LocalModeViewModel.kt`
 
 **Checkpoint**: All user stories should now be independently functional.
 
@@ -127,10 +127,10 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-**Purpose**: Finish observability, docs, and acceptance validation across the whole feature.
+**Purpose**: Finish observability, docs, privacy/security references, and acceptance validation across the whole feature.
 
 - [ ] T038 [P] Add sync telemetry and success-metric instrumentation points in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncTelemetry.kt`
-- [ ] T039 [P] Update feature and developer documentation in `specs/005-remote-sync-auth/quickstart.md`
+- [ ] T039 [P] Update feature documentation and add the planned privacy/security document reference in `specs/005-remote-sync-auth/quickstart.md`
 - [ ] T040 Run quickstart validation scenarios and record final implementation notes in `specs/005-remote-sync-auth/quickstart.md`
 
 ---
@@ -150,13 +150,14 @@
 
 - **US1 (P1)**: Can start immediately after the foundational phase.
 - **US2 (P2)**: Requires the signed-in account flow from US1 to exist, but remains independently testable once that slice is present.
-- **US3 (P3)**: Requires the shared account and sync primitives, but remains independently testable as a local-only plus reconciliation slice.
+- **US3 (P3)**: Requires the shared account and sync primitives, but remains independently testable as a local-only plus explicit keep-local/keep-remote reconciliation slice.
 
 ### Within Each User Story
 
 - Tests must be written and fail before implementation.
 - Data sources and repositories come before coordinating use cases.
 - Use cases come before presentation models and view models.
+- Reconciliation tasks must preserve the v1 constraint that merge is out of scope.
 - Story-specific checkpoints should be validated before moving to the next priority.
 
 ### Parallel Opportunities
@@ -195,15 +196,15 @@ Task: "Implement remote dataset snapshot fetch and apply pipeline in shared/src/
 1. Complete Phase 1: Setup.
 2. Complete Phase 2: Foundational.
 3. Complete Phase 3: User Story 1.
-4. Validate sign-up, sign-in, restore, and post-relaunch continuity.
+4. Validate email/password sign-up, sign-in, restore, photo recovery, and post-relaunch continuity.
 5. Demo the account-backed backup flow before expanding scope.
 
 ### Incremental Delivery
 
 1. Setup + Foundational -> shared auth and sync infrastructure ready.
 2. Add US1 -> validate account backup and restore.
-3. Add US2 -> validate offline work and retry synchronization.
-4. Add US3 -> validate local-only continuity, reconciliation, and safe sign-out.
+3. Add US2 -> validate offline work, pending restore, and retry synchronization.
+4. Add US3 -> validate local-only continuity, explicit keep-local/keep-remote reconciliation, and safe sign-out into local-only mode.
 5. Finish polish -> run quickstart scenarios and capture final notes.
 
 ### Single-Engineer Delivery Strategy
