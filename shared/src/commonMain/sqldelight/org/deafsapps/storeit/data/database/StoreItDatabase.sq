@@ -17,6 +17,7 @@ CREATE TABLE shelf_slots (
     y_rel REAL NOT NULL
 );
 
+-- Supports selecting all slots for a rack without scanning the full table.
 CREATE INDEX shelf_slots_rack_id_idx ON shelf_slots(rack_id);
 
 CREATE TABLE items (
@@ -33,8 +34,72 @@ CREATE TABLE items (
     updated_at INTEGER
 );
 
-CREATE INDEX items_rack_id_idx ON items(rack_id);
+-- Covers rack-wide item reads and narrower rack+slot reads with one composite index.
 CREATE INDEX items_rack_slot_id_idx ON items(rack_id, slot_id);
+
+CREATE TABLE account_sessions (
+    account_id TEXT NOT NULL PRIMARY KEY,
+    email TEXT NOT NULL,
+    session_state TEXT NOT NULL,
+    access_token TEXT,
+    refresh_token TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at INTEGER,
+    last_authenticated_at INTEGER
+);
+
+CREATE TABLE remote_account_datasets (
+    account_id TEXT NOT NULL PRIMARY KEY,
+    dataset_version TEXT NOT NULL,
+    last_synced_at INTEGER
+);
+
+CREATE TABLE local_dataset_state (
+    singleton_id INTEGER NOT NULL PRIMARY KEY CHECK (singleton_id = 1),
+    mode TEXT NOT NULL,
+    account_id TEXT,
+    last_local_change_at INTEGER,
+    last_remote_sync_at INTEGER,
+    has_pending_changes INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE sync_state (
+    singleton_id INTEGER NOT NULL PRIMARY KEY CHECK (singleton_id = 1),
+    status TEXT NOT NULL,
+    failure_reason TEXT,
+    last_attempt_at INTEGER,
+    pending_operation_count INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE sync_operations (
+    id TEXT NOT NULL PRIMARY KEY,
+    account_id TEXT,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    operation_type TEXT NOT NULL,
+    payload_json TEXT,
+    sync_status TEXT NOT NULL,
+    recorded_at INTEGER NOT NULL,
+    last_attempt_at INTEGER,
+    failure_reason TEXT
+);
+
+-- Supports pending-operation reads ordered by recorded time.
+CREATE INDEX sync_operations_status_idx ON sync_operations(sync_status, recorded_at, id);
+
+CREATE TABLE photo_sync_scope (
+    photo_id TEXT NOT NULL PRIMARY KEY,
+    owner_type TEXT NOT NULL,
+    owner_id TEXT NOT NULL,
+    local_uri TEXT NOT NULL,
+    remote_url TEXT,
+    checksum TEXT,
+    sync_status TEXT NOT NULL,
+    last_synced_at INTEGER
+);
+
+-- Supports pending photo-sync reads filtered by sync status and ordered by photo id.
+CREATE INDEX photo_sync_scope_status_idx ON photo_sync_scope(sync_status, photo_id);
 
 selectAllRacks:
 SELECT * FROM racks
@@ -45,7 +110,7 @@ SELECT * FROM racks
 WHERE id = ?;
 
 upsertRack:
-INSERT INTO racks(
+INSERT OR REPLACE INTO racks(
     id,
     name,
     description,
@@ -53,14 +118,7 @@ INSERT INTO racks(
     photo_uri,
     created_at,
     updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT(id) DO UPDATE SET
-    name = excluded.name,
-    description = excluded.description,
-    location = excluded.location,
-    photo_uri = excluded.photo_uri,
-    created_at = excluded.created_at,
-    updated_at = excluded.updated_at;
+) VALUES (?, ?, ?, ?, ?, ?, ?);
 
 deleteRackById:
 DELETE FROM racks
@@ -74,20 +132,14 @@ SELECT * FROM shelf_slots
 WHERE rack_id = ?;
 
 upsertSlot:
-INSERT INTO shelf_slots(
+INSERT OR REPLACE INTO shelf_slots(
     id,
     rack_id,
     x,
     y,
     x_rel,
     y_rel
-) VALUES (?, ?, ?, ?, ?, ?)
-ON CONFLICT(id) DO UPDATE SET
-    rack_id = excluded.rack_id,
-    x = excluded.x,
-    y = excluded.y,
-    x_rel = excluded.x_rel,
-    y_rel = excluded.y_rel;
+) VALUES (?, ?, ?, ?, ?, ?);
 
 deleteSlotsByRack:
 DELETE FROM shelf_slots
@@ -145,3 +197,148 @@ WHERE rack_id = ?;
 
 deleteAllItems:
 DELETE FROM items;
+
+selectActiveAccountSession:
+SELECT * FROM account_sessions
+WHERE is_active = 1
+ORDER BY COALESCE(last_authenticated_at, created_at) DESC
+LIMIT 1;
+
+selectAccountSessionByAccountId:
+SELECT * FROM account_sessions
+WHERE account_id = ?;
+
+upsertAccountSession:
+INSERT OR REPLACE INTO account_sessions(
+    account_id,
+    email,
+    session_state,
+    access_token,
+    refresh_token,
+    is_active,
+    created_at,
+    last_authenticated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+clearActiveAccountSessions:
+UPDATE account_sessions
+SET is_active = 0
+WHERE is_active = 1;
+
+deleteAccountSessionByAccountId:
+DELETE FROM account_sessions
+WHERE account_id = ?;
+
+deleteAllAccountSessions:
+DELETE FROM account_sessions;
+
+selectRemoteAccountDatasetByAccountId:
+SELECT * FROM remote_account_datasets
+WHERE account_id = ?;
+
+upsertRemoteAccountDataset:
+INSERT OR REPLACE INTO remote_account_datasets(
+    account_id,
+    dataset_version,
+    last_synced_at
+) VALUES (?, ?, ?);
+
+deleteRemoteAccountDatasetByAccountId:
+DELETE FROM remote_account_datasets
+WHERE account_id = ?;
+
+deleteAllRemoteAccountDatasets:
+DELETE FROM remote_account_datasets;
+
+selectLocalDatasetState:
+SELECT * FROM local_dataset_state
+WHERE singleton_id = 1;
+
+upsertLocalDatasetState:
+INSERT OR REPLACE INTO local_dataset_state(
+    singleton_id,
+    mode,
+    account_id,
+    last_local_change_at,
+    last_remote_sync_at,
+    has_pending_changes
+) VALUES (1, ?, ?, ?, ?, ?);
+
+deleteLocalDatasetState:
+DELETE FROM local_dataset_state
+WHERE singleton_id = 1;
+
+selectSyncState:
+SELECT * FROM sync_state
+WHERE singleton_id = 1;
+
+upsertSyncState:
+INSERT OR REPLACE INTO sync_state(
+    singleton_id,
+    status,
+    failure_reason,
+    last_attempt_at,
+    pending_operation_count
+) VALUES (1, ?, ?, ?, ?);
+
+deleteSyncState:
+DELETE FROM sync_state
+WHERE singleton_id = 1;
+
+selectSyncOperations:
+SELECT * FROM sync_operations
+ORDER BY recorded_at ASC, id ASC;
+
+selectPendingSyncOperations:
+SELECT * FROM sync_operations
+WHERE sync_status IN ('pending', 'failed')
+ORDER BY recorded_at ASC, id ASC;
+
+upsertSyncOperation:
+INSERT OR REPLACE INTO sync_operations(
+    id,
+    account_id,
+    entity_type,
+    entity_id,
+    operation_type,
+    payload_json,
+    sync_status,
+    recorded_at,
+    last_attempt_at,
+    failure_reason
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteSyncOperationById:
+DELETE FROM sync_operations
+WHERE id = ?;
+
+deleteAllSyncOperations:
+DELETE FROM sync_operations;
+
+selectPhotoSyncScope:
+SELECT * FROM photo_sync_scope
+ORDER BY photo_id ASC;
+
+selectPendingPhotoSyncScope:
+SELECT * FROM photo_sync_scope
+WHERE sync_status IN ('pending_upload', 'pending_delete', 'failed')
+ORDER BY photo_id ASC;
+
+upsertPhotoSyncScope:
+INSERT OR REPLACE INTO photo_sync_scope(
+    photo_id,
+    owner_type,
+    owner_id,
+    local_uri,
+    remote_url,
+    checksum,
+    sync_status,
+    last_synced_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deletePhotoSyncScopeById:
+DELETE FROM photo_sync_scope
+WHERE photo_id = ?;
+
+deleteAllPhotoSyncScope:
+DELETE FROM photo_sync_scope;

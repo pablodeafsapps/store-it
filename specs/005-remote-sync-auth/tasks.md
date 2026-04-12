@@ -38,9 +38,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Extend local persistence for account sessions, dataset state, photo sync scope, and sync queue metadata in `shared/src/commonMain/sqldelight/org/deafsapps/storeit/data/database/StoreItDatabase.sq`
-- [ ] T005 [P] Create shared account and sync domain models for email/password auth, restore-pending state, and signed-out-with-local-copy mode in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/model/AccountSyncModels.kt`
-- [ ] T006 [P] Define account, sync, reconciliation, photo-backup, and session-store contracts in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/repository/AccountSyncRepositories.kt`
+- [X] T004 Extend local persistence for account sessions, dataset state, photo sync scope, and sync queue metadata in `shared/src/commonMain/sqldelight/org/deafsapps/storeit/data/database/StoreItDatabase.sq`
+- [X] T005 [P] Create shared account and sync domain models for email/password auth, restore-pending state, and signed-out-with-local-copy mode in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/model/AccountSyncModels.kt`
+- [X] T006 [P] Define account, sync, reconciliation, photo-backup, and session-store contracts in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/repository/AccountSyncRepositories.kt`
 - [ ] T007 [P] Add SQLDelight-backed sync metadata data sources in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/SqlDelightSyncMetadataDataSource.kt`
 - [ ] T008 Implement shared sync orchestration primitives and error mapping for synchronized, pending-upload, pending-restore, failed, and reconciliation-required states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncCoordinator.kt`
 - [ ] T009 Create Android secure session storage actual in `shared/src/androidMain/kotlin/org/deafsapps/storeit/data/auth/SessionCredentialStore.android.kt`
