@@ -199,13 +199,25 @@ deleteAllItems:
 DELETE FROM items;
 
 selectActiveAccountSession:
-SELECT * FROM account_sessions
+SELECT
+    account_id,
+    email,
+    session_state,
+    created_at,
+    last_authenticated_at
+FROM account_sessions
 WHERE is_active = 1
 ORDER BY COALESCE(last_authenticated_at, created_at) DESC
 LIMIT 1;
 
 selectAccountSessionByAccountId:
-SELECT * FROM account_sessions
+SELECT
+    account_id,
+    email,
+    session_state,
+    created_at,
+    last_authenticated_at
+FROM account_sessions
 WHERE account_id = ?;
 
 upsertAccountSession:
@@ -233,7 +245,11 @@ deleteAllAccountSessions:
 DELETE FROM account_sessions;
 
 selectRemoteAccountDatasetByAccountId:
-SELECT * FROM remote_account_datasets
+SELECT
+    account_id,
+    dataset_version,
+    last_synced_at
+FROM remote_account_datasets
 WHERE account_id = ?;
 
 upsertRemoteAccountDataset:
@@ -251,7 +267,13 @@ deleteAllRemoteAccountDatasets:
 DELETE FROM remote_account_datasets;
 
 selectLocalDatasetState:
-SELECT * FROM local_dataset_state
+SELECT
+    mode,
+    account_id,
+    last_local_change_at,
+    last_remote_sync_at,
+    has_pending_changes
+FROM local_dataset_state
 WHERE singleton_id = 1;
 
 upsertLocalDatasetState:
@@ -269,7 +291,12 @@ DELETE FROM local_dataset_state
 WHERE singleton_id = 1;
 
 selectSyncState:
-SELECT * FROM sync_state
+SELECT
+    status,
+    failure_reason,
+    last_attempt_at,
+    pending_operation_count
+FROM sync_state
 WHERE singleton_id = 1;
 
 upsertSyncState:
