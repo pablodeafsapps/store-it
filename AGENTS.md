@@ -24,19 +24,24 @@ Apply these instructions for work in this repository.
 ## KMP Placement
 
 - Follow the `kmp-source-set-placement` skill when adding or moving Kotlin Multiplatform code.
-- Preferred skill path:
+- Canonical project skill path:
+  - `.agents/skills/kmp-source-set-placement/SKILL.md`
+- Engine-specific mirrors may also exist in:
   - `.cursor/skills/kmp-source-set-placement/SKILL.md`
-- Fallback skill path:
+- User-level fallback skill path:
   - `/Users/pablo/.codex/skills/kmp-source-set-placement/SKILL.md`
 
 ## Delivery workflow
 
 When starting or finishing substantive work in this repository, follow the `store-it-delivery-workflow` skill.
 
-Preferred skill path:
+Canonical project skill path:
+- `.agents/skills/store-it-delivery-workflow/SKILL.md`
+
+Engine-specific mirrors may also exist in:
 - `.cursor/skills/store-it-delivery-workflow/SKILL.md`
 
-Fallback skill path:
+User-level fallback skill path:
 - `/Users/pablo/.codex/skills/store-it-delivery-workflow/SKILL.md`
 
 This includes:
@@ -44,6 +49,12 @@ This includes:
 - running the Gradle verification steps before handoff,
 - confirming the iOS build when shared Kotlin or framework integration changed,
 - leaving changes in a commit-ready state.
+
+## Skills And Rules
+
+- Canonical project-owned skills live under `.agents/skills/`.
+- Engine-specific guidance may also live under `.cursor/skills/`, `.cursor/rules/`, `.claude/commands/`, or other engine folders. Treat those as engine adapters or overlays, not as the primary project source of truth.
+- When the same capability exists in more than one place, keep `.agents/skills/` authoritative and keep engine-specific copies aligned with it.
 
 ## Feature Workflow
 
@@ -84,6 +95,7 @@ For all new and modified Kotlin files in this project:
 - Prefer exhaustive `when` over long `if`/`else` chains for sealed hierarchies.
 - Avoid `!!`; use explicit null handling and boundary checks instead.
 - Use `value.ok()` and `error.err()` when constructing result values.
+- For datasource delete and clear operations, prefer `Result<DomainError, Long>` when the backing store can report affected-row counts. Treat `ok(0L)` as a successful no-op, not as an error.
 - Protect mutable in-memory repository state with `Mutex` and `withLock`.
 
 ## Testing

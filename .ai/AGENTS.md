@@ -9,6 +9,13 @@ This document defines how agents (humans or tools) should reason about, extend, 
 
 The target audience is experienced Android engineers building or reviewing a KMP codebase.
 
+## Skill And Rule Sources
+
+- Canonical project-owned skills live under `.agents/skills/`.
+- Engine-specific overlays may also exist under `.cursor/skills/`, `.cursor/rules/`, and `.claude/commands/`.
+- User-level fallback skills may exist under `/Users/pablo/.codex/skills/`.
+- When the same workflow or guidance exists in multiple places, prefer `.agents/skills/` as the authoritative project source and keep the engine-specific copies aligned to it.
+
 ---
 
 ## 1. High-Level System Shape
@@ -160,6 +167,7 @@ The following stack is designed to align with official KMP recommendations and c
   - Map infrastructure exceptions to domain errors at boundaries (e.g. `Either.catch { ... }.mapLeft { toDomainError(it) }`).
   - Presentation/UI layers `fold` or pattern-match on the result to derive UI state and user-facing messages.
 - **Building Result values**: Prefer the extension functions `value.ok()` and `error.err()` when constructing success/failure (e.g. `list.ok()`, `DomainError.NotFound(...).err()`) instead of `Result.ok(value)` / `Result.err(error)`.
+- **Delete / clear result shape**: For datasource operations that delete or clear persisted records, prefer `Result<DomainError, Long>` when the underlying store can report affected-row counts. `ok(0L)` means the operation executed successfully and nothing matched; reserve `err(...)` for execution failures.
 - **Swift alignment**: In iOS code, mirror the same semantics with Swift enums with associated values (e.g. `Result<Success, Failure>`) or a custom `Either`-like type so success/failure handling stays consistent across the stack.
 
 ### 4.3 Networking

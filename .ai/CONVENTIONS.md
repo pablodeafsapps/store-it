@@ -2,6 +2,13 @@
 
 A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swift platform idioms with Clean Architecture and SOLID. Target: seasoned Android engineers.
 
+## Skill And Rule Sources
+
+- Canonical project-owned skills live under `.agents/skills/`.
+- Engine-specific overlays may also exist under `.cursor/skills/`, `.cursor/rules/`, and `.claude/commands/`.
+- User-level fallback skills may exist under `/Users/pablo/.codex/skills/`.
+- When the same workflow or guidance exists in multiple places, prefer `.agents/skills/` as the authoritative project source and keep the engine-specific copies aligned to it.
+
 ---
 
 ## 1. Kotlin Conventions
@@ -40,6 +47,7 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 - Prefer `?.let { }` or early return over nested null checks.
 - Use `require()` / `check()` / `requireNotNull()` for preconditions; `error()` for unreachable or illegal state.
 - Prefer `Sequence` for chained transformations on large collections; use `Iterable` when you need multiple iterations or materialized results.
+- For datasource delete and clear operations, prefer `Result<DomainError, Long>` when the backing store can report affected-row counts. Use `ok(0L)` for a successful no-op and reserve `err(...)` for execution failures.
 
 ### 1.5 Nullability & Types
 
