@@ -49,7 +49,7 @@ internal class GetItemByIdUseCaseTest {
 
     @Test
     fun `GIVEN fake returns Unknown WHEN invoke THEN returns unknown`() = runTest {
-        fakeItemRepository.getItemByIdResult = DomainError.Unknown.err()
+        fakeItemRepository.getItemByIdResult = DomainError.Unknown().err()
 
         val result = sut(input = "i1")
 

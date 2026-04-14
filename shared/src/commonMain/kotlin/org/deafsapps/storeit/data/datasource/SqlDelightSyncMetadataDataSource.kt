@@ -24,6 +24,7 @@ import org.deafsapps.storeit.domain.model.SyncOperation
 import org.deafsapps.storeit.domain.model.SyncOperationStatus
 import org.deafsapps.storeit.domain.model.SyncState
 import org.deafsapps.storeit.domain.model.SyncStatus
+import org.deafsapps.storeit.domain.model.toUnknownDomainError
 import org.koin.core.annotation.Single
 
 @Single(
@@ -53,7 +54,7 @@ internal class SqlDelightSyncMetadataDataSource(
           .asFlow()
           .mapToOneOrNull(context = Dispatchers.IO)
           .map { data -> data.ok() as Result<DomainError, AccountSession?> }
-          .catch { emit(DomainError.Unknown.err()) }
+          .catch { throwable -> emit(throwable.toUnknownDomainError().err()) }
 
   override suspend fun getAccountSession(accountId: String): Result<DomainError, AccountSession?> =
       try {
@@ -64,8 +65,8 @@ internal class SqlDelightSyncMetadataDataSource(
             )
             .executeAsOneOrNull()
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun saveAccountSession(
@@ -83,15 +84,15 @@ internal class SqlDelightSyncMetadataDataSource(
             last_authenticated_at = accountSession.lastAuthenticatedAt,
         )
         accountSession.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun clearActiveAccountSessions(): Result<DomainError, Long> =
       try {
         databaseProvider.database.storeItDatabaseQueries.clearActiveAccountSessions().value.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun deleteAccountSession(accountId: String): Result<DomainError, Long> =
@@ -100,8 +101,8 @@ internal class SqlDelightSyncMetadataDataSource(
             .deleteAccountSessionByAccountId(account_id = accountId)
             .value
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun getAccountDataset(accountId: String): Result<DomainError, AccountDataset?> =
@@ -113,8 +114,8 @@ internal class SqlDelightSyncMetadataDataSource(
             )
             .executeAsOneOrNull()
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun saveAccountDataset(
@@ -127,8 +128,8 @@ internal class SqlDelightSyncMetadataDataSource(
             last_synced_at = accountDataset.lastSyncedAt,
         )
         accountDataset.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun deleteAccountDataset(accountId: String): Result<DomainError, Long> =
@@ -137,8 +138,8 @@ internal class SqlDelightSyncMetadataDataSource(
             .deleteRemoteAccountDatasetByAccountId(account_id = accountId)
             .value
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override fun observeLocalDatasetState(): Flow<Result<DomainError, LocalDatasetState?>> =
@@ -147,7 +148,7 @@ internal class SqlDelightSyncMetadataDataSource(
           .asFlow()
           .mapToOneOrNull(context = Dispatchers.IO)
           .map { data -> data.ok() as Result<DomainError, LocalDatasetState?> }
-          .catch { emit(DomainError.Unknown.err()) }
+          .catch { throwable -> emit(throwable.toUnknownDomainError().err()) }
 
   override suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?> =
       try {
@@ -155,8 +156,8 @@ internal class SqlDelightSyncMetadataDataSource(
             .selectLocalDatasetState(mapper = ::mapLocalDatasetState)
             .executeAsOneOrNull()
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
     override suspend fun saveLocalDatasetState(
@@ -170,15 +171,15 @@ internal class SqlDelightSyncMetadataDataSource(
             has_pending_changes = if (localDatasetState.hasPendingChanges) 1 else 0,
         )
         localDatasetState.ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
   override suspend fun deleteLocalDatasetState(): Result<DomainError, Long> =
       try {
         databaseProvider.database.storeItDatabaseQueries.deleteLocalDatasetState().value.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override fun observeSyncState(): Flow<Result<DomainError, SyncState?>> =
@@ -187,7 +188,7 @@ internal class SqlDelightSyncMetadataDataSource(
           .asFlow()
           .mapToOneOrNull(context = Dispatchers.IO)
           .map { data -> data.ok() as Result<DomainError, SyncState?> }
-          .catch { emit(DomainError.Unknown.err()) }
+          .catch { throwable -> emit(throwable.toUnknownDomainError().err()) }
 
   override suspend fun getSyncState(): Result<DomainError, SyncState?> =
       try {
@@ -195,8 +196,8 @@ internal class SqlDelightSyncMetadataDataSource(
             .selectSyncState(mapper = ::mapSyncState)
             .executeAsOneOrNull()
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun saveSyncState(syncState: SyncState): Result<DomainError, SyncState> =
@@ -208,15 +209,15 @@ internal class SqlDelightSyncMetadataDataSource(
             pending_operation_count = syncState.pendingOperationCount.toLong(),
         )
         syncState.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun deleteSyncState(): Result<DomainError, Long> =
       try {
         databaseProvider.database.storeItDatabaseQueries.deleteSyncState().value.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override fun observePendingSyncOperations(): Flow<Result<DomainError, List<SyncOperation>>> =
@@ -225,7 +226,7 @@ internal class SqlDelightSyncMetadataDataSource(
           .asFlow()
           .mapToList(context = Dispatchers.IO)
           .map { data -> data.ok() as Result<DomainError, List<SyncOperation>> }
-          .catch { emit(DomainError.Unknown.err()) }
+          .catch { throwable -> emit(throwable.toUnknownDomainError().err()) }
 
   override suspend fun getPendingSyncOperations(): Result<DomainError, List<SyncOperation>> =
       try {
@@ -233,8 +234,8 @@ internal class SqlDelightSyncMetadataDataSource(
             .selectPendingSyncOperations(mapper = ::mapSyncOperation)
             .executeAsList()
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun saveSyncOperation(
@@ -254,8 +255,8 @@ internal class SqlDelightSyncMetadataDataSource(
             failure_reason = syncOperation.failureReason,
         )
         syncOperation.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun deleteSyncOperation(operationId: String): Result<DomainError, Long> =
@@ -264,15 +265,15 @@ internal class SqlDelightSyncMetadataDataSource(
             .deleteSyncOperationById(id = operationId)
             .value
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun clearSyncOperations(): Result<DomainError, Long> =
       try {
         databaseProvider.database.storeItDatabaseQueries.deleteAllSyncOperations().value.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override fun observePhotoSyncScope(): Flow<Result<DomainError, List<PhotoSyncScope>>> =
@@ -281,7 +282,7 @@ internal class SqlDelightSyncMetadataDataSource(
           .asFlow()
           .mapToList(context = Dispatchers.IO)
           .map { data -> data.ok() as Result<DomainError, List<PhotoSyncScope>> }
-          .catch { emit(DomainError.Unknown.err()) }
+          .catch { throwable -> emit(throwable.toUnknownDomainError().err()) }
 
   override suspend fun getPendingPhotoSyncScope(): Result<DomainError, List<PhotoSyncScope>> =
       try {
@@ -289,8 +290,8 @@ internal class SqlDelightSyncMetadataDataSource(
             .selectPendingPhotoSyncScope(mapper = ::mapPhotoSyncScope)
             .executeAsList()
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun savePhotoSyncScope(
@@ -314,8 +315,8 @@ internal class SqlDelightSyncMetadataDataSource(
             last_synced_at = photoSyncScope.lastSyncedAt,
         )
         photoSyncScope.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun deletePhotoSyncScope(photoId: String): Result<DomainError, Long> =
@@ -324,15 +325,15 @@ internal class SqlDelightSyncMetadataDataSource(
             .deletePhotoSyncScopeById(photo_id = photoId)
             .value
             .ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   override suspend fun clearPhotoSyncScope(): Result<DomainError, Long> =
       try {
         databaseProvider.database.storeItDatabaseQueries.deleteAllPhotoSyncScope().value.ok()
-      } catch (_: Throwable) {
-        DomainError.Unknown.err()
+      } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
       }
 
   private fun mapAccountSession(

@@ -105,7 +105,7 @@ class GetSyncStageUseCaseTest {
                     accountId = "account-1",
                     hasPendingChanges = true,
                 ),
-                syncError = DomainError.Unknown,
+                syncError = DomainError.Unknown(),
             ),
         )
 

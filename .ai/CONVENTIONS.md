@@ -48,6 +48,7 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 - Use `require()` / `check()` / `requireNotNull()` for preconditions; `error()` for unreachable or illegal state.
 - Prefer `Sequence` for chained transformations on large collections; use `Iterable` when you need multiple iterations or materialized results.
 - For datasource delete and clear operations, prefer `Result<DomainError, Long>` when the backing store can report affected-row counts. Use `ok(0L)` for a successful no-op and reserve `err(...)` for execution failures.
+- When converting an unexpected `Throwable` into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Avoid replacing a caught exception with a bare `DomainError.Unknown()` unless no throwable exists.
 
 ### 1.5 Nullability & Types
 

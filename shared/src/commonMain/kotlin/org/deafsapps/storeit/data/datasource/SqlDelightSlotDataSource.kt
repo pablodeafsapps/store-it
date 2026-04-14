@@ -7,6 +7,7 @@ import org.deafsapps.storeit.data.database.StoreItDatabaseProvider
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
+import org.deafsapps.storeit.domain.model.toUnknownDomainError
 import org.koin.core.annotation.Single
 
 @Single(binds = [SlotDataSource::class])
@@ -33,8 +34,8 @@ internal class SqlDelightSlotDataSource(
             )
             .executeAsList()
             .ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun saveSlot(slot: ShelfSlot): Result<DomainError, ShelfSlot> = try {
@@ -47,15 +48,15 @@ internal class SqlDelightSlotDataSource(
             y_rel = slot.position.yRel.toDouble(),
         )
         slot.ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun deleteByRack(rackId: String): Result<DomainError, Unit> = try {
         databaseProvider.database.storeItDatabaseQueries.deleteSlotsByRack(rack_id = rackId)
         Unit.ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun clear() {

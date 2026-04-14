@@ -255,5 +255,5 @@ private fun RackSlotMarkerVo.distanceSquared(otherXRel: Float, otherYRel: Float)
 private fun DomainError.toErrorCause(): String = when (this) {
     is DomainError.ValidationError -> reason
     is DomainError.NotFound -> "Rack details not found"
-    is DomainError.Unknown -> "An unknown error occurred"
+    is DomainError.Unknown -> message
 }

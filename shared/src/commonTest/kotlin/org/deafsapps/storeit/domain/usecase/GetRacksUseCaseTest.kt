@@ -52,7 +52,7 @@ class GetRacksUseCaseTest {
 
     @Test
     fun `GIVEN fake returns error WHEN invoke THEN returns same error`() = runTest {
-        fakeRackRepository.getAllRacksResult = DomainError.Unknown.err()
+        fakeRackRepository.getAllRacksResult = DomainError.Unknown().err()
 
         sut(input = Unit).collect { allRacks -> result = allRacks }
 

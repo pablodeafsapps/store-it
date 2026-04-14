@@ -9,10 +9,10 @@ sealed interface DomainError : Error {
     /**
      * Signals an unexpected failure that could not be mapped to a more specific domain error.
      */
-    data object Unknown : DomainError {
-        override val message: String = "Unknown error"
-        override val cause: Throwable? = null
-    }
+    data class Unknown(
+        override val message: String = "Unknown error",
+        override val cause: Throwable? = null,
+    ) : DomainError
 
     /**
      * Signals that a requested resource does not exist.
@@ -31,3 +31,10 @@ sealed interface DomainError : Error {
         override val cause: Throwable? = null
     }
 }
+
+internal fun Throwable.toUnknownDomainError(
+    message: String = this.message ?: "Unknown error",
+): DomainError.Unknown = DomainError.Unknown(
+    message = message,
+    cause = this,
+)

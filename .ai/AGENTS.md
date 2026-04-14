@@ -168,6 +168,7 @@ The following stack is designed to align with official KMP recommendations and c
   - Presentation/UI layers `fold` or pattern-match on the result to derive UI state and user-facing messages.
 - **Building Result values**: Prefer the extension functions `value.ok()` and `error.err()` when constructing success/failure (e.g. `list.ok()`, `DomainError.NotFound(...).err()`) instead of `Result.ok(value)` / `Result.err(error)`.
 - **Delete / clear result shape**: For datasource operations that delete or clear persisted records, prefer `Result<DomainError, Long>` when the underlying store can report affected-row counts. `ok(0L)` means the operation executed successfully and nothing matched; reserve `err(...)` for execution failures.
+- **Unknown error mapping**: When converting an unexpected `Throwable` into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Do not discard the thrown exception behind a bare `DomainError.Unknown()` unless there is no throwable available.
 - **Swift alignment**: In iOS code, mirror the same semantics with Swift enums with associated values (e.g. `Result<Success, Failure>`) or a custom `Either`-like type so success/failure handling stays consistent across the stack.
 
 ### 4.3 Networking

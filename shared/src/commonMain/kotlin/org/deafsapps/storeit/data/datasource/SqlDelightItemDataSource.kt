@@ -8,6 +8,7 @@ import org.deafsapps.storeit.data.database.decodeTags
 import org.deafsapps.storeit.data.database.encodeTags
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
+import org.deafsapps.storeit.domain.model.toUnknownDomainError
 import org.koin.core.annotation.Single
 
 @Single(binds = [ItemDataSource::class])
@@ -23,8 +24,8 @@ internal class SqlDelightItemDataSource(
             )
             .executeAsList()
             .ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun getItemsBySlot(rackId: String, slotId: String): Result<DomainError, List<Item>> = try {
@@ -36,8 +37,8 @@ internal class SqlDelightItemDataSource(
             )
             .executeAsList()
             .ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun getItemById(id: String): Result<DomainError, Item?> = try {
@@ -45,8 +46,8 @@ internal class SqlDelightItemDataSource(
             .selectItemById(id = id, mapper = ::mapItem)
             .executeAsOneOrNull()
             .ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun searchItems(query: String): Result<DomainError, List<Item>> = try {
@@ -59,8 +60,8 @@ internal class SqlDelightItemDataSource(
             )
             .executeAsList()
             .ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun saveItem(item: Item): Result<DomainError, Item> = try {
@@ -78,22 +79,22 @@ internal class SqlDelightItemDataSource(
             updated_at = item.updatedAt,
         )
         item.ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun deleteItem(id: String): Result<DomainError, Boolean> = try {
         val deleted = databaseProvider.database.storeItDatabaseQueries.deleteItemById(id = id).value > 0L
         deleted.ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Unit> = try {
         databaseProvider.database.storeItDatabaseQueries.deleteItemsByRack(rack_id = rackId)
         Unit.ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun clear() {

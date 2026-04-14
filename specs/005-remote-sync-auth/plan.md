@@ -63,18 +63,15 @@ shared/
 │   │   ├── kotlin/org/deafsapps/storeit/data/
 │   │   │   ├── datasource/
 │   │   │   ├── repository/
-│   │   │   ├── sync/
-│   │   │   └── auth/
+│   │   │   └── sync/
 │   │   ├── kotlin/org/deafsapps/storeit/presentation/
 │   │   │   ├── account/
 │   │   │   └── sync/
 │   │   └── sqldelight/org/deafsapps/storeit/data/database/
 │   ├── androidMain/kotlin/org/deafsapps/storeit/
-│   │   ├── auth/
-│   │   └── sync/
+│   │   └── data/datasource/
 │   ├── iosMain/kotlin/org/deafsapps/storeit/
-│   │   ├── auth/
-│   │   └── sync/
+│   │   └── data/datasource/
 │   └── commonTest/kotlin/org/deafsapps/storeit/
 │       ├── data/
 │       ├── domain/
@@ -90,6 +87,9 @@ iosApp/
 ```
 
 **Structure Decision**: The feature is designed shared-first. All business rules, reconciliation logic, sync orchestration, repository contracts, DTO mapping, and presentation state live in `shared/src/commonMain`. `shared/src/androidMain` and `shared/src/iosMain` are reserved for thin provider adapters only if Firebase Auth, Firestore, Storage, or secure credential APIs require platform-specific bridging. The shared implementation must cover email/password auth, explicit keep-local vs keep-remote reconciliation, photo backup, restore-pending states, and sign-out transitions into local-only mode. Existing platform UI shells may need follow-up view wiring, but the plan intentionally concentrates feature logic under `shared/`.
+
+- Android secure session persistence is implemented as `DataStore` plus Android Keystore-backed encryption behind `SessionCredentialDataSource`.
+- iOS secure session persistence should use Keychain behind the same shared `SessionCredentialDataSource` contract rather than plain file or database storage.
 
 ## Alignment Notes
 

@@ -59,5 +59,5 @@ class SearchViewModel(
 private fun DomainError.toErrorCause(): String = when (this) {
     is DomainError.ValidationError -> reason
     is DomainError.NotFound -> "No items found"
-    is DomainError.Unknown -> "An unknown error occurred"
+    is DomainError.Unknown -> message
 }

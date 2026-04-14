@@ -50,7 +50,7 @@ class GetItemsBySlotUseCaseTest {
 
     @Test
     fun `GIVEN fake returns error WHEN invoke THEN returns same error`() = runTest {
-        fakeItemRepository.getItemsBySlotResult = DomainError.Unknown.err()
+        fakeItemRepository.getItemsBySlotResult = DomainError.Unknown().err()
 
         val result = sut(input = GetItemsBySlotInput(rackId = "r1", slotId = "s1"))
 

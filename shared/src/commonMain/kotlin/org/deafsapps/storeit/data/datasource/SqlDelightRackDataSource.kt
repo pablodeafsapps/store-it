@@ -13,6 +13,7 @@ import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.data.database.StoreItDatabaseProvider
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.domain.model.toUnknownDomainError
 import org.koin.core.annotation.Single
 
 @Single(binds = [RackDataSource::class])
@@ -38,7 +39,7 @@ internal class SqlDelightRackDataSource(
             .asFlow()
             .mapToList(context = Dispatchers.IO)
             .map { racks -> Result.ok(racks) as Result<DomainError, List<Rack>> }
-            .catch { emit(DomainError.Unknown.err()) }
+            .catch { throwable -> emit(throwable.toUnknownDomainError().err()) }
 
     override suspend fun getRackById(id: String): Result<DomainError, Rack?> = try {
         databaseProvider.database.storeItDatabaseQueries
@@ -58,8 +59,8 @@ internal class SqlDelightRackDataSource(
             )
             .executeAsOneOrNull()
             .ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun saveRack(rack: Rack): Result<DomainError, Rack> = try {
@@ -73,15 +74,15 @@ internal class SqlDelightRackDataSource(
             updated_at = rack.updatedAt,
         )
         rack.ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun deleteRack(id: String): Result<DomainError, Boolean> = try {
         val deleted = databaseProvider.database.storeItDatabaseQueries.deleteRackById(id = id).value > 0L
         deleted.ok()
-    } catch (_: Throwable) {
-        DomainError.Unknown.err()
+    } catch (throwable: Throwable) {
+        throwable.toUnknownDomainError().err()
     }
 
     override suspend fun clear() {
