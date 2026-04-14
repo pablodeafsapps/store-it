@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.data.datasource
 
+import kotlinx.serialization.Serializable
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
@@ -50,6 +51,7 @@ internal data class AuthenticatedRemoteAccount(
     val lastAuthenticatedAt: Long? = null,
 )
 
+@Serializable
 internal data class StoredSessionCredentials(
     val accountId: String,
     val email: String,
