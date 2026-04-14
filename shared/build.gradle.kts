@@ -42,6 +42,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.datastore.preferences)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.koin.androidx.compose)
             implementation(libs.sqldelight.android.driver)

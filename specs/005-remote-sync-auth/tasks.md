@@ -43,8 +43,8 @@
 - [X] T006 [P] Define account, sync, reconciliation, photo-backup, and session-store contracts in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/repository/AccountSyncRepositories.kt`
 - [X] T007 [P] Add SQLDelight-backed sync metadata data sources in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/SqlDelightSyncMetadataDataSource.kt`
 - [X] T008 Implement shared sync orchestration primitives and error mapping for synchronized, pending-upload, pending-restore, failed, and reconciliation-required states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/GetSyncStageUseCase.kt`
-- [ ] T009 Create Android secure session storage actual in `shared/src/androidMain/kotlin/org/deafsapps/storeit/data/auth/SessionCredentialStore.android.kt`
-- [ ] T010 Create iOS secure session storage actual in `shared/src/iosMain/kotlin/org/deafsapps/storeit/data/auth/SessionCredentialStore.ios.kt`
+- [X] T009 Create Android secure session storage actual in `shared/src/androidMain/kotlin/org/deafsapps/storeit/data/datasource/SessionCredentialAndroidDataSource.kt`
+- [ ] T010 Create iOS Keychain-backed secure session storage adapter in `shared/src/iosMain/kotlin/org/deafsapps/storeit/data/datasource/SessionCredentialIosDataSource.kt`
 
 **Checkpoint**: Foundation ready. User story work can begin.
 
