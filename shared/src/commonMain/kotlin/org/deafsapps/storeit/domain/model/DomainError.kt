@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.domain.model
 
+import kotlinx.coroutines.CancellationException
 import org.deafsapps.storeit.base.Error
 
 /**
@@ -34,7 +35,13 @@ sealed interface DomainError : Error {
 
 internal fun Throwable.toUnknownDomainError(
     message: String = this.message ?: "Unknown error",
-): DomainError.Unknown = DomainError.Unknown(
-    message = message,
-    cause = this,
-)
+): DomainError.Unknown {
+    if (this is CancellationException) {
+        throw this
+    }
+
+    return DomainError.Unknown(
+        message = message,
+        cause = this,
+    )
+}

@@ -11,6 +11,8 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import java.io.IOException
+import java.security.GeneralSecurityException
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -19,6 +21,7 @@ import javax.crypto.spec.GCMParameterSpec
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import org.json.JSONObject
+import org.json.JSONException
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
@@ -47,12 +50,22 @@ internal class SessionCredentialAndroidDataSource(
             preferences[KEY_ENCRYPTION_IV] = encryptedPayload.initializationVector
         }
         Unit.ok()
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+    } catch (exception: IOException) {
+        exception.toUnknownDomainError(message = "Unable to persist encrypted session credentials.").err()
+    } catch (exception: GeneralSecurityException) {
+        exception.toUnknownDomainError(message = "Unable to encrypt session credentials.").err()
+    } catch (exception: JSONException) {
+        exception.toUnknownDomainError(message = "Unable to serialize session credentials.").err()
     }
 
     override suspend fun restore(): Result<DomainError, StoredSessionCredentials?> = try {
-        val preferences = dataStore.data.catch { emit(value = emptyPreferences()) }.first()
+        val preferences = dataStore.data.catch { exception ->
+            if (exception is IOException) {
+                emit(value = emptyPreferences())
+            } else {
+                throw exception
+            }
+        }.first()
         val encryptedPayload = preferences[KEY_ENCRYPTED_PAYLOAD]
         val encryptionIv = preferences[KEY_ENCRYPTION_IV]
 
@@ -64,8 +77,12 @@ internal class SessionCredentialAndroidDataSource(
                 initializationVector = encryptionIv,
             ).toStoredSessionCredentials().ok()
         }
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+    } catch (exception: GeneralSecurityException) {
+        exception.toUnknownDomainError(message = "Unable to decrypt session credentials.").err()
+    } catch (exception: IllegalArgumentException) {
+        exception.toUnknownDomainError(message = "Stored session credentials are malformed.").err()
+    } catch (exception: JSONException) {
+        exception.toUnknownDomainError(message = "Stored session credentials are malformed.").err()
     }
 
     override suspend fun clear(): Result<DomainError, Unit> = try {
@@ -74,8 +91,8 @@ internal class SessionCredentialAndroidDataSource(
             preferences.remove(key = KEY_ENCRYPTION_IV)
         }
         Unit.ok()
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+    } catch (exception: IOException) {
+        exception.toUnknownDomainError(message = "Unable to clear persisted session credentials.").err()
     }
 
     private fun encrypt(plainText: String): EncryptedPayload {

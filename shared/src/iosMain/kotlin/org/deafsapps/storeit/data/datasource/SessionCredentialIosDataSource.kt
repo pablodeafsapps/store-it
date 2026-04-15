@@ -1,22 +1,30 @@
 package org.deafsapps.storeit.data.datasource
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.readBytes
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.usePinned
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
+import org.deafsapps.storeit.base.foldMap
 import org.deafsapps.storeit.base.ok
+import org.deafsapps.storeit.base.onOk
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.toUnknownDomainError
 import org.koin.core.annotation.Single
-import platform.CoreFoundation.CFDictionaryRef
 import platform.CoreFoundation.CFDataCreate
+import platform.CoreFoundation.CFDictionaryRef
+import platform.CoreFoundation.CFRetain
+import platform.CoreFoundation.CFRelease
+import platform.CoreFoundation.CFStringRef
+import platform.Foundation.CFBridgingRelease
 import platform.Foundation.NSData
+import platform.Foundation.NSMutableDictionary
 import platform.Foundation.NSUserDefaults
+import platform.Foundation.CFBridgingRetain
+import platform.Foundation.NSCopyingProtocol
 import platform.Security.SecCopyErrorMessageString
 import platform.Security.SecItemAdd
 import platform.Security.SecItemDelete
@@ -34,18 +42,26 @@ import platform.Security.kSecValueData
 @Single(binds = [SessionCredentialDataSource::class])
 internal class SessionCredentialIosDataSource : SessionCredentialDataSource {
     override suspend fun save(session: StoredSessionCredentials): Result<DomainError, Unit> = try {
-        when (val clearResult = deleteStoredValueIfPresent()) {
-            is KeychainOperationResult.Error -> clearResult.error.err()
-            KeychainOperationResult.Success -> {
+        deleteStoredValueIfPresent()
+            .foldMap(ifOk = {
                 val payloadData = SESSION_JSON.encodeToString(value = session).toNSData()
+                val query = baseQuery().apply {
+                    setObject(
+                        anObject = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+                        forKey = cfStringKey(value = kSecAttrAccessible),
+                    )
+                    setObject(
+                        anObject = payloadData,
+                        forKey = cfStringKey(value = kSecValueData),
+                    )
+                }
 
-                val status = SecItemAdd(
-                    (baseQuery() + mapOf(
-                        kSecAttrAccessible to kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-                        kSecValueData to payloadData,
-                    )) as CFDictionaryRef,
-                    null,
-                )
+                val status = query.useAsKeychainQuery { keychainQuery ->
+                    SecItemAdd(
+                        attributes = keychainQuery,
+                        result = null,
+                    )
+                }
 
                 if (status == errSecSuccess) {
                     USER_DEFAULTS.setObject(
@@ -59,10 +75,11 @@ internal class SessionCredentialIosDataSource : SessionCredentialDataSource {
                         status = status,
                     ).err()
                 }
-            }
-        }
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+            })
+    } catch (exception: SerializationException) {
+        exception.toUnknownDomainError(message = "Unable to serialize session credentials.").err()
+    } catch (exception: IllegalStateException) {
+        exception.toUnknownDomainError(message = "Unable to allocate keychain payload data.").err()
     }
 
     override suspend fun restore(): Result<DomainError, StoredSessionCredentials?> = try {
@@ -72,44 +89,29 @@ internal class SessionCredentialIosDataSource : SessionCredentialDataSource {
         } else {
             SESSION_JSON.decodeFromString<StoredSessionCredentials>(string = payload).ok()
         }
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+    } catch (exception: SerializationException) {
+        exception.toUnknownDomainError(message = "Stored session credentials are malformed.").err()
     }
 
-    override suspend fun clear(): Result<DomainError, Unit> = try {
-        when (val result = deleteStoredValueIfPresent()) {
-            is KeychainOperationResult.Error -> result.error.err()
-            KeychainOperationResult.Success -> {
-                USER_DEFAULTS.removeObjectForKey(defaultName = USER_DEFAULTS_SESSION_KEY)
-                Unit.ok()
-            }
-        }
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
-    }
+    override suspend fun clear(): Result<DomainError, Unit> =
+        deleteStoredValueIfPresent()
+            .onOk { USER_DEFAULTS.removeObjectForKey(defaultName = USER_DEFAULTS_SESSION_KEY) }
 
-    private fun deleteStoredValueIfPresent(): KeychainOperationResult {
-        val status = SecItemDelete(baseQuery() as CFDictionaryRef)
-
-        return when (status) {
+    private fun deleteStoredValueIfPresent(): Result<DomainError, Unit> =
+        when (val status = baseQuery().useAsKeychainQuery { keychainQuery -> SecItemDelete(query = keychainQuery) }) {
             errSecSuccess,
-            errSecItemNotFound,
-            -> KeychainOperationResult.Success
-
-            else -> KeychainOperationResult.Error(
-                error = keychainFailure(
-                    operation = "delete session credentials",
-                    status = status,
-                ),
-            )
+            errSecItemNotFound, -> Unit.ok()
+            else -> keychainFailure(
+                operation = "delete session credentials",
+                status = status,
+            ).err()
         }
-    }
 
-    private fun baseQuery(): Map<Any?, Any?> = mapOf(
-        kSecClass to kSecClassGenericPassword,
-        kSecAttrService to KEYCHAIN_SERVICE,
-        kSecAttrAccount to KEYCHAIN_ACCOUNT,
-    )
+    private fun baseQuery(): NSMutableDictionary = NSMutableDictionary().apply {
+        setObject(anObject = kSecClassGenericPassword, forKey = cfStringKey(value = kSecClass))
+        setObject(anObject = KEYCHAIN_SERVICE, forKey = cfStringKey(value = kSecAttrService))
+        setObject(anObject = KEYCHAIN_ACCOUNT, forKey = cfStringKey(value = kSecAttrAccount))
+    }
 
     private companion object {
         val SESSION_JSON = Json {
@@ -121,12 +123,6 @@ internal class SessionCredentialIosDataSource : SessionCredentialDataSource {
         const val KEYCHAIN_SERVICE = "org.deafsapps.storeit.session_credentials"
         const val KEYCHAIN_ACCOUNT = "active_session"
     }
-}
-
-private sealed interface KeychainOperationResult {
-    data object Success : KeychainOperationResult
-
-    data class Error(val error: DomainError) : KeychainOperationResult
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -152,16 +148,23 @@ private fun String.toNSData(): NSData {
             length = bytes.size.toLong(),
         )
     } ?: error("Unable to allocate Keychain payload data.")
-    return cfData as NSData
+
+    return CFBridgingRelease(cfData) as NSData
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun NSData.toUtf8String(): String? {
-    val payloadLength = length.toInt()
-    if (payloadLength <= 0) {
-        return ""
-    }
+private fun cfStringKey(value: CFStringRef?): NSCopyingProtocol =
+    CFBridgingRelease(CFRetain(value)) as NSCopyingProtocol
 
-    val rawPointer = bytes ?: return null
-    return rawPointer.reinterpret<ByteVar>().readBytes(payloadLength).decodeToString()
+@OptIn(ExperimentalForeignApi::class)
+private inline fun <T> NSMutableDictionary.useAsKeychainQuery(block: (CFDictionaryRef?) -> T): T {
+    val retainedQuery = CFBridgingRetain(this)
+
+    try {
+        return block(retainedQuery?.reinterpret())
+    } finally {
+        if (retainedQuery != null) {
+            CFRelease(retainedQuery)
+        }
+    }
 }
