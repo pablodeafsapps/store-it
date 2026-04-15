@@ -58,7 +58,7 @@
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Add email/password sign-up, sign-in, and session-restore use case coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCaseTest.kt`
+- [X] T011 [P] [US1] Add email/password sign-up, sign-in, and session-restore use case coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCaseTest.kt`
 - [ ] T012 [P] [US1] Add first-sync dataset-plus-photo restore and remote-authority repository coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/repository/AccountSyncRepositoryTest.kt`
 - [ ] T013 [P] [US1] Add account presentation state coverage for authenticated restore and restore-pending status in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/AccountViewModelTest.kt`
 
@@ -66,7 +66,7 @@
 
 - [ ] T014 [P] [US1] Implement Firebase-backed email/password account authentication repository in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseAccountRepository.kt`
 - [ ] T015 [P] [US1] Implement remote dataset and photo snapshot fetch/apply pipeline in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseRemoteAccountDataSource.kt`
-- [ ] T016 [US1] Implement email/password sign-up, sign-in, and session-restore use cases in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCases.kt`
+- [X] T016 [US1] Implement email/password sign-up, sign-in, and session-restore use cases in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCases.kt`
 - [ ] T017 [US1] Implement account-backed synchronization bootstrap and restore flow with restore-pending handling in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/AccountRestoreCoordinator.kt`
 - [ ] T018 [US1] Expose account mode, synchronized, and restore-pending state through shared presentation models in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/model/AccountUiState.kt`
 - [ ] T019 [US1] Implement shared account entry and restore view model for email/password auth and restore retry in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/viewmodel/AccountViewModel.kt`

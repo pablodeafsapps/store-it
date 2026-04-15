@@ -4,6 +4,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.base.Err
 import org.deafsapps.storeit.base.Ok
 import org.deafsapps.storeit.domain.model.AccountDataset
@@ -27,7 +28,7 @@ class GetSyncStageUseCaseTest {
     }
 
     @Test
-    fun invoke_returns_synchronized_state_when_account_backed_data_is_aligned() {
+    fun invoke_returns_synchronized_state_when_account_backed_data_is_aligned() = runTest {
         val result = sut.invoke(
             input = GetSyncStageUseCaseInput(
                 session = activeSession(),
@@ -48,7 +49,7 @@ class GetSyncStageUseCaseTest {
     }
 
     @Test
-    fun invoke_returns_pending_upload_state_when_local_changes_exist() {
+    fun invoke_returns_pending_upload_state_when_local_changes_exist() = runTest {
         val result = sut.invoke(
             input = GetSyncStageUseCaseInput(
                 session = activeSession(),
@@ -67,7 +68,7 @@ class GetSyncStageUseCaseTest {
     }
 
     @Test
-    fun invoke_returns_restore_pending_state_when_restore_operation_exists() {
+    fun invoke_returns_restore_pending_state_when_restore_operation_exists() = runTest {
         val result = sut.invoke(
             input = GetSyncStageUseCaseInput(
                 session = activeSession(),
@@ -96,7 +97,7 @@ class GetSyncStageUseCaseTest {
     }
 
     @Test
-    fun invoke_returns_failed_state_when_sync_error_is_present() {
+    fun invoke_returns_failed_state_when_sync_error_is_present() = runTest {
         val result = sut.invoke(
             input = GetSyncStageUseCaseInput(
                 session = activeSession(),
@@ -120,7 +121,7 @@ class GetSyncStageUseCaseTest {
     }
 
     @Test
-    fun invoke_returns_reconciliation_required_state_when_flagged() {
+    fun invoke_returns_reconciliation_required_state_when_flagged() = runTest {
         val result = sut.invoke(
             input = GetSyncStageUseCaseInput(
                 session = activeSession(),
@@ -140,7 +141,7 @@ class GetSyncStageUseCaseTest {
     }
 
     @Test
-    fun invoke_returns_validation_error_when_account_backed_state_has_no_account_id() {
+    fun invoke_returns_validation_error_when_account_backed_state_has_no_account_id() = runTest {
         val result = sut.invoke(
             input = GetSyncStageUseCaseInput(
                 session = activeSession(),
