@@ -60,7 +60,7 @@
 
 - [X] T011 [P] [US1] Add email/password sign-up, sign-in, and session-restore use case coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCaseTest.kt`
 - [X] T012 [P] [US1] Add account repository restore coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/repository/AccountSyncRepositoryTest.kt` and first-sync dataset-plus-photo restore plus remote-authority use-case coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/RestoreAccountDataUseCaseTest.kt`
-- [ ] T013 [P] [US1] Add account presentation state coverage for authenticated restore and restore-pending status in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/AccountViewModelTest.kt`
+- [X] T013 [P] [US1] Add account presentation state coverage for authenticated restore and restore-pending status in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/AccountViewModelTest.kt`
 
 ### Implementation for User Story 1
 
