@@ -95,6 +95,7 @@ For all new and modified Kotlin files in this project:
 - Prefer exhaustive `when` over long `if`/`else` chains for sealed hierarchies.
 - Avoid `!!`; use explicit null handling and boundary checks instead.
 - Use `value.ok()` and `error.err()` when constructing result values.
+- When working with the project `Result` type, prefer `map`, `flatMap`, `suspendFlatMap`, `fold`, and related helpers over explicit branching on `Ok` and `Err` when the combinator form is clearer.
 - Avoid generic catch clauses such as `catch (exception: Exception)` and `catch (throwable: Throwable)`. Catch the narrowest concrete exception types the block can actually throw, let programmer bugs fail loudly, and never swallow `CancellationException`.
 - When mapping an unexpected exception into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Do not replace thrown exceptions with a bare `DomainError.Unknown()` unless no throwable exists.
 - For datasource delete and clear operations, prefer `Result<DomainError, Long>` when the backing store can report affected-row counts. Treat `ok(0L)` as a successful no-op, not as an error.

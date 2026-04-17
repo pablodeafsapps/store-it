@@ -64,7 +64,7 @@
 
 ### Implementation for User Story 1
 
-- [ ] T014 [P] [US1] Implement Firebase-backed email/password account authentication repository in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseAccountRepository.kt`
+- [X] T014 [P] [US1] Implement Firebase-backed email/password account authentication repository in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseAccountRepository.kt`
 - [ ] T015 [P] [US1] Implement remote dataset and photo snapshot fetch/apply pipeline in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseRemoteAccountDataSource.kt`
 - [X] T016 [US1] Implement email/password sign-up, sign-in, and session-restore use cases in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/AuthenticateAccountUseCases.kt`
 - [ ] T017 [US1] Implement account-backed synchronization bootstrap and restore flow with restore-pending handling in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/RestoreAccountDataUseCase.kt`

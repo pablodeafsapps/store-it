@@ -3,6 +3,7 @@ package org.deafsapps.storeit.data.datasource
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
+import org.deafsapps.storeit.data.database.StoreItDatabaseException
 import org.deafsapps.storeit.data.database.StoreItDatabaseProvider
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.ShelfSlot
@@ -34,8 +35,8 @@ internal class SqlDelightSlotDataSource(
             )
             .executeAsList()
             .ok()
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+    } catch (exception: StoreItDatabaseException) {
+        exception.toUnknownDomainError().err()
     }
 
     override suspend fun saveSlot(slot: ShelfSlot): Result<DomainError, ShelfSlot> = try {
@@ -47,16 +48,37 @@ internal class SqlDelightSlotDataSource(
             x_rel = slot.position.xRel.toDouble(),
             y_rel = slot.position.yRel.toDouble(),
         )
-        slot.ok()
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+
+        databaseProvider.database.storeItDatabaseQueries
+            .selectSlotById(
+                id = slot.id,
+                mapper = { id, rowRackId, x, y, xRel, yRel ->
+                    ShelfSlot(
+                        id = id,
+                        rackId = rowRackId,
+                        position = SlotPosition(
+                            x = x.toFloat(),
+                            y = y.toFloat(),
+                            xRel = xRel.toFloat(),
+                            yRel = yRel.toFloat(),
+                        ),
+                    )
+                },
+            )
+            .executeAsOneOrNull()
+            ?.ok()
+            ?: DomainError.Unknown(
+                message = "ShelfSlot '${slot.id}' could not be reloaded after save",
+            ).err()
+    } catch (exception: StoreItDatabaseException) {
+        exception.toUnknownDomainError().err()
     }
 
     override suspend fun deleteByRack(rackId: String): Result<DomainError, Unit> = try {
         databaseProvider.database.storeItDatabaseQueries.deleteSlotsByRack(rack_id = rackId)
         Unit.ok()
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+    } catch (exception: StoreItDatabaseException) {
+        exception.toUnknownDomainError().err()
     }
 
     override suspend fun clear() {

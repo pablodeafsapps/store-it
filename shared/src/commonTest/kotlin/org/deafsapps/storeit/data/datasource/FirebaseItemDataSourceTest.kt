@@ -77,6 +77,6 @@ internal class FirebaseItemDataSourceTest {
         val result = sut.deleteItemsByRack(rackId = "rack-1")
 
         assertTrue(actual = result.isOk)
-        assertEquals(expected = Unit, actual = result.getOrNull())
+        assertEquals(expected = 0L, actual = result.getOrNull())
     }
 }

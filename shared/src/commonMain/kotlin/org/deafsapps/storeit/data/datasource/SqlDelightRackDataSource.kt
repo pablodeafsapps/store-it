@@ -10,7 +10,9 @@ import kotlinx.coroutines.flow.map
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
+import org.deafsapps.storeit.data.database.StoreItDatabaseException
 import org.deafsapps.storeit.data.database.StoreItDatabaseProvider
+import org.deafsapps.storeit.data.database.toStoreItDatabaseDomainErrorOrThrow
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.model.toUnknownDomainError
@@ -39,7 +41,7 @@ internal class SqlDelightRackDataSource(
             .asFlow()
             .mapToList(context = Dispatchers.IO)
             .map { racks -> Result.ok(racks) as Result<DomainError, List<Rack>> }
-            .catch { throwable -> emit(throwable.toUnknownDomainError().err()) }
+            .catch { throwable -> emit(throwable.toStoreItDatabaseDomainErrorOrThrow().err()) }
 
     override suspend fun getRackById(id: String): Result<DomainError, Rack?> = try {
         databaseProvider.database.storeItDatabaseQueries
@@ -59,8 +61,8 @@ internal class SqlDelightRackDataSource(
             )
             .executeAsOneOrNull()
             .ok()
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+    } catch (exception: StoreItDatabaseException) {
+        exception.toUnknownDomainError().err()
     }
 
     override suspend fun saveRack(rack: Rack): Result<DomainError, Rack> = try {
@@ -73,16 +75,36 @@ internal class SqlDelightRackDataSource(
             created_at = rack.createdAt,
             updated_at = rack.updatedAt,
         )
-        rack.ok()
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+
+        databaseProvider.database.storeItDatabaseQueries
+            .selectRackById(
+                id = rack.id,
+                mapper = { rowId, name, description, location, photoUri, createdAt, updatedAt ->
+                    Rack(
+                        id = rowId,
+                        name = name,
+                        description = description,
+                        location = location,
+                        photoUri = photoUri,
+                        createdAt = createdAt,
+                        updatedAt = updatedAt,
+                    )
+                },
+            )
+            .executeAsOneOrNull()
+            ?.ok()
+            ?: DomainError.Unknown(
+                message = "Rack '${rack.id}' could not be reloaded after save",
+            ).err()
+    } catch (exception: StoreItDatabaseException) {
+        exception.toUnknownDomainError().err()
     }
 
     override suspend fun deleteRack(id: String): Result<DomainError, Boolean> = try {
         val deleted = databaseProvider.database.storeItDatabaseQueries.deleteRackById(id = id).value > 0L
         deleted.ok()
-    } catch (throwable: Throwable) {
-        throwable.toUnknownDomainError().err()
+    } catch (exception: StoreItDatabaseException) {
+        exception.toUnknownDomainError().err()
     }
 
     override suspend fun clear() {

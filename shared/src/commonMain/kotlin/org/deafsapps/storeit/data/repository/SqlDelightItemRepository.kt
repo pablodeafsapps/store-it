@@ -3,6 +3,7 @@ package org.deafsapps.storeit.data.repository
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.flatMap
+import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.data.datasource.ItemDataSource
 import org.deafsapps.storeit.domain.model.DomainError
@@ -95,7 +96,7 @@ internal class SqlDelightItemRepository(
         if (rackId.isBlank()) {
             DomainError.ValidationError(field = "rackId", reason = "Rack ID cannot be blank").err()
         } else {
-            itemDataSource.deleteItemsByRack(rackId = rackId)
+            itemDataSource.deleteItemsByRack(rackId = rackId).map { Unit }
         }
 
     override suspend fun clear() {

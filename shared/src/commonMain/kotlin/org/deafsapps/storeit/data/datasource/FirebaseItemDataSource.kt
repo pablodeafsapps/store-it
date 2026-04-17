@@ -19,7 +19,7 @@ internal class FirebaseItemDataSource : ItemDataSource {
 
     override suspend fun deleteItem(id: String): Result<DomainError, Boolean> = false.ok()
 
-    override suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Unit> = Unit.ok()
+    override suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Long> = 0L.ok()
 
     override suspend fun clear() = Unit
 }

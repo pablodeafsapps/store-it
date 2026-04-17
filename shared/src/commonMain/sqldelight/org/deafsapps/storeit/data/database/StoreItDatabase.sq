@@ -131,6 +131,10 @@ selectSlotsByRack:
 SELECT * FROM shelf_slots
 WHERE rack_id = ?;
 
+selectSlotById:
+SELECT * FROM shelf_slots
+WHERE id = ?;
+
 upsertSlot:
 INSERT OR REPLACE INTO shelf_slots(
     id,
@@ -321,6 +325,10 @@ SELECT * FROM sync_operations
 WHERE sync_status IN ('pending', 'failed')
 ORDER BY recorded_at ASC, id ASC;
 
+selectSyncOperationById:
+SELECT * FROM sync_operations
+WHERE id = ?;
+
 upsertSyncOperation:
 INSERT OR REPLACE INTO sync_operations(
     id,
@@ -350,6 +358,10 @@ selectPendingPhotoSyncScope:
 SELECT * FROM photo_sync_scope
 WHERE sync_status IN ('pending_upload', 'pending_delete', 'failed')
 ORDER BY photo_id ASC;
+
+selectPhotoSyncScopeById:
+SELECT * FROM photo_sync_scope
+WHERE photo_id = ?;
 
 upsertPhotoSyncScope:
 INSERT OR REPLACE INTO photo_sync_scope(
