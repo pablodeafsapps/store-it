@@ -116,6 +116,16 @@ interface SyncRepository {
 }
 
 /**
+ * Defines the account-backed restore operation that hydrates local data from the remote account dataset.
+ */
+interface AccountDataRestoreRepository {
+    /**
+     * Restores the remote account dataset into the local store and updates synchronization metadata.
+     */
+    suspend fun restoreAccountData(session: AccountSession): Result<DomainError, Unit>
+}
+
+/**
  * Defines user-controlled reconciliation operations for divergent local and remote datasets.
  */
 interface ReconciliationRepository {

@@ -168,6 +168,7 @@ The following stack is designed to align with official KMP recommendations and c
   - Presentation/UI layers `fold` or pattern-match on the result to derive UI state and user-facing messages.
 - **Building Result values**: Prefer the extension functions `value.ok()` and `error.err()` when constructing success/failure (e.g. `list.ok()`, `DomainError.NotFound(...).err()`) instead of `Result.ok(value)` / `Result.err(error)`.
 - **Result composition**: Prefer composing the project `Result` type with helpers such as `map`, `flatMap`, `suspendFlatMap`, and `fold` instead of manually branching on `Ok` and `Err` when the combinator form expresses the flow more clearly.
+- **No `Ok`/`Err` branching for ordinary flow**: Do not pattern-match on `Ok`/`Err` in use cases or repositories for normal success/failure propagation. Use the project helpers (`map`, `flatMap`, `suspendFlatMap`, `fold`, `failureOrNull`, `getOrNull`, etc.) so result handling stays consistent.
 - **Delete / clear result shape**: For datasource operations that delete or clear persisted records, prefer `Result<DomainError, Long>` when the underlying store can report affected-row counts. `ok(0L)` means the operation executed successfully and nothing matched; reserve `err(...)` for execution failures.
 - **Try/catch specificity**: Avoid generic catch clauses such as `catch (exception: Exception)` or `catch (throwable: Throwable)`. Catch the narrowest concrete exception types the block can actually throw, let programmer bugs fail loudly, and always rethrow coroutine `CancellationException`.
 - **Unknown error mapping**: When converting an unexpected `Throwable` into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Do not discard the thrown exception behind a bare `DomainError.Unknown()` unless there is no throwable available.
@@ -209,7 +210,7 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 - **Initialisation**:
   - **Android**: Use a custom `Application` subclass (**`StoreItApplication`** in `:androidApp`) declared in the manifest. In `onCreate()` call `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this@StoreItApplication) }`. `AndroidModule` includes `AppModule` and provides the composition root.
   - **iOS**: Call `KoinInitKt.doInitKoinIos()` from the Swift app’s `init()` (e.g. in `@main struct iOSApp: App`). This runs `initKoin {}`, which starts Koin with only `AppModule().module` (no platform-specific options).
-- **Rule**: Domain/use case types remain framework-agnostic; only the composition root and ViewModel layer use Koin APIs.
+- **Rule**: Domain/use case types remain framework-agnostic; only the composition root and ViewModel layer use Koin APIs. Domain use cases depend on domain repository/use-case abstractions only; they must not inject or import data-source types. If datasource-backed orchestration is required, define a domain repository interface and implement the orchestration in the data layer.
 
 ### 4.8 UI Technologies
 

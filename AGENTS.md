@@ -12,6 +12,7 @@ Apply these instructions for work in this repository.
 - `androidMain` and `iosMain` should only contain `actual` implementations and minimal platform services. Do not put platform UI there.
 - Android UI, app entry, and navigation belong in `:androidApp`. iOS UI belongs in `iosApp`.
 - Respect dependency direction: UI -> Presentation -> Domain -> Data -> Platform APIs.
+- Domain use cases must depend on domain repository/use-case abstractions only. Do not inject or import `data.datasource` types from domain use cases; if a use case needs datasource-backed orchestration, add a domain repository interface and implement it in the data layer.
 
 ## Koin And ViewModels
 
@@ -96,6 +97,7 @@ For all new and modified Kotlin files in this project:
 - Avoid `!!`; use explicit null handling and boundary checks instead.
 - Use `value.ok()` and `error.err()` when constructing result values.
 - When working with the project `Result` type, prefer `map`, `flatMap`, `suspendFlatMap`, `fold`, and related helpers over explicit branching on `Ok` and `Err` when the combinator form is clearer.
+- Do not pattern-match on `Ok`/`Err` in use cases or repositories for ordinary success/failure flow. Use the project `Result` helpers (`map`, `flatMap`, `suspendFlatMap`, `fold`, `failureOrNull`, `getOrNull`, etc.) so error propagation remains consistent and reviewable.
 - Avoid generic catch clauses such as `catch (exception: Exception)` and `catch (throwable: Throwable)`. Catch the narrowest concrete exception types the block can actually throw, let programmer bugs fail loudly, and never swallow `CancellationException`.
 - When mapping an unexpected exception into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Do not replace thrown exceptions with a bare `DomainError.Unknown()` unless no throwable exists.
 - For datasource delete and clear operations, prefer `Result<DomainError, Long>` when the backing store can report affected-row counts. Treat `ok(0L)` as a successful no-op, not as an error.

@@ -49,6 +49,7 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 - Prefer `Sequence` for chained transformations on large collections; use `Iterable` when you need multiple iterations or materialized results.
 - For datasource delete and clear operations, prefer `Result<DomainError, Long>` when the backing store can report affected-row counts. Use `ok(0L)` for a successful no-op and reserve `err(...)` for execution failures.
 - Prefer composing the project `Result` type with `map`, `flatMap`, `suspendFlatMap`, `fold`, and similar helpers instead of manually branching on `Ok` and `Err` when the functional form is more legible.
+- Do not pattern-match on `Ok`/`Err` in use cases or repositories for normal success/failure flow. Use the project `Result` helpers (`map`, `flatMap`, `suspendFlatMap`, `fold`, `failureOrNull`, `getOrNull`, etc.) to keep error propagation uniform.
 - Avoid generic catch clauses such as `catch (exception: Exception)` and `catch (throwable: Throwable)`. Catch only the narrowest concrete exception types the block can actually throw, allow programmer bugs to fail loudly, and always rethrow coroutine `CancellationException`.
 - When converting an unexpected `Throwable` into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Avoid replacing a caught exception with a bare `DomainError.Unknown()` unless no throwable exists.
 - In Firebase-backed or other remote datasources, make the rule concrete: catch provider-specific exceptions such as `FirebaseFirestoreException`, `FirebaseStorageException`, and serialization failures instead of `Throwable`, and return delete counts as `Result<DomainError, Long>` whenever the provider makes the affected object count observable.
@@ -184,7 +185,7 @@ Dependency rule: inner layers do not know outer layers. Dependencies point inwar
 - **data**: data sources, repository implementations, DTOs, mappers.
 - **ui / presentation**: ViewModels, UI state, screens (platform-specific: Android Compose in `androidApp`, iOS SwiftUI in `iosApp`).
 
-Use cases sit in domain and orchestrate repository interfaces; they return domain types or simple sealed results (Success / Error).
+Use cases sit in domain and orchestrate repository interfaces; they return domain types or simple sealed results (Success / Error). Domain use cases must not inject or import data-source types. When an operation needs datasource-backed coordination, define a domain repository abstraction and place the datasource orchestration in the data-layer implementation.
 
 **Pure Kotlin ViewModels (shared)**: State holders in `shared/commonMain` are plain Kotlin classes (no AndroidX `ViewModel` or iOS types). Annotate with `@Factory`; inject a `CoroutineScope` via `@Provided` and use cases via constructor (scope owned by the platform). Expose state via `StateFlow`, events via `SharedFlow`. Implement `clear()` that calls `coroutineScope.cancel()`. Prefer automatic data loading: use `stateIn` or `init { coroutineScope.launch { … } }`; for testability inject a `CoroutineScope` (e.g. `TestScope` from `runTest`).
 
