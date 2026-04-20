@@ -6,15 +6,15 @@ import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.map
-import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.base.suspendFlatMap
-import org.deafsapps.storeit.data.datasource.AccountDatasetDataSource
 import org.deafsapps.storeit.data.datasource.AccountRemoteDataSource
-import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
-import org.deafsapps.storeit.data.datasource.PhotoSyncScopeDataSource
 import org.deafsapps.storeit.data.datasource.RemoteAccountSnapshot
 import org.deafsapps.storeit.data.datasource.RemotePhotoReference
-import org.deafsapps.storeit.data.datasource.SyncStateDataSource
+import org.deafsapps.storeit.domain.gateway.AccountRestoreMetadataGateway
+import org.deafsapps.storeit.domain.gateway.ItemRestoreGateway
+import org.deafsapps.storeit.domain.gateway.PhotoRestoreGateway
+import org.deafsapps.storeit.domain.gateway.RackRestoreGateway
+import org.deafsapps.storeit.domain.gateway.SlotRestoreGateway
 import org.deafsapps.storeit.domain.model.AccountDataset
 import org.deafsapps.storeit.domain.model.AccountSession
 import org.deafsapps.storeit.domain.model.DataMode
@@ -26,26 +26,21 @@ import org.deafsapps.storeit.domain.model.SyncEntityType
 import org.deafsapps.storeit.domain.model.SyncState
 import org.deafsapps.storeit.domain.model.SyncStatus
 import org.deafsapps.storeit.domain.repository.AccountDataRestoreRepository
-import org.deafsapps.storeit.domain.repository.ItemRepository
-import org.deafsapps.storeit.domain.repository.RackRepository
-import org.deafsapps.storeit.domain.repository.SlotRepository
 import org.koin.core.annotation.Single
 
 @Single(binds = [AccountDataRestoreRepository::class])
 @Suppress("LongParameterList")
 internal class FirebaseAccountDataRestoreRepository(
     private val accountRemoteDataSource: AccountRemoteDataSource,
-    private val accountDatasetDataSource: AccountDatasetDataSource,
-    private val localDatasetStateDataSource: LocalDatasetStateDataSource,
-    private val syncStateDataSource: SyncStateDataSource,
-    private val photoSyncScopeDataSource: PhotoSyncScopeDataSource,
-    private val rackRepository: RackRepository,
-    private val slotRepository: SlotRepository,
-    private val itemRepository: ItemRepository,
+    private val accountRestoreMetadataGateway: AccountRestoreMetadataGateway,
+    private val rackRestoreGateway: RackRestoreGateway,
+    private val slotRestoreGateway: SlotRestoreGateway,
+    private val itemRestoreGateway: ItemRestoreGateway,
+    private val photoRestoreGateway: PhotoRestoreGateway,
 ) : AccountDataRestoreRepository {
 
     override suspend fun restoreAccountData(session: AccountSession): Result<DomainError, Unit> {
-        val localDatasetStateResult = localDatasetStateDataSource.getLocalDatasetState()
+        val localDatasetStateResult = accountRestoreMetadataGateway.getLocalDatasetState()
         val previousState = localDatasetStateResult.getOrNull()
         val restoreResult = localDatasetStateResult.suspendFlatMap { localDatasetState ->
             accountRemoteDataSource.fetchSnapshot(accountId = session.accountId)
@@ -88,100 +83,57 @@ internal class FirebaseAccountDataRestoreRepository(
         snapshot: RemoteAccountSnapshot,
         previousState: LocalDatasetState?,
     ): Result<DomainError, Unit> =
-        replaceLocalAccountDatasetIfNeeded(
-            session = session,
-            previousState = previousState,
-        ).suspendFlatMap {
-            applyEntities(snapshot = snapshot)
-        }.suspendFlatMap {
-            savePhotoSyncScopes(snapshot = snapshot)
-        }.suspendFlatMap {
-            saveSynchronizedMetadata(
-                session = session,
-                snapshot = snapshot,
-                previousState = previousState,
-            )
-        }
+        replaceLocalAccountDataset(snapshot = snapshot)
+            .suspendFlatMap {
+                saveSynchronizedMetadata(
+                    session = session,
+                    snapshot = snapshot,
+                    previousState = previousState,
+                )
+            }
 
-    private suspend fun replaceLocalAccountDatasetIfNeeded(
-        session: AccountSession,
-        previousState: LocalDatasetState?,
-    ): Result<DomainError, Unit> {
-        if (!previousState.shouldReplaceLocalAccountDataset(session = session)) {
-            return Unit.ok()
-        }
-
-        itemRepository.clear()
-        slotRepository.clear()
-        rackRepository.clear()
-        return photoSyncScopeDataSource.clearPhotoSyncScope()
+    private suspend fun replaceLocalAccountDataset(snapshot: RemoteAccountSnapshot): Result<DomainError, Unit> =
+        rackRestoreGateway.replaceRestoredRacks(racks = snapshot.racks)
+            .suspendFlatMap {
+                slotRestoreGateway.replaceRestoredSlots(slots = snapshot.slots)
+            }
+            .suspendFlatMap {
+                itemRestoreGateway.replaceRestoredItems(items = snapshot.items)
+            }
+            .suspendFlatMap {
+                photoRestoreGateway.replaceRestoredPhotoSyncScope(
+                    photoSyncScope = snapshot.photos.map { photo ->
+                        photo.toPhotoSyncScope(syncedAt = snapshot.syncCheckpoint.updatedAt)
+                    },
+                )
+            }
             .map { Unit }
-    }
-
-    private suspend fun applyEntities(snapshot: RemoteAccountSnapshot): Result<DomainError, Unit> {
-        snapshot.racks.forEach { rack ->
-            rackRepository.saveRack(rack = rack)
-                .failureOrNull()
-                ?.let { error -> return error.err() }
-        }
-        snapshot.slots.forEach { slot ->
-            slotRepository.saveSlot(slot = slot)
-                .failureOrNull()
-                ?.let { error -> return error.err() }
-        }
-        snapshot.items.forEach { item ->
-            itemRepository.saveItem(item = item)
-                .failureOrNull()
-                ?.let { error -> return error.err() }
-        }
-
-        return Unit.ok()
-    }
-
-    private suspend fun savePhotoSyncScopes(snapshot: RemoteAccountSnapshot): Result<DomainError, Unit> {
-        snapshot.photos.forEach { photo ->
-            photoSyncScopeDataSource.savePhotoSyncScope(
-                photoSyncScope = photo.toPhotoSyncScope(
-                    syncedAt = snapshot.syncCheckpoint.updatedAt,
-                ),
-            ).failureOrNull()
-                ?.let { error -> return error.err() }
-        }
-
-        return Unit.ok()
-    }
 
     private suspend fun saveSynchronizedMetadata(
         session: AccountSession,
         snapshot: RemoteAccountSnapshot,
         previousState: LocalDatasetState?,
     ): Result<DomainError, Unit> =
-        accountDatasetDataSource.saveAccountDataset(
+        accountRestoreMetadataGateway.markRestoreSynchronized(
             accountDataset = AccountDataset(
                 accountId = session.accountId,
                 datasetVersion = snapshot.syncCheckpoint.value,
                 lastSyncedAt = snapshot.syncCheckpoint.updatedAt,
             ),
-        ).suspendFlatMap {
-            localDatasetStateDataSource.saveLocalDatasetState(
-                localDatasetState = LocalDatasetState(
-                    mode = DataMode.AccountBackedSynchronized,
-                    accountId = session.accountId,
-                    lastLocalChangeAt = previousState?.lastLocalChangeAt,
-                    lastRemoteSyncAt = snapshot.syncCheckpoint.updatedAt,
-                    hasPendingChanges = false,
-                ),
-            )
-        }.suspendFlatMap {
-            syncStateDataSource.saveSyncState(
-                syncState = SyncState(
-                    status = SyncStatus.Synchronized,
-                    failureReason = null,
-                    lastAttemptAt = snapshot.syncCheckpoint.updatedAt,
-                    pendingOperationCount = 0,
-                ),
-            )
-        }.map { Unit }
+            localDatasetState = LocalDatasetState(
+                mode = DataMode.AccountBackedSynchronized,
+                accountId = session.accountId,
+                lastLocalChangeAt = previousState?.lastLocalChangeAt,
+                lastRemoteSyncAt = snapshot.syncCheckpoint.updatedAt,
+                hasPendingChanges = false,
+            ),
+            syncState = SyncState(
+                status = SyncStatus.Synchronized,
+                failureReason = null,
+                lastAttemptAt = snapshot.syncCheckpoint.updatedAt,
+                pendingOperationCount = 0,
+            ),
+        )
 
     private suspend fun markRestorePending(
         session: AccountSession,
@@ -189,7 +141,7 @@ internal class FirebaseAccountDataRestoreRepository(
         error: DomainError,
     ) {
         val attemptedAt = Clock.System.now().toEpochMilliseconds()
-        localDatasetStateDataSource.saveLocalDatasetState(
+        accountRestoreMetadataGateway.markRestorePending(
             localDatasetState = LocalDatasetState(
                 mode = DataMode.AccountBackedPendingSync,
                 accountId = session.accountId,
@@ -197,8 +149,6 @@ internal class FirebaseAccountDataRestoreRepository(
                 lastRemoteSyncAt = previousState?.lastRemoteSyncAt,
                 hasPendingChanges = previousState?.hasPendingChanges ?: false,
             ),
-        )
-        syncStateDataSource.saveSyncState(
             syncState = SyncState(
                 status = SyncStatus.RestorePending,
                 failureReason = error.toRestoreFailureMessage(),
@@ -208,14 +158,6 @@ internal class FirebaseAccountDataRestoreRepository(
         )
     }
 }
-
-private fun LocalDatasetState?.shouldReplaceLocalAccountDataset(session: AccountSession): Boolean =
-    this?.accountId == session.accountId &&
-        mode in setOf(
-            DataMode.AccountBackedSynchronized,
-            DataMode.AccountBackedPendingSync,
-            DataMode.SignedOutWithLocalCopy,
-        )
 
 private fun RemotePhotoReference.toPhotoSyncScope(syncedAt: Long?): PhotoSyncScope = PhotoSyncScope(
     photoId = photoId,

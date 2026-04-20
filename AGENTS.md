@@ -13,6 +13,10 @@ Apply these instructions for work in this repository.
 - Android UI, app entry, and navigation belong in `:androidApp`. iOS UI belongs in `iosApp`.
 - Respect dependency direction: UI -> Presentation -> Domain -> Data -> Platform APIs.
 - Domain use cases must depend on domain repository/use-case abstractions only. Do not inject or import `data.datasource` types from domain use cases; if a use case needs datasource-backed orchestration, add a domain repository interface and implement it in the data layer.
+- Use gateways for cross-feature access that must remain modular-ready. Gateway interfaces describe the capability a caller needs and belong in a stable shared/domain/core boundary; concrete implementations are owned by the feature that owns the data or behaviour and are resolved by Koin.
+- Gateway implementations are feature façades, not persistence adapters. Name them by feature ownership and capability, for example `SlotFeatureRestoreGateway` or `AccountSyncFeatureRestoreMetadataGateway`, not by backing technology such as `SqlDelightSlotRestoreGateway`.
+- Gateway implementations may delegate to owner-feature use cases, repositories, data sources, or internal services. Prefer the highest-level owner-feature abstraction that already preserves the required business rules; use data sources directly only when no repository/use-case contract exists for that capability yet.
+- Callers of another feature's gateway must depend only on the gateway interface. They must not reach into the owner feature's repositories, data sources, DTOs, or implementation details.
 
 ## Koin And ViewModels
 

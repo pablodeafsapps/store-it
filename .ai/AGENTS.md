@@ -134,6 +134,10 @@ The multiplatform module (`:shared`) is configured roughly as:
 - Data depends on Domain and infrastructure abstractions/platform APIs (via `expect` or injected interfaces).
 - Presentation depends on Domain (and optionally Data when the team explicitly decides to collapse them).
 - UI depends only on Presentation and **shared domain types exposed as public interfaces** from `:shared` (not internal domain implementations).
+- Cross-feature communication should use gateway interfaces when code must stay modular-ready. Gateway interfaces describe a capability needed by another feature and live in a stable shared/domain/core boundary. Koin resolves the concrete implementation provided by the feature that owns the data or behaviour.
+- Gateway implementations are feature-owned façades, not persistence adapters. Name them by feature ownership and capability, for example `RackFeatureRestoreGateway`, `SlotFeatureRestoreGateway`, or `AccountSyncFeatureRestoreMetadataGateway`; do not name them after backing technologies such as `SqlDelightSlotRestoreGateway`.
+- Gateway implementations may depend on owner-feature use cases, repositories, data sources, or internal services. Prefer the highest-level abstraction that preserves the required business rules, including local/remote strategy, validation, and reconciliation. Use data sources directly only when no owner-feature repository/use-case contract exists for the needed capability.
+- Gateway callers must depend only on the gateway interface and domain types. They must not import another feature's repositories, data sources, DTOs, or implementation classes.
 
 These rules are enforced by:
 

@@ -249,14 +249,23 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 - Dedicated types or extension functions for DTO → Entity and Entity → UI model. Keep mapping in one place; avoid anemic entities that are “just DTOs” in domain.
 
-### 6.4 Dependency Injection (Koin)
+### 6.4 Gateway
+
+- Use gateways for cross-feature communication in modular or modular-ready code. A gateway is a stable capability interface, usually declared in a shared `core`/domain boundary, that lets one feature ask another feature for data or behaviour without depending on that feature's internal module.
+- Gateway implementations are owned by the feature that owns the data or behaviour and are resolved through DI. They are façades over the owner feature, not persistence-technology adapters.
+- Name gateway implementations by feature ownership and capability, for example `UserFeatureProfileGateway`, `SlotFeatureRestoreGateway`, or `AccountSyncFeatureRestoreMetadataGateway`. Do not name them after backing technologies such as `SqlDelightSlotRestoreGateway`, `FirebaseUserGateway`, or `RealmInventoryGateway` unless the gateway contract itself is explicitly provider-specific.
+- A gateway implementation may delegate to use cases, repositories, data sources, or internal services owned by its feature. Prefer the highest-level abstraction that preserves the required business rules. For example, if a use case already handles local/remote reconciliation and validation, the gateway should call that use case instead of bypassing it through a data source.
+- Gateway callers depend only on the gateway interface and domain types. They must not import the owner feature's repositories, data sources, DTOs, or implementation classes.
+- Gateways are based on Strategy plus DI: the caller depends on the strategy interface, while Koin resolves the owner-feature implementation. This avoids circular feature dependencies and keeps future physical module extraction straightforward.
+
+### 6.5 Dependency Injection (Koin)
 
 - This project uses **Koin** with **Koin Annotations** (KSP): **AppModule** in `commonMain` has `@Module` and `@ComponentScan("org.deafsapps.storeit")`. **Android** uses a custom **Application** subclass (**StoreItApplication** in `:androidApp`) declared in the manifest; in `onCreate()` it calls `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this@StoreItApplication) }`. **AndroidModule** (in `:androidApp`) is `@Module(includes = [AppModule::class])` and provides the composition root. **iOS** calls `KoinInitKt.doInitKoinIos()` from the app entry point; that runs `initKoin {}` (only `AppModule().module`, no platform options).
 - **Shared ViewModels** in `commonMain` extend **StoreItViewModel** (expect in commonMain; actuals in androidMain and iosMain). They take an optional `coroutineScope` (default `null`); on Android the scope comes from the ViewModel machinery; on iOS the **StoreItViewModel** actual uses `MainScope()` when null. **Do not** pass a shared `CoroutineScope` from **IosKoinHelper**; that pattern caused iOS bugs. **IosKoinHelper** (commonMain) exposes getters like `getRackListViewModel()`, `getAddRackViewModel()`, `getRackDetailViewModel(rackId: String)` and resolves with **only** business parameters (e.g. `parametersOf(rackId)` for RackDetail), not a scope.
 - **Android**: Use Koin’s `viewModel()` / `@KoinViewModel` in the app module; no wrapper ViewModel classes. **iOS**: Use `ViewModelHolder<T: StoreItViewModel>` in Swift; it holds the KMP ViewModel and calls `sharedVm.clear()` in `deinit`. Prefer constructor injection; avoid `KoinComponent`/`inject()` in the pure ViewModels.
 - Use case interfaces: expose a typealias (e.g. `GetRacksUseCaseType`) and bind the implementation to it so ViewModels depend on the interface.
 
-### 6.5 Result / Either
+### 6.6 Result / Either
 
 - Use a sealed hierarchy for operations that can fail: e.g. `sealed interface Result<out T> { data class Ok<T>(val value: T) : Result<T>; data class Error(val cause: Throwable) : Result<Nothing> }`, or a type like `Either<L, R>`.
 - **Building Result values**: Prefer the extension functions `value.ok()` and `error.err()` when constructing success/failure (e.g. `list.ok()`, `DomainError.NotFound(...).err()`) instead of `Result.ok(value)` / `Result.err(error)`.
