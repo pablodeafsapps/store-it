@@ -51,6 +51,7 @@ A reference for Kotlin Multiplatform (KMP) applications aligning Kotlin and Swif
 - Prefer composing the project `Result` type with `map`, `flatMap`, `suspendFlatMap`, `fold`, and similar helpers instead of manually branching on `Ok` and `Err` when the functional form is more legible.
 - Avoid generic catch clauses such as `catch (exception: Exception)` and `catch (throwable: Throwable)`. Catch only the narrowest concrete exception types the block can actually throw, allow programmer bugs to fail loudly, and always rethrow coroutine `CancellationException`.
 - When converting an unexpected `Throwable` into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Avoid replacing a caught exception with a bare `DomainError.Unknown()` unless no throwable exists.
+- In Firebase-backed or other remote datasources, make the rule concrete: catch provider-specific exceptions such as `FirebaseFirestoreException`, `FirebaseStorageException`, and serialization failures instead of `Throwable`, and return delete counts as `Result<DomainError, Long>` whenever the provider makes the affected object count observable.
 
 ### 1.5 Nullability & Types
 

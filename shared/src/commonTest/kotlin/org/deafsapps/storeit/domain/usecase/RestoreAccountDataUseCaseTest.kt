@@ -191,7 +191,7 @@ private class FakeAccountRemoteDataSource : AccountRemoteDataSource {
     override suspend fun uploadPhoto(asset: RemotePhotoAsset): Result<DomainError, RemotePhotoReference> =
         DomainError.Unknown(message = "Not required for this test").err()
 
-    override suspend fun deletePhoto(photoId: String): Result<DomainError, Unit> = Unit.ok()
+    override suspend fun deletePhoto(photoId: String): Result<DomainError, Long> = 0L.ok()
 }
 
 private class FakeAccountDatasetDataSource : AccountDatasetDataSource {

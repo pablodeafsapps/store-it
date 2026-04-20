@@ -35,7 +35,7 @@ internal interface AccountRemoteDataSource {
 
     suspend fun uploadPhoto(asset: RemotePhotoAsset): Result<DomainError, RemotePhotoReference>
 
-    suspend fun deletePhoto(photoId: String): Result<DomainError, Unit>
+    suspend fun deletePhoto(photoId: String): Result<DomainError, Long>
 }
 
 internal data class EmailPasswordCredentials(

@@ -99,6 +99,7 @@ For all new and modified Kotlin files in this project:
 - Avoid generic catch clauses such as `catch (exception: Exception)` and `catch (throwable: Throwable)`. Catch the narrowest concrete exception types the block can actually throw, let programmer bugs fail loudly, and never swallow `CancellationException`.
 - When mapping an unexpected exception into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Do not replace thrown exceptions with a bare `DomainError.Unknown()` unless no throwable exists.
 - For datasource delete and clear operations, prefer `Result<DomainError, Long>` when the backing store can report affected-row counts. Treat `ok(0L)` as a successful no-op, not as an error.
+- For Firebase-backed or other remote datasources, apply the same rule explicitly: catch provider-specific exceptions such as `FirebaseFirestoreException`, `FirebaseStorageException`, or serialization failures instead of `Throwable`, and return affected-row/object counts from delete operations whenever the remote API lets you determine them.
 - Protect mutable in-memory repository state with `Mutex` and `withLock`.
 
 ## Testing
