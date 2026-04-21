@@ -21,7 +21,9 @@ import org.deafsapps.storeit.domain.model.EmailPasswordCredentials
 import org.deafsapps.storeit.domain.model.SessionState
 import org.deafsapps.storeit.domain.model.asModel
 import org.deafsapps.storeit.domain.repository.AccountRepository
+import org.koin.core.annotation.Single
 
+@Single(binds = [AccountRepository::class])
 internal class FirebaseAccountRepository(
     private val authRemoteDataSource: AuthRemoteDataSource,
     private val sessionCredentialDataSource: SessionCredentialDataSource,

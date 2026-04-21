@@ -1,7 +1,9 @@
 package org.deafsapps.storeit.presentation.account
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
@@ -49,6 +51,7 @@ class AccountViewModelTest {
             ).ok()
 
             val sut = createSut(testScope = this)
+            collectUiState(sut = sut)
 
             advanceUntilIdle()
 
@@ -76,6 +79,7 @@ class AccountViewModelTest {
             ).ok()
 
             val sut = createSut(testScope = this)
+            collectUiState(sut = sut)
 
             advanceUntilIdle()
 
@@ -91,6 +95,12 @@ class AccountViewModelTest {
         restoreAccountSessionUseCase = fakeRestoreAccountSessionUseCase,
         getSyncStageUseCase = fakeGetSyncStageUseCase,
     )
+
+    private fun TestScope.collectUiState(sut: AccountViewModel) {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            sut.uiState.collect {}
+        }
+    }
 }
 
 private fun accountSession(): AccountSession = AccountSession(

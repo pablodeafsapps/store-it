@@ -6,10 +6,12 @@ import org.deafsapps.storeit.domain.model.AccountSession
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.EmailPasswordCredentials
 import org.deafsapps.storeit.domain.repository.AccountRepository
+import org.koin.core.annotation.Factory
 
 internal interface SignUpAccountUseCaseType :
     UseCase<EmailPasswordCredentials, Result<DomainError, AccountSession>>
 
+@Factory(binds = [SignUpAccountUseCaseType::class])
 internal class SignUpAccountUseCase(
     private val accountRepository: AccountRepository,
 ) : SignUpAccountUseCaseType {
@@ -20,6 +22,7 @@ internal class SignUpAccountUseCase(
 internal interface SignInAccountUseCaseType :
     UseCase<EmailPasswordCredentials, Result<DomainError, AccountSession>>
 
+@Factory(binds = [SignInAccountUseCaseType::class])
 internal class SignInAccountUseCase(
     private val accountRepository: AccountRepository,
 ) : SignInAccountUseCaseType {
@@ -30,6 +33,7 @@ internal class SignInAccountUseCase(
 internal interface RestoreAccountSessionUseCaseType :
     UseCase<Unit, Result<DomainError, AccountSession?>>
 
+@Factory(binds = [RestoreAccountSessionUseCaseType::class])
 internal class RestoreAccountSessionUseCase(
     private val accountRepository: AccountRepository,
 ) : RestoreAccountSessionUseCaseType {
