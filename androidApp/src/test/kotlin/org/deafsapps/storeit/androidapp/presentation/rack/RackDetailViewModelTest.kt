@@ -5,6 +5,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeDeleteRackUseCase
@@ -430,8 +431,8 @@ internal class RackDetailViewModelTest {
             assertEquals(0, fakeSaveSlot.invokeCount)
         }
 
-    private fun getDummyRackDetailViewModel(): RackDetailViewModel =
-        RackDetailViewModel(
+    private fun getDummyRackDetailViewModel(): RackDetailViewModel {
+        val viewModel = RackDetailViewModel(
             coroutineScope = testScope,
             rackId = dummyRackId,
             getRackDataByRackIdUseCase = fakeGetRackDataByRackId,
@@ -439,4 +440,9 @@ internal class RackDetailViewModelTest {
             deleteRackUseCase = fakeDeleteRack,
             saveSlotUseCase = fakeSaveSlot,
         )
+        testScope.backgroundScope.launch(UnconfinedTestDispatcher(testScope.testScheduler)) {
+            viewModel.uiState.collect {}
+        }
+        return viewModel
+    }
 }

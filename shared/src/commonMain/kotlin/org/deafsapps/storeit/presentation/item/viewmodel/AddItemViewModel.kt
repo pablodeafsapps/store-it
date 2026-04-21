@@ -8,10 +8,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -55,7 +53,15 @@ class AddItemViewModel(
             addItemSlot = addItemSlot,
         ),
     )
-    val uiState: StateFlow<AddItemUiState> = _uiState.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<AddItemUiState> = _uiState
+        .combine(getRacksStateFlow()) { state, racksState ->
+            state.copy(
+                racks = racksState.racks,
+                error = racksState.error ?: state.error,
+            )
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
@@ -64,6 +70,7 @@ class AddItemViewModel(
                 addItemSlot = addItemSlot,
             ),
         )
+
     private val _uiEvent = MutableSharedFlow<AddItemUiEvent?>()
     val uiEvent: SharedFlow<AddItemUiEvent?> = _uiEvent.asSharedFlow()
         .shareIn(
@@ -71,28 +78,15 @@ class AddItemViewModel(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
         )
 
-    init {
-        startRacksFlowWhenSelectingRack()
-    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun startRacksFlowWhenSelectingRack() {
+    private fun getRacksStateFlow() =
         getRacksFlowUseCase(input = Unit)
             .mapLatest { result ->
                 result.fold(
-                    ifErr = { error ->
-                        _uiState.value.copy(racks = emptyList(), error = error.toErrorCause())
-                    },
-                    ifOk = { racks ->
-                        _uiState.value.copy(racks = racks, error = null)
-                    },
+                    ifErr = { error -> AddItemRacksState(racks = emptyList(), error = error.toErrorCause()) },
+                    ifOk = { racks -> AddItemRacksState(racks = racks, error = null) },
                 )
-            }.onEach { newState ->
-                _uiState.update { state ->
-                    state.copy(racks = newState.racks, error = newState.error ?: state.error)
-                }
-            }.launchIn(viewModelScope)
-    }
+            }
 
     fun onUpdateName(name: String) {
         _uiState.update { state -> state.copy(name = name, error = null) }
@@ -230,6 +224,11 @@ class AddItemViewModel(
         )
     }
 }
+
+private data class AddItemRacksState(
+    val racks: List<Rack>,
+    val error: String?,
+)
 
 private fun DomainError.toErrorCause(): String = when (this) {
     is DomainError.ValidationError -> reason

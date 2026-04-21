@@ -1,8 +1,10 @@
 package org.deafsapps.storeit.androidapp.presentation.item
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeAddItemUseCase
@@ -45,6 +47,8 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
+            collectUiState(sut = sut)
+
             advanceUntilIdle()
 
             assertFalse(sut.uiState.value.isLoading)
@@ -62,6 +66,8 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
+            collectUiState(sut = sut)
+
             advanceUntilIdle()
             sut.onUpdateName("Hammer")
             sut.onSave()
@@ -81,10 +87,18 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
+            collectUiState(sut = sut)
+
             advanceUntilIdle()
             sut.onConfirmDelete()
             advanceUntilIdle()
 
             assertEquals(itemId, fakeDelete.lastId)
         }
+
+    private fun TestScope.collectUiState(sut: ItemDetailViewModel) {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            sut.uiState.collect {}
+        }
+    }
 }

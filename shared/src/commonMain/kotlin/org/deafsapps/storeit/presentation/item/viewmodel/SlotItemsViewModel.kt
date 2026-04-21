@@ -1,18 +1,23 @@
 package org.deafsapps.storeit.presentation.item.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.stateIn
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
+import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.usecase.GetItemsBySlotInput
 import org.deafsapps.storeit.domain.usecase.GetItemsBySlotUseCaseType
 import org.deafsapps.storeit.presentation.StoreItViewModel
@@ -21,6 +26,7 @@ import org.deafsapps.storeit.presentation.item.model.SlotItemsUiState
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
 
+private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
 private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
 
 @Factory
@@ -31,8 +37,24 @@ class SlotItemsViewModel(
     private val getItemsBySlotUseCase: GetItemsBySlotUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 
-    private val _uiState = MutableStateFlow(SlotItemsUiState.getDefault())
-    val uiState: StateFlow<SlotItemsUiState> = _uiState.asStateFlow()
+    private val loadRequests = MutableSharedFlow<SlotItemsLoadRequest>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<SlotItemsUiState> = loadRequests
+        .onStart { emit(value = SlotItemsLoadRequest.RefreshItems) }
+        .flatMapLatest { request -> request.toStateChanges() }
+        .runningFold(
+            initial = SlotItemsUiState.getDefault(),
+            operation = { state, change -> change.reduce(state = state) },
+        )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_LONG_TIMEOUT_MILLIS),
+            initialValue = SlotItemsUiState.getDefault(),
+        )
 
     private val _uiEvent = MutableSharedFlow<SlotItemsUiEvent?>()
     val uiEvent: SharedFlow<SlotItemsUiEvent?> = _uiEvent.asSharedFlow()
@@ -41,29 +63,49 @@ class SlotItemsViewModel(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
         )
 
-    init {
-        refresh()
+    fun refresh() {
+        loadRequests.tryEmit(value = SlotItemsLoadRequest.RefreshItems)
     }
 
-    fun refresh() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            getItemsBySlotUseCase(input = GetItemsBySlotInput(rackId = rackId, slotId = slotId)).fold(
-                ifErr = { error ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = error.toErrorCause(),
-                            items = emptyList(),
-                        )
-                    }
-                },
-                ifOk = { items ->
-                    _uiState.update {
-                        it.copy(isLoading = false, error = null, items = items)
-                    }
-                },
-            )
+    private fun SlotItemsLoadRequest.toStateChanges(): Flow<SlotItemsStateChange> = flow {
+        emit(value = SlotItemsStateChange.Loading)
+        when (this@toStateChanges) {
+            SlotItemsLoadRequest.RefreshItems ->
+                getItemsBySlotUseCase(input = GetItemsBySlotInput(rackId = rackId, slotId = slotId)).fold(
+                    ifErr = { error -> emit(value = SlotItemsStateChange.LoadFailed(error = error)) },
+                    ifOk = { items -> emit(value = SlotItemsStateChange.ItemsLoaded(items = items)) },
+                )
+        }
+    }
+
+    private enum class SlotItemsLoadRequest {
+        RefreshItems,
+    }
+
+    private sealed interface SlotItemsStateChange {
+        fun reduce(state: SlotItemsUiState): SlotItemsUiState
+
+        data object Loading : SlotItemsStateChange {
+            override fun reduce(state: SlotItemsUiState): SlotItemsUiState =
+                state.copy(isLoading = true, error = null)
+        }
+
+        data class ItemsLoaded(
+            private val items: List<Item>,
+        ) : SlotItemsStateChange {
+            override fun reduce(state: SlotItemsUiState): SlotItemsUiState =
+                state.copy(isLoading = false, error = null, items = items)
+        }
+
+        data class LoadFailed(
+            private val error: DomainError,
+        ) : SlotItemsStateChange {
+            override fun reduce(state: SlotItemsUiState): SlotItemsUiState =
+                state.copy(
+                    isLoading = false,
+                    error = error.toErrorCause(),
+                    items = emptyList(),
+                )
         }
     }
 }

@@ -1,13 +1,21 @@
 package org.deafsapps.storeit.presentation.rack.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.runningFold
+import kotlinx.coroutines.flow.stateIn
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
+import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.usecase.GetRackDataByRackIdUseCaseType
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.mapper.toRackSlotMarkerVos
@@ -19,7 +27,9 @@ import org.koin.core.annotation.InjectedParam
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
 private const val SLOT_TAP_HIT_RADIUS_REL = 0.08f
+private const val STATE_CHANGE_BUFFER_CAPACITY = 32
 
 @Factory
 class RackSlotPickerViewModel(
@@ -28,23 +38,45 @@ class RackSlotPickerViewModel(
     private val getRackDataByRackIdUseCase: GetRackDataByRackIdUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 
-    private val _uiState = MutableStateFlow(RackSlotPickerUiState.getDefault())
-    val uiState: StateFlow<RackSlotPickerUiState> = _uiState.asStateFlow()
+    private var latestState = RackSlotPickerUiState.getDefault()
 
-    init {
-        loadRackDataById(rackId = rackId)
-    }
+    private val loadRequests = MutableSharedFlow<RackSlotPickerLoadRequest>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    private val stateChanges = MutableSharedFlow<RackSlotPickerStateChange>(
+        extraBufferCapacity = STATE_CHANGE_BUFFER_CAPACITY,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<RackSlotPickerUiState> = loadRequests
+        .onStart { emit(value = RackSlotPickerLoadRequest.RefreshRackData) }
+        .flatMapLatest { request -> request.toStateChanges() }
+        .let { loadChanges -> listOf(loadChanges, stateChanges).merge() }
+        .runningFold(
+            initial = RackSlotPickerUiState.getDefault(),
+            operation = { state, change ->
+                change.reduce(state = state).also { latestState = it }
+            },
+        )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_LONG_TIMEOUT_MILLIS),
+            initialValue = RackSlotPickerUiState.getDefault(),
+        )
 
     fun onImageTap(xRel: Float, yRel: Float) {
-        val slots = _uiState.value.slots
+        val slots = latestState.slots
         val existing = slots.findNearestSlotWithinOrNull(xRel = xRel, yRel = yRel, radiusRel = SLOT_TAP_HIT_RADIUS_REL)
         if (existing != null) {
-            _uiState.update {
-                it.copy(
-                    selectedSlot = existing,
-                    selectedPlacementType = SlotPlacementType.EXISTING,
-                )
-            }
+            enqueueStateChange(
+                change = RackSlotPickerStateChange.SlotSelected(
+                    slot = existing,
+                    placementType = SlotPlacementType.EXISTING,
+                ),
+            )
             return
         }
         createDraftSlot(xRel = xRel, yRel = yRel)
@@ -52,7 +84,7 @@ class RackSlotPickerViewModel(
 
     @OptIn(ExperimentalUuidApi::class)
     private fun createDraftSlot(xRel: Float, yRel: Float) {
-        val current = _uiState.value
+        val current = latestState
         val draftSlot = RackSlotMarkerVo(
             id = Uuid.random().toString(),
             xRel = xRel,
@@ -61,42 +93,98 @@ class RackSlotPickerViewModel(
         val mergedSlots = current.slots
             .filterNot {
                 current.selectedPlacementType == SlotPlacementType.DRAFT &&
-                    current.selectedSlot?.id == it.id
+                current.selectedSlot?.id == it.id
             }
             .plus(draftSlot)
-        _uiState.update {
-            it.copy(
+        enqueueStateChange(
+            change = RackSlotPickerStateChange.DraftSlotCreated(
                 slots = mergedSlots,
-                selectedSlot = draftSlot,
-                selectedPlacementType = SlotPlacementType.DRAFT,
-            )
+                slot = draftSlot,
+            ),
+        )
+    }
+
+    private fun RackSlotPickerLoadRequest.toStateChanges(): Flow<RackSlotPickerStateChange> = flow {
+        emit(value = RackSlotPickerStateChange.Loading)
+        when (this@toStateChanges) {
+            RackSlotPickerLoadRequest.RefreshRackData ->
+                getRackDataByRackIdUseCase(input = rackId).fold(
+                    ifErr = { error -> emit(value = RackSlotPickerStateChange.LoadFailed(error = error)) },
+                    ifOk = { rackData ->
+                        emit(
+                            value = RackSlotPickerStateChange.RackDataLoaded(
+                                rack = rackData.rack,
+                                slots = rackData.shelfSlots.toRackSlotMarkerVos(),
+                            ),
+                        )
+                    },
+                )
         }
     }
 
-    private fun loadRackDataById(rackId: String) {
-        viewModelScope.launch {
-            getRackDataByRackIdUseCase(input = rackId).fold(
-                ifErr = { error ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = error.toErrorCause(),
-                        )
-                    }
-                },
-                ifOk = { rackData ->
-                    _uiState.update {
-                        it.copy(
-                            rack = rackData.rack,
-                            slots = rackData.shelfSlots.toRackSlotMarkerVos(),
-                            selectedSlot = null,
-                            selectedPlacementType = null,
-                            isLoading = false,
-                            error = null,
-                        )
-                    }
-                },
-            )
+    private fun enqueueStateChange(change: RackSlotPickerStateChange) {
+        latestState = change.reduce(state = latestState)
+        stateChanges.tryEmit(value = change)
+    }
+
+    private enum class RackSlotPickerLoadRequest {
+        RefreshRackData,
+    }
+
+    private sealed interface RackSlotPickerStateChange {
+        fun reduce(state: RackSlotPickerUiState): RackSlotPickerUiState
+
+        data object Loading : RackSlotPickerStateChange {
+            override fun reduce(state: RackSlotPickerUiState): RackSlotPickerUiState =
+                state.copy(isLoading = true, error = null)
+        }
+
+        data class RackDataLoaded(
+            private val rack: Rack,
+            private val slots: List<RackSlotMarkerVo>,
+        ) : RackSlotPickerStateChange {
+            override fun reduce(state: RackSlotPickerUiState): RackSlotPickerUiState =
+                state.copy(
+                    rack = rack,
+                    slots = slots,
+                    selectedSlot = null,
+                    selectedPlacementType = null,
+                    isLoading = false,
+                    error = null,
+                )
+        }
+
+        data class LoadFailed(
+            private val error: DomainError,
+        ) : RackSlotPickerStateChange {
+            override fun reduce(state: RackSlotPickerUiState): RackSlotPickerUiState =
+                state.copy(
+                    isLoading = false,
+                    error = error.toErrorCause(),
+                )
+        }
+
+        data class SlotSelected(
+            private val slot: RackSlotMarkerVo,
+            private val placementType: SlotPlacementType,
+        ) : RackSlotPickerStateChange {
+            override fun reduce(state: RackSlotPickerUiState): RackSlotPickerUiState =
+                state.copy(
+                    selectedSlot = slot,
+                    selectedPlacementType = placementType,
+                )
+        }
+
+        data class DraftSlotCreated(
+            private val slots: List<RackSlotMarkerVo>,
+            private val slot: RackSlotMarkerVo,
+        ) : RackSlotPickerStateChange {
+            override fun reduce(state: RackSlotPickerUiState): RackSlotPickerUiState =
+                state.copy(
+                    slots = slots,
+                    selectedSlot = slot,
+                    selectedPlacementType = SlotPlacementType.DRAFT,
+                )
         }
     }
 }

@@ -5,6 +5,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeGetItemsBySlotUseCase
@@ -65,9 +66,17 @@ internal class SlotItemsViewModelTest {
                 coroutineScope = testScope,
                 getItemsBySlotUseCase = fakeGetItemsBySlot,
             )
+            collectUiState(sut = sut)
+
             advanceUntilIdle()
 
             assertTrue(sut.uiState.value.items.isEmpty())
             assertFalse(sut.uiState.value.isLoading)
         }
+
+    private fun TestScope.collectUiState(sut: SlotItemsViewModel) {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            sut.uiState.collect {}
+        }
+    }
 }
