@@ -20,6 +20,7 @@ navigation3 = "1.1.0-beta01"
 kotlinx-serialization = "1.9.0"
 sqldelight = "2.3.2"
 gitlive-firebase = "2.4.0"
+firebase-bom = "34.12.0"
 androidx-datastore = "1.2.1"
 
 [libraries]
@@ -61,6 +62,7 @@ sqldelight-sqlite-dialect = { module = "app.cash.sqldelight:sqlite-3-38-dialect"
 gitlive-firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "gitlive-firebase" }
 gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "gitlive-firebase" }
 gitlive-firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "gitlive-firebase" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
 
 [plugins]
