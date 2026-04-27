@@ -7,6 +7,10 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "org.deafsapps.storeit.androidapp"
     compileSdk = 36
@@ -43,6 +47,8 @@ configurations.matching { it.name.contains("androidTest", ignoreCase = true) }.c
 
 dependencies {
     implementation(projects.shared)
+    implementation(project.dependencies.platform(libs.firebase.bom))
+    implementation(libs.firebase.common)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.annotations)
     ksp(libs.koin.ksp.compiler)

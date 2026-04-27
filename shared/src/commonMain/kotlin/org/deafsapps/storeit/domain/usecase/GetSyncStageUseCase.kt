@@ -231,7 +231,8 @@ internal class GetSyncStageUseCase : GetSyncStageUseCaseType {
 }
 
 private fun DomainError.toSyncFailureMessage(): String = when (this) {
-    is DomainError.Unknown -> message
+    is DomainError.Unknown ->
+        message.takeUnless { it == "Unknown error" } ?: "Synchronization failed. Retry is required."
     is DomainError.NotFound -> "Synchronization failed because required $resource data could not be found."
     is DomainError.ValidationError -> "Synchronization failed: $reason"
 }

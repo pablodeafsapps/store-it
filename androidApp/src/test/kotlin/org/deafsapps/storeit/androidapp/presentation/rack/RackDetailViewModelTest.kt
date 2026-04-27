@@ -3,7 +3,6 @@ package org.deafsapps.storeit.androidapp.presentation.rack
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -38,7 +37,7 @@ internal class RackDetailViewModelTest {
     private lateinit var fakeSaveRack: FakeSaveRackUseCase
     private lateinit var fakeDeleteRack: FakeDeleteRackUseCase
     private lateinit var fakeSaveSlot: FakeSaveSlotUseCase
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val dummyRackId = "rack-1"
     private val dummyRack = Rack(id = dummyRackId, name = "Rack 1")

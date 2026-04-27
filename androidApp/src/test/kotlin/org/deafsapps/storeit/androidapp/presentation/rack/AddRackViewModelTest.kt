@@ -208,13 +208,13 @@ internal class AddRackViewModelTest {
             advanceUntilIdle()
             sut.onUpdateName("Rack 1")
             advanceUntilIdle()
-            fakeSaveRackUseCase.invokeResult = DomainError.Unknown.err()
+            fakeSaveRackUseCase.invokeResult = DomainError.Unknown().err()
 
             sut.onSaveRack()
             advanceUntilIdle()
 
             val state = states.last()
-            assertEquals("An unknown error occurred", state.error)
+            assertEquals("Unknown error", state.error)
             assertFalse(state.isSuccess)
             collectJob.cancel()
         }

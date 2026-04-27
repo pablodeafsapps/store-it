@@ -91,13 +91,12 @@ internal class FirebaseAuthRemoteDataSource : AuthRemoteDataSource {
         block: suspend () -> AuthResult,
     ): Result<DomainError, AuthenticatedRemoteAccount> = try {
         val user = block().user
-        if (user == null) {
-            DomainError.Unknown(message = "Firebase $operationName did not return an authenticated user").err()
-        } else {
-            user.toAuthenticatedRemoteAccount().ok()
-        }
+        user?.toAuthenticatedRemoteAccount()?.ok()
+            ?: DomainError.Unknown(message = "Firebase $operationName did not return an authenticated user")
+                .err()
     } catch (exception: FirebaseAuthException) {
-        exception.toUnknownDomainError(message = "Unable to $operationName with Firebase account").err()
+        exception.toUnknownDomainError(message = "Unable to $operationName with Firebase account")
+            .err()
     }
 
     private suspend fun FirebaseUser.toAuthenticatedRemoteAccount(): AuthenticatedRemoteAccount =

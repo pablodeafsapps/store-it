@@ -22,10 +22,12 @@ import androidx.navigation3.ui.NavDisplay
 import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.ItemDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.SlotItemsScreen
+import org.deafsapps.storeit.androidapp.presentation.account.ui.AccountScreen
 import org.deafsapps.storeit.androidapp.presentation.search.ui.SearchScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackBrowseScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
+import org.deafsapps.storeit.presentation.account.viewmodel.AccountViewModel
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
@@ -77,6 +79,11 @@ internal fun StoreItNavDisplay(
                 }
                 entry<NavScreen.Search> {
                     SearchNavContent(
+                        backStack = backStack,
+                    )
+                }
+                entry<NavScreen.Account> {
+                    AccountNavContent(
                         backStack = backStack,
                     )
                 }
@@ -182,8 +189,41 @@ private fun RackListNavContent(
         onNavigateToRackDetail = { id -> backStack.add(NavScreen.RackDetail(id)) },
         onNavigateToAddItem = { backStack.add(NavScreen.AddItem) },
         onNavigateToSearch = { backStack.add(NavScreen.Search) },
+        onNavigateToAccount = { backStack.add(NavScreen.Account) },
         isDarkModeEnabled = isDarkModeEnabled,
         onThemeModeToggle = onThemeModeToggle,
+    )
+}
+
+@Composable
+private fun AccountNavContent(
+    backStack: NavBackStack<NavKey>,
+) {
+    val viewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore = ViewModelStore()
+        }
+    }
+    val accountViewModel: AccountViewModel = koinViewModel(
+        viewModelStoreOwner = viewModelStoreOwner,
+    )
+    val uiState by accountViewModel.uiState.collectAsStateWithLifecycle()
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModelStoreOwner.viewModelStore.clear()
+        }
+    }
+
+    AccountScreen(
+        uiState = uiState,
+        onSelectSignIn = accountViewModel::selectSignInMode,
+        onSelectSignUp = accountViewModel::selectSignUpMode,
+        onEmailChange = accountViewModel::onEmailInputChanged,
+        onPasswordChange = accountViewModel::onPasswordInputChanged,
+        onSubmitCredentials = accountViewModel::submitCredentials,
+        onRetryRestore = accountViewModel::retryRestore,
+        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
     )
 }
 

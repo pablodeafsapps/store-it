@@ -64,6 +64,7 @@ internal fun RackListScreen(
     onNavigateToRackDetail: (String) -> Unit,
     onNavigateToAddItem: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    onNavigateToAccount: () -> Unit = {},
     isDarkModeEnabled: Boolean = false,
     onThemeModeToggle: () -> Unit = {},
 ) {
@@ -103,6 +104,14 @@ internal fun RackListScreen(
                             onClick = {
                                 showMenu = false
                                 onNavigateToAddItem()
+                            },
+                        )
+                        DropdownMenuItem(
+                            modifier = Modifier.testTag("rackListAccountMenuItem"),
+                            text = { Text(stringResource(R.string.rack_list_overflow_account)) },
+                            onClick = {
+                                showMenu = false
+                                onNavigateToAccount()
                             },
                         )
                         DropdownMenuItem(

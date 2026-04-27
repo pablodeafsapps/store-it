@@ -6,6 +6,21 @@
 
 "racks_title" = "Racks";
 "rack_list_more_options" = "More options";
+"account_title" = "Account";
+"account_sign_in" = "Sign in";
+"account_sign_up" = "Sign up";
+"account_email_label" = "Email";
+"account_password_label" = "Password";
+"account_submit_sign_in" = "Sign in";
+"account_submit_sign_up" = "Create account";
+"account_local_only" = "Your data is currently stored only on this device.";
+"account_signed_in" = "Signed in as %@";
+"account_backed_up" = "Your data is backed up.";
+"account_pending" = "Backup or restore is pending.";
+"account_restore_pending" = "Restore is pending.";
+"account_failed" = "Account sync needs attention.";
+"account_reconciliation_required" = "Choose how to reconcile local and remote data before continuing.";
+"account_retry_restore" = "Retry restore";
 "rack_list_switch_dark_mode" = "Switch to dark mode";
 "rack_list_switch_light_mode" = "Switch to light mode";
 "rack_search_placeholder" = "Search items by name or description";

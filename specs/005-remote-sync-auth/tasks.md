@@ -71,6 +71,7 @@
 - [X] T017A [US1] Implement account restore gateway adapters and refactor restore orchestration in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/gateway/FeatureAccountRestoreGateways.kt` and `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/FirebaseAccountDataRestoreRepository.kt`
 - [X] T018 [US1] Expose account mode, synchronized, and restore-pending state through shared presentation models in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/model/AccountUiState.kt`
 - [X] T019 [US1] Implement shared account entry and restore view model for email/password auth and restore retry in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/viewmodel/AccountViewModel.kt`
+- [X] T019A [US1] Implement Android and iOS account sign-in/sign-up UI flow in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/`, `androidApp/src/main/java/org/deafsapps/storeit/androidapp/presentation/account/ui/`, `androidApp/src/main/java/org/deafsapps/storeit/androidapp/`, `iosApp/iosApp/Presentation/Account/Views/`, `iosApp/iosApp/Presentation/AppRoute.swift`, and `iosApp/iosApp/Presentation/ContentView.swift`
 
 **Checkpoint**: User Story 1 should be fully functional and independently testable.
 

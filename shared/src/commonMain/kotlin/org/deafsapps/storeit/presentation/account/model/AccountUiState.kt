@@ -7,6 +7,10 @@ import org.deafsapps.storeit.domain.model.SyncStatus
 @Immutable
 data class AccountUiState(
     val isLoading: Boolean,
+    val isSubmitting: Boolean = false,
+    val authMode: AccountAuthMode = AccountAuthMode.SignIn,
+    val emailInput: String = "",
+    val passwordInput: String = "",
     val isAuthenticated: Boolean,
     val accountEmail: String?,
     val dataMode: DataMode,
@@ -37,9 +41,25 @@ data class AccountUiState(
         get() = dataMode == DataMode.ReconciliationRequired ||
             syncStatus == SyncStatus.BlockedByReconciliation
 
+    val isSignInMode: Boolean
+        get() = authMode == AccountAuthMode.SignIn
+
+    val isSignUpMode: Boolean
+        get() = authMode == AccountAuthMode.SignUp
+
+    val canSubmitCredentials: Boolean
+        get() = !isLoading &&
+            !isSubmitting &&
+            emailInput.isNotBlank() &&
+            passwordInput.isNotBlank()
+
     companion object {
         fun getDefault(): AccountUiState = AccountUiState(
             isLoading = false,
+            isSubmitting = false,
+            authMode = AccountAuthMode.SignIn,
+            emailInput = "",
+            passwordInput = "",
             isAuthenticated = false,
             accountEmail = null,
             dataMode = DataMode.LocalOnly,
@@ -55,4 +75,9 @@ data class AccountUiState(
             SyncStatus.RestorePending,
         )
     }
+}
+
+enum class AccountAuthMode {
+    SignIn,
+    SignUp,
 }

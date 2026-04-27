@@ -21,6 +21,7 @@ kotlinx-serialization = "1.9.0"
 sqldelight = "2.3.2"
 gitlive-firebase = "2.4.0"
 firebase-bom = "34.12.0"
+google-services = "4.4.4"
 androidx-datastore = "1.2.1"
 
 [libraries]
@@ -63,6 +64,7 @@ gitlive-firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "g
 gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "gitlive-firebase" }
 gitlive-firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "gitlive-firebase" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-common = { module = "com.google.firebase:firebase-common" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
 
 [plugins]
@@ -78,3 +80,4 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 skie = { id = "co.touchlab.skie", version.ref = "skie" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+googleServices = { id = "com.google.gms.google-services", version.ref = "google-services" }

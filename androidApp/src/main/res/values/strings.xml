@@ -12,6 +12,7 @@
     <string name="rack_list_title">Racks</string>
     <string name="rack_list_overflow_menu">More options</string>
     <string name="rack_list_overflow_add_item">Add item</string>
+    <string name="rack_list_overflow_account">Account</string>
     <string name="rack_list_overflow_dark_mode">Switch to dark mode</string>
     <string name="rack_list_overflow_light_mode">Switch to light mode</string>
     <string name="rack_list_search_placeholder">Search items by name or description</string>
@@ -32,6 +33,22 @@
     <string name="image_picker_title">Select Photo Source</string>
     <string name="image_picker_take_photo">Take Photo</string>
     <string name="image_picker_choose_gallery">Choose from Gallery</string>
+
+    <string name="account_title">Account</string>
+    <string name="account_sign_in">Sign in</string>
+    <string name="account_sign_up">Sign up</string>
+    <string name="account_email_label">Email</string>
+    <string name="account_password_label">Password</string>
+    <string name="account_submit_sign_in">Sign in</string>
+    <string name="account_submit_sign_up">Create account</string>
+    <string name="account_local_only">Your data is currently stored only on this device.</string>
+    <string name="account_signed_in">Signed in as %1$s</string>
+    <string name="account_backed_up">Your data is backed up.</string>
+    <string name="account_pending">Backup or restore is pending.</string>
+    <string name="account_restore_pending">Restore is pending.</string>
+    <string name="account_failed">Account sync needs attention.</string>
+    <string name="account_reconciliation_required">Choose how to reconcile local and remote data before continuing.</string>
+    <string name="account_retry_restore">Retry restore</string>
 
     <string name="rack_detail_title_default">Rack</string>
     <string name="rack_detail_title_select_slot">%1$s - select slot</string>

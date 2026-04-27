@@ -1,6 +1,7 @@
 package org.deafsapps.storeit.di
 
 import org.deafsapps.storeit.data.model.DebugMockDataPreloader
+import org.deafsapps.storeit.presentation.account.viewmodel.AccountViewModel
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.item.viewmodel.AddItemViewModel
 import org.deafsapps.storeit.presentation.item.viewmodel.ItemDetailViewModel
@@ -46,4 +47,6 @@ object IosKoinHelper : KoinComponent {
         get(parameters = { parametersOf(itemId) })
 
     fun getSearchViewModel(): SearchViewModel = get()
+
+    fun getAccountViewModel(): AccountViewModel = get()
 }

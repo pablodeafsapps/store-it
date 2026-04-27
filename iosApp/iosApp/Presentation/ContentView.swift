@@ -15,6 +15,7 @@ struct ContentView: View {
                         onAddRackSelected: { rackListViewModel.sharedVm.onAddRackSelected() },
                         onRackSelected: { rack in rackListViewModel.sharedVm.onRackSelected(rack: rack) },
                         onNavigateToSearch: { path.append(.search) },
+                        onNavigateToAccount: { path.append(.account) },
                         isDarkModeEnabled: isDarkModeEnabled,
                         onThemeModeToggle: { isDarkModeEnabled.toggle() }
                     )
@@ -53,6 +54,10 @@ struct ContentView: View {
     @ViewBuilder
     private func routeDestination(_ route: AppRoute) -> some View {
         switch route {
+        case .account:
+            AccountScreen(
+                onNavigateBack: { popRoute() }
+            )
         case .search:
             SearchFlowScreen(
                 onItemSelected: { placement in

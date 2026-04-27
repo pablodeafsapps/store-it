@@ -6,6 +6,7 @@ struct RackListView: View {
     let onAddRackSelected: () -> Void
     let onRackSelected: (Rack) -> Void
     let onNavigateToSearch: () -> Void
+    let onNavigateToAccount: () -> Void
     let isDarkModeEnabled: Bool
     let onThemeModeToggle: () -> Void
 
@@ -37,6 +38,11 @@ struct RackListView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
+                    Button(
+                        "account_title",
+                        action: onNavigateToAccount,
+                    )
+                    .accessibilityIdentifier("rackListAccountMenuItem")
                     Button(
                         isDarkModeEnabled ? "rack_list_switch_light_mode" : "rack_list_switch_dark_mode",
                         action: onThemeModeToggle,

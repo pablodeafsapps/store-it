@@ -104,10 +104,23 @@ kotlin.sourceSets.named("commonMain") {
     kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
 }
 
+kotlin.sourceSets.named("iosArm64Main") {
+    kotlin.srcDir("build/generated/ksp/iosArm64/iosArm64Main/kotlin")
+}
+
+kotlin.sourceSets.named("iosSimulatorArm64Main") {
+    kotlin.srcDir("build/generated/ksp/iosSimulatorArm64/iosSimulatorArm64Main/kotlin")
+}
+
+kotlin.sourceSets.named("iosX64Main") {
+    kotlin.srcDir("build/generated/ksp/iosX64/iosX64Main/kotlin")
+}
+
 dependencies {
     add("kspCommonMainMetadata", libs.koin.ksp.compiler)
     add("kspAndroid", libs.koin.ksp.compiler)
     add("kspIosArm64", libs.koin.ksp.compiler)
+    add("kspIosX64", libs.koin.ksp.compiler)
     add("kspIosSimulatorArm64", libs.koin.ksp.compiler)
 }
 
