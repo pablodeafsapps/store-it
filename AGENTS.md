@@ -108,6 +108,16 @@ For all new and modified Kotlin files in this project:
 - For Firebase-backed or other remote datasources, apply the same rule explicitly: catch provider-specific exceptions such as `FirebaseFirestoreException`, `FirebaseStorageException`, or serialization failures instead of `Throwable`, and return affected-row/object counts from delete operations whenever the remote API lets you determine them.
 - Protect mutable in-memory repository state with `Mutex` and `withLock`.
 
+## Compose Stability And UiState
+
+- Prefer correct immutable UI-state design over Compose stability annotations.
+- Do not add `@Stable` or `@Immutable` by default to `UiState`, presentation VOs, or other shared models.
+- Use `@Immutable` only when it solves a real compiler inference problem or there is a concrete, demonstrated need to assert the contract explicitly.
+- Use `@Stable` only for mutable state holders whose public changes are fully backed by Compose-observable state. Do not use it on ordinary data classes or domain interfaces.
+- Treat both annotations as strong manual contracts, not as performance decorations. If the contract is wrong, remove the annotation instead of forcing Compose to trust it.
+- For shared presentation models, prefer immutable `val` properties, immutable collections such as `ImmutableList`, and presentation-owned VOs instead of exposing domain interfaces or standard mutable-by-contract collection types.
+- If a `UiState` or VO needs a refactor to become truly immutable, do the data-shape refactor first and add no annotation unless a concrete need remains afterward.
+
 ## Testing
 
 - Follow a GIVEN-WHEN-THEN approach for test design and naming.

@@ -167,6 +167,22 @@ When writing Swift in the iOS app or in shared contracts that mirror Swift style
 - Prefer immutable values at the interface boundary; in Swift, structs with `let` properties where you mirror types locally.
 - Use a single source of truth for DTOs if you share networking (e.g. kotlinx.serialization); document field names and optionality so iOS can mirror or generate models consistently.
 
+### 3.7 Compose Stability Annotations
+
+- Prefer immutable design over `@Stable` / `@Immutable`.
+- Do not annotate `UiState`, presentation VOs, or shared models with Compose stability annotations by default.
+- Use `@Immutable` only when the public object graph is genuinely immutable and there is a concrete reason to help or override Compose stability inference.
+- Use `@Stable` only for mutable state-holder types whose public changes are fully observable by Compose state primitives. It is not a substitute for immutability.
+- Never annotate domain interfaces or regular `List`-based UI models just to chase recomposition optimisations. If the type shape is weak, fix the shape instead.
+- For Compose-facing shared state, prefer:
+  - immutable `data class`es with `val` properties
+  - immutable collections such as `ImmutableList`
+  - presentation-owned VOs instead of exposing domain interfaces directly in `UiState`
+- The preferred decision order is:
+  1. make the state graph actually immutable,
+  2. let Compose infer stability,
+  3. add an annotation only if a real inference gap or measured need remains.
+
 ---
 
 ## 4. Clean Architecture in KMP
