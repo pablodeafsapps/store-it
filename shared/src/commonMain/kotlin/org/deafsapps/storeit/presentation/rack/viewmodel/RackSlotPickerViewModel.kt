@@ -190,7 +190,10 @@ class RackSlotPickerViewModel(
 }
 
 private fun DomainError.toErrorCause(): String = when (this) {
+    is DomainError.AuthenticationFailed,
+    is DomainError.ServiceUnavailable,
+    is DomainError.ConfigurationError,
+    is DomainError.Unknown -> message
     is DomainError.ValidationError -> reason
     is DomainError.NotFound -> "Rack details not found"
-    is DomainError.Unknown -> message
 }

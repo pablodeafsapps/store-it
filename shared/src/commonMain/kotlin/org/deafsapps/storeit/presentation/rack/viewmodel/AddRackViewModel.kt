@@ -85,9 +85,12 @@ class AddRackViewModel(
             saveRackUseCase(rack).fold(
                 ifErr = { error ->
                     val errorMessage = when (error) {
+                        is DomainError.AuthenticationFailed,
+                        is DomainError.ServiceUnavailable,
+                        is DomainError.ConfigurationError,
+                        is DomainError.Unknown -> error.message
                         is DomainError.ValidationError -> error.reason
                         is DomainError.NotFound -> "Rack not found"
-                        is DomainError.Unknown -> error.message
                     }
                     _uiState.update { state ->
                         state.copy(isLoading = false, error = errorMessage)

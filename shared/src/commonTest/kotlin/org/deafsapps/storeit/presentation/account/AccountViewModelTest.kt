@@ -161,9 +161,8 @@ class AccountViewModelTest {
     @Test
     fun `GIVEN authentication failure WHEN submit credentials THEN keeps local state and exposes failure`() =
         runTest {
-            fakeSignInAccountUseCase.result = DomainError.ValidationError(
-                field = "email",
-                reason = "Invalid email",
+            fakeSignInAccountUseCase.result = DomainError.AuthenticationFailed(
+                message = "The email or password is incorrect.",
             ).err()
 
             val sut = createSut(testScope = this)
@@ -177,8 +176,30 @@ class AccountViewModelTest {
             assertEquals(expected = false, actual = sut.uiState.value.isSubmitting)
             assertEquals(expected = false, actual = sut.uiState.value.isAuthenticated)
             assertEquals(expected = DataMode.LocalOnly, actual = sut.uiState.value.dataMode)
-            assertEquals(expected = "Invalid email", actual = sut.uiState.value.failureMessage)
+            assertEquals(expected = "The email or password is incorrect.", actual = sut.uiState.value.failureMessage)
             assertEquals(expected = null, actual = fakeRestoreAccountDataUseCase.lastSession)
+        }
+
+    @Test
+    fun `GIVEN Firebase configuration failure WHEN submit credentials THEN exposes gentle fallback message`() =
+        runTest {
+            fakeSignInAccountUseCase.result = DomainError.ConfigurationError(
+                message = "Authentication is unavailable on this build. Check the Firebase configuration.",
+            ).err()
+
+            val sut = createSut(testScope = this)
+            collectUiState(sut = sut)
+
+            sut.onEmailInputChanged(email = "user@example.com")
+            sut.onPasswordInputChanged(password = "passw0rd")
+            sut.submitCredentials()
+            advanceUntilIdle()
+
+            assertEquals(expected = false, actual = sut.uiState.value.isSubmitting)
+            assertEquals(
+                expected = "Authentication is unavailable on this build. Check the Firebase configuration.",
+                actual = sut.uiState.value.failureMessage,
+            )
         }
 
     private fun createSut(testScope: TestScope): AccountViewModel = AccountViewModel(

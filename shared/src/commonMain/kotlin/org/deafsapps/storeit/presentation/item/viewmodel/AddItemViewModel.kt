@@ -208,6 +208,9 @@ class AddItemViewModel(
         addItemUseCase(item).fold(
             ifErr = { error: DomainError ->
                 val message = when (error) {
+                    is DomainError.AuthenticationFailed -> error.message
+                    is DomainError.ServiceUnavailable -> error.message
+                    is DomainError.ConfigurationError -> error.message
                     is DomainError.ValidationError -> error.reason
                     is DomainError.NotFound -> "Not found"
                     is DomainError.Unknown -> error.message
@@ -231,7 +234,10 @@ private data class AddItemRacksState(
 )
 
 private fun DomainError.toErrorCause(): String = when (this) {
+    is DomainError.AuthenticationFailed,
+    is DomainError.ServiceUnavailable,
+    is DomainError.ConfigurationError,
+    is DomainError.Unknown -> message
     is DomainError.ValidationError -> reason
     is DomainError.NotFound -> "Item not found"
-    is DomainError.Unknown -> message
 }

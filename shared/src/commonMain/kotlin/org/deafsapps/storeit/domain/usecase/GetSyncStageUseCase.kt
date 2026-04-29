@@ -212,7 +212,8 @@ internal class GetSyncStageUseCase : GetSyncStageUseCaseType {
         }
 
         val hasRemoteCheckpoint = input.remoteDataset != null || input.localDatasetState?.lastRemoteSyncAt != null
-        val hasPendingChanges = input.localDatasetState?.hasPendingChanges == true || input.pendingOperations.isNotEmpty()
+        val hasPendingChanges =
+            input.localDatasetState?.hasPendingChanges == true || input.pendingOperations.isNotEmpty()
         val isAccountBackedMode =
             input.localDatasetState?.mode in setOf(
                 DataMode.AccountBackedSynchronized,
@@ -231,6 +232,9 @@ internal class GetSyncStageUseCase : GetSyncStageUseCaseType {
 }
 
 private fun DomainError.toSyncFailureMessage(): String = when (this) {
+    is DomainError.AuthenticationFailed,
+    is DomainError.ServiceUnavailable,
+    is DomainError.ConfigurationError -> message
     is DomainError.Unknown ->
         message.takeUnless { it == "Unknown error" } ?: "Synchronization failed. Retry is required."
     is DomainError.NotFound -> "Synchronization failed because required $resource data could not be found."
