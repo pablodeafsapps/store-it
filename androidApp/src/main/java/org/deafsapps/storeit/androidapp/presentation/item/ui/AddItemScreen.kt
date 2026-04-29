@@ -50,18 +50,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.androidapp.design.backArrowIcon
 import org.deafsapps.storeit.androidapp.design.closeIcon
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.ImagePickerDialog
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackSlotPickerScreen
 import org.deafsapps.storeit.androidapp.R
-import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.item.model.AddItemStep
 import org.deafsapps.storeit.presentation.item.model.AddItemUiEvent
 import org.deafsapps.storeit.presentation.item.model.AddItemUiState
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.item.viewmodel.AddItemViewModel
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -139,7 +140,7 @@ private fun AddItemScreenContent(
     onUpdatePhotoUri: (String?) -> Unit,
     onSelectRackAndSlotSelect: () -> Unit,
     onSaveItem: () -> Unit,
-    onRackSelected: (Rack) -> Unit,
+    onRackSelected: (RackSummaryVo) -> Unit,
     onBackFromSelectRack: () -> Unit,
     onBackFromSelectSlot: () -> Unit,
     onSlotSelectedForItem: (rackId: String, slot: AddItemSlotVo) -> Unit,
@@ -417,8 +418,8 @@ private fun PhotoPickerSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectRackContent(
-    racks: List<Rack>,
-    onRackSelected: (Rack) -> Unit,
+    racks: List<RackSummaryVo>,
+    onRackSelected: (RackSummaryVo) -> Unit,
     onBack: () -> Unit,
     onNavigateToAddRack: () -> Unit = {},
 ) {
@@ -528,7 +529,7 @@ private fun AddItemScreenPreview() {
                 description = "Cordless power drill",
                 quantity = 1,
                 owner = "Me",
-                tags = listOf("Tools", "Power"),
+                tags = persistentListOf("Tools", "Power"),
                 tagInput = "",
                 photoUri = null,
                 selectedRackId = "1",
@@ -536,7 +537,7 @@ private fun AddItemScreenPreview() {
                 selectedSlotPlacementType = SlotPlacementType.EXISTING,
                 selectedSlotXRel = null,
                 selectedSlotYRel = null,
-                racks = emptyList(),
+                racks = persistentListOf(),
                 step = AddItemStep.FORM,
                 isLoading = false,
                 error = null,
@@ -569,9 +570,9 @@ private fun AddItemScreenSelectRackPreview() {
         AddItemScreenContent(
             uiState = AddItemUiState.getDefault().copy(
                 step = AddItemStep.SELECT_RACK,
-                racks = listOf(
-                    Rack(id = "1", name = "Garage Rack", location = "Garage"),
-                    Rack(id = "2", name = "Kitchen Shelf", location = "Kitchen"),
+                racks = persistentListOf(
+                    RackSummaryVo(id = "1", name = "Garage Rack", location = "Garage", photoUri = null),
+                    RackSummaryVo(id = "2", name = "Kitchen Shelf", location = "Kitchen", photoUri = null),
                 )
             ),
             onNavigateToAddRack = {},

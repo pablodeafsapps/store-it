@@ -1,13 +1,11 @@
 package org.deafsapps.storeit.presentation.rack.model
 
-import androidx.compose.runtime.Immutable
-import org.deafsapps.storeit.domain.model.Rack
-import kotlin.collections.emptyList
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
-@Immutable
 data class RackDetailUiState(
-    val rack: Rack?,
-    val slots: List<RackSlotMarkerVo>,
+    val rack: RackSummaryVo?,
+    val slots: ImmutableList<RackSlotMarkerVo>,
     val isLoading: Boolean,
     val error: String?,
     val showEditDialog: Boolean,
@@ -19,7 +17,7 @@ data class RackDetailUiState(
     companion object {
         fun getDefault(): RackDetailUiState = RackDetailUiState(
             rack = null,
-            slots = emptyList(),
+            slots = persistentListOf(),
             isLoading = false,
             error = null,
             showEditDialog = false,

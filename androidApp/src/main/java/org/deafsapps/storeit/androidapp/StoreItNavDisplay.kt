@@ -250,12 +250,12 @@ private fun SearchNavContent(
     SearchScreen(
         uiState = uiState,
         onQueryChange = searchViewModel::onQueryChange,
-        onItemSelected = { placement ->
+        onItemSelected = { result ->
             backStack.add(
                 NavScreen.ItemDetail(
-                    itemId = placement.item.id,
-                    rackId = placement.item.rackId,
-                    slotId = placement.item.slotId,
+                    itemId = result.itemId,
+                    rackId = result.rackId,
+                    slotId = result.slotId,
                     fromSearch = true,
                 ),
             )

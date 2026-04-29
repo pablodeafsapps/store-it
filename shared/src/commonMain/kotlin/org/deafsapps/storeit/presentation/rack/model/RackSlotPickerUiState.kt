@@ -1,12 +1,11 @@
 package org.deafsapps.storeit.presentation.rack.model
 
-import androidx.compose.runtime.Immutable
-import org.deafsapps.storeit.domain.model.Rack
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
-@Immutable
 data class RackSlotPickerUiState(
-    val rack: Rack?,
-    val slots: List<RackSlotMarkerVo>,
+    val rack: RackSummaryVo?,
+    val slots: ImmutableList<RackSlotMarkerVo>,
     val selectedSlot: RackSlotMarkerVo?,
     val selectedPlacementType: SlotPlacementType?,
     val isLoading: Boolean,
@@ -15,7 +14,7 @@ data class RackSlotPickerUiState(
     companion object {
         fun getDefault(): RackSlotPickerUiState = RackSlotPickerUiState(
             rack = null,
-            slots = emptyList(),
+            slots = persistentListOf(),
             selectedSlot = null,
             selectedPlacementType = null,
             isLoading = false,

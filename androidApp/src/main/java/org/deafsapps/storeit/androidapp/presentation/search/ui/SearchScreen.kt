@@ -26,9 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.res.stringResource
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.androidapp.design.Dimens
-import org.deafsapps.storeit.domain.model.ItemWithPlacement
 import org.deafsapps.storeit.androidapp.R
+import org.deafsapps.storeit.presentation.search.model.SearchResultVo
 import org.deafsapps.storeit.presentation.search.model.SearchUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,7 +37,7 @@ import org.deafsapps.storeit.presentation.search.model.SearchUiState
 internal fun SearchScreen(
     uiState: SearchUiState,
     onQueryChange: (String) -> Unit,
-    onItemSelected: (ItemWithPlacement) -> Unit,
+    onItemSelected: (SearchResultVo) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     SearchScreenContent(
@@ -54,11 +55,11 @@ internal fun SearchScreen(
 @Composable
 private fun SearchScreenContent(
     query: String,
-    results: List<ItemWithPlacement>,
+    results: List<SearchResultVo>,
     isLoading: Boolean,
     error: String?,
     onQueryChange: (String) -> Unit,
-    onItemSelected: (ItemWithPlacement) -> Unit,
+    onItemSelected: (SearchResultVo) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     Scaffold(
@@ -152,7 +153,7 @@ private fun SearchScreenContent(
                                 .padding(top = Dimens.listContentPadding)
                                 .testTag("searchScreenResults"),
                         ) {
-                            items(results, key = { it.item.id }) { row ->
+                            items(results, key = { it.itemId }) { row ->
                                 SearchResultRow(
                                     row = row,
                                     onClick = { onItemSelected(row) },
@@ -168,22 +169,22 @@ private fun SearchScreenContent(
 
 @Composable
 private fun SearchResultRow(
-    row: ItemWithPlacement,
+    row: SearchResultVo,
     onClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = Dimens.listItemSpacing / 2)
-            .testTag("searchResultRow_${row.item.id}")
+            .testTag("searchResultRow_${row.itemId}")
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = Dimens.cardElevation),
     ) {
         Column(modifier = Modifier.padding(Dimens.cardPadding)) {
             Text(
-                text = row.item.name,
+                text = row.itemName,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.testTag("searchResultItemName_${row.item.id}"),
+                modifier = Modifier.testTag("searchResultItemName_${row.itemId}"),
             )
             Text(
                 text = stringResource(R.string.search_result_rack_prefix, row.rackName),
@@ -205,7 +206,7 @@ private fun SearchScreenContentPreview() {
     MaterialTheme {
         SearchScreenContent(
             query = "tool",
-            results = emptyList(),
+            results = persistentListOf(),
             isLoading = false,
             error = null,
             onQueryChange = {},

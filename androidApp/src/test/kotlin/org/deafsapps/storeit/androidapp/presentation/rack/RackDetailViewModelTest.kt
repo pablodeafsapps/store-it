@@ -21,6 +21,7 @@ import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -41,6 +42,12 @@ internal class RackDetailViewModelTest {
     private val testScope = TestScope(testDispatcher)
     private val dummyRackId = "rack-1"
     private val dummyRack = Rack(id = dummyRackId, name = "Rack 1")
+    private val dummyRackSummary = RackSummaryVo(
+        id = dummyRackId,
+        name = "Rack 1",
+        location = "",
+        photoUri = null,
+    )
 
     @BeforeEach
     fun setUp() {
@@ -67,7 +74,7 @@ internal class RackDetailViewModelTest {
             advanceUntilIdle()
 
             val state = collectedStates.firstOrNull { !it.isLoading } ?: collectedStates.last()
-            assertEquals(dummyRack, state.rack)
+            assertEquals(dummyRackSummary, state.rack)
             assertEquals(1, state.slots.size)
             assertEquals(0.5f, state.slots.first().xRel)
             assertEquals(0.5f, state.slots.first().yRel)
@@ -124,7 +131,7 @@ internal class RackDetailViewModelTest {
             advanceUntilIdle()
 
             val state = collectedStates.last()
-            assertEquals(dummyRack, state.rack)
+            assertEquals(dummyRackSummary, state.rack)
             assertTrue(state.showEditDialog)
             assertEquals(dummyRack.name, state.editName)
             assertEquals(dummyRack.description, state.editDescription)
@@ -185,7 +192,15 @@ internal class RackDetailViewModelTest {
             advanceUntilIdle()
 
             val state = collectedStates.last()
-            assertEquals(updatedRack, state.rack)
+            assertEquals(
+                RackSummaryVo(
+                    id = updatedRack.id,
+                    name = updatedRack.name,
+                    location = updatedRack.location,
+                    photoUri = updatedRack.photoUri,
+                ),
+                state.rack,
+            )
             assertFalse(state.showEditDialog)
             collectJob.cancel()
         }
@@ -207,7 +222,7 @@ internal class RackDetailViewModelTest {
         advanceUntilIdle()
 
         val state = collectedStates.last()
-        assertEquals(dummyRack, state.rack)
+        assertEquals(dummyRackSummary, state.rack)
         assertTrue(state.slots.isEmpty())
         collectJob.cancel()
     }

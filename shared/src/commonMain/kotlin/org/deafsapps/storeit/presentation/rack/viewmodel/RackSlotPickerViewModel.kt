@@ -13,10 +13,11 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.collections.immutable.toImmutableList
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
-import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.usecase.GetRackDataByRackIdUseCaseType
+import org.deafsapps.storeit.presentation.mapper.toRackSummaryVo
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.mapper.toRackSlotMarkerVos
 import org.deafsapps.storeit.presentation.rack.model.RackSlotMarkerVo
@@ -140,13 +141,13 @@ class RackSlotPickerViewModel(
         }
 
         data class RackDataLoaded(
-            private val rack: Rack,
+            private val rack: org.deafsapps.storeit.domain.model.Rack,
             private val slots: List<RackSlotMarkerVo>,
         ) : RackSlotPickerStateChange {
             override fun reduce(state: RackSlotPickerUiState): RackSlotPickerUiState =
                 state.copy(
-                    rack = rack,
-                    slots = slots,
+                    rack = rack.toRackSummaryVo(),
+                    slots = slots.toImmutableList(),
                     selectedSlot = null,
                     selectedPlacementType = null,
                     isLoading = false,
@@ -181,7 +182,7 @@ class RackSlotPickerViewModel(
         ) : RackSlotPickerStateChange {
             override fun reduce(state: RackSlotPickerUiState): RackSlotPickerUiState =
                 state.copy(
-                    slots = slots,
+                    slots = slots.toImmutableList(),
                     selectedSlot = slot,
                     selectedPlacementType = SlotPlacementType.DRAFT,
                 )

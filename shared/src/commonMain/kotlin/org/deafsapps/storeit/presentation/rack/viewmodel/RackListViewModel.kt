@@ -13,11 +13,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
-import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.usecase.GetRacksFlowUseCaseType
+import org.deafsapps.storeit.presentation.mapper.toRackSummaryVos
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 import org.koin.core.annotation.Factory
 
 private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
@@ -36,7 +37,7 @@ class RackListViewModel(
                 result.fold(ifErr = { error ->
                     RackListUiState.getDefault().copy(error = error.toErrorCause())
                 }, ifOk = { racks ->
-                    RackListUiState.getDefault().copy(racks = racks)
+                    RackListUiState.getDefault().copy(racks = racks.toRackSummaryVos())
                 })
         }.stateIn(
             scope = viewModelScope,
@@ -57,7 +58,7 @@ class RackListViewModel(
         }
     }
 
-    fun onRackSelected(rack: Rack) {
+    fun onRackSelected(rack: RackSummaryVo) {
         viewModelScope.launch {
             _uiEvent.emit(RackListUiEvent.NavigateToRackDetail(rackId = rack.id))
         }

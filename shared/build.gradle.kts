@@ -64,6 +64,7 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.viewmodel)
             api(libs.koin.annotations)
+            api(libs.kotlinx.collections.immutable)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines.extensions)

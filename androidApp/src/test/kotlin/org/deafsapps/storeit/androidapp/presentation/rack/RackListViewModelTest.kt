@@ -14,6 +14,7 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -64,8 +65,13 @@ internal class RackListViewModelTest {
           advanceUntilIdle()
 
           val state = states.firstOrNull { !it.isLoading } ?: states.last()
+          val expectedRacks = listOf(
+              RackSummaryVo(id = "1", name = "Rack 1", location = "", photoUri = null),
+              RackSummaryVo(id = "2", name = "Rack 2", location = "", photoUri = null),
+          )
+
           assertEquals(2, state.racks.size)
-          assertTrue(state.racks.containsAll(listOf(rack1, rack2)))
+          assertEquals(expectedRacks, state.racks)
           assertNull(state.error)
           collectJob.cancel()
           advanceUntilIdle()
@@ -167,7 +173,7 @@ internal class RackListViewModelTest {
           val events = mutableListOf<RackListUiEvent?>()
           val collectJob: Job = launch { sut.uiEvent.collect { events.add(it) } }
           advanceUntilIdle()
-          val rack = Rack(id = "r1", name = "My Rack")
+          val rack = RackSummaryVo(id = "r1", name = "My Rack", location = "", photoUri = null)
 
           sut.onRackSelected(rack = rack)
           advanceUntilIdle()

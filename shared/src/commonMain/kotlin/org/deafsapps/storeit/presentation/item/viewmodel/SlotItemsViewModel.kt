@@ -15,11 +15,12 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
-import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.usecase.GetItemsBySlotInput
 import org.deafsapps.storeit.domain.usecase.GetItemsBySlotUseCaseType
+import org.deafsapps.storeit.presentation.mapper.toItemSummaryVos
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.item.model.SlotItemsUiEvent
 import org.deafsapps.storeit.presentation.item.model.SlotItemsUiState
@@ -91,10 +92,10 @@ class SlotItemsViewModel(
         }
 
         data class ItemsLoaded(
-            private val items: List<Item>,
+            private val items: List<org.deafsapps.storeit.domain.model.Item>,
         ) : SlotItemsStateChange {
             override fun reduce(state: SlotItemsUiState): SlotItemsUiState =
-                state.copy(isLoading = false, error = null, items = items)
+                state.copy(isLoading = false, error = null, items = items.toItemSummaryVos())
         }
 
         data class LoadFailed(
@@ -104,7 +105,7 @@ class SlotItemsViewModel(
                 state.copy(
                     isLoading = false,
                     error = error.toErrorCause(),
-                    items = emptyList(),
+                    items = persistentListOf(),
                 )
         }
     }

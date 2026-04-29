@@ -1,10 +1,8 @@
 package org.deafsapps.storeit.presentation.account.model
 
-import androidx.compose.runtime.Immutable
 import org.deafsapps.storeit.domain.model.DataMode
 import org.deafsapps.storeit.domain.model.SyncStatus
 
-@Immutable
 data class AccountUiState(
     val isLoading: Boolean,
     val isSubmitting: Boolean = false,

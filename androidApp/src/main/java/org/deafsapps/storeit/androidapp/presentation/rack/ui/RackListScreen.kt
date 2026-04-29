@@ -46,12 +46,13 @@ import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import org.deafsapps.storeit.androidapp.R
-import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +60,7 @@ internal fun RackListScreen(
     uiState: RackListUiState,
     uiEvent: () -> Flow<RackListUiEvent?>,
     onAddRackSelect: () -> Unit,
-    onRackSelected: (Rack) -> Unit,
+    onRackSelected: (RackSummaryVo) -> Unit,
     onNavigateToAddRack: () -> Unit,
     onNavigateToRackDetail: (String) -> Unit,
     onNavigateToAddItem: () -> Unit = {},
@@ -255,7 +256,7 @@ private fun EmptyState(
 
 @Composable
 private fun RackListItem(
-    rack: Rack,
+    rack: RackSummaryVo,
     onClick: () -> Unit,
 ) {
     Card(
@@ -297,18 +298,16 @@ private fun RackListItem(
 @Preview(showBackground = true)
 @Composable
 private fun RackListScreenPreview() {
-    val sampleRacks = listOf(
-        Rack(
+    val sampleRacks = persistentListOf(
+        RackSummaryVo(
             id = "1",
             name = "Garage shelf",
-            description = "Main storage shelf in garage",
             location = "Garage",
             photoUri = null,
         ),
-        Rack(
+        RackSummaryVo(
             id = "2",
             name = "Kitchen pantry",
-            description = "Pantry in the kitchen",
             location = "Kitchen",
             photoUri = null,
         )
@@ -339,7 +338,7 @@ private fun RackListScreenEmptyPreview() {
     MaterialTheme {
         RackListScreen(
             uiState = RackListUiState(
-                racks = emptyList(),
+                racks = persistentListOf(),
                 isLoading = false,
                 error = null
             ),
@@ -362,7 +361,7 @@ private fun RackListScreenLoadingPreview() {
     MaterialTheme {
         RackListScreen(
             uiState = RackListUiState(
-                racks = emptyList(),
+                racks = persistentListOf(),
                 isLoading = true,
                 error = null
             ),

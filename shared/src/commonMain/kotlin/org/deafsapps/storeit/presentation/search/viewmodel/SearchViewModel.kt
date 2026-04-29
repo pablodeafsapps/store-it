@@ -8,9 +8,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.usecase.SearchItemsUseCaseType
+import org.deafsapps.storeit.presentation.mapper.toSearchResultVos
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.search.model.SearchUiState
 import org.koin.core.annotation.Factory
@@ -33,7 +35,7 @@ class SearchViewModel(
         searchJob?.cancel()
         if (query.isBlank()) {
             _uiState.update { state ->
-                state.copy(isLoading = false, results = emptyList(), error = null)
+                state.copy(isLoading = false, results = persistentListOf(), error = null)
             }
             return
         }
@@ -43,12 +45,12 @@ class SearchViewModel(
             searchItemsUseCase(input = query.trim()).fold(
                 ifErr = { error ->
                     _uiState.update { state ->
-                        state.copy(isLoading = false, error = error.toErrorCause(), results = emptyList())
+                        state.copy(isLoading = false, error = error.toErrorCause(), results = persistentListOf())
                     }
                 },
                 ifOk = { results ->
                     _uiState.update { state ->
-                        state.copy(isLoading = false, error = null, results = results)
+                        state.copy(isLoading = false, error = null, results = results.toSearchResultVos())
                     }
                 },
             )

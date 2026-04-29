@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
@@ -226,7 +228,7 @@ class ItemDetailViewModel(
                     description = item.description,
                     quantity = item.quantity,
                     owner = item.owner,
-                    tags = item.tags,
+                    tags = item.tags.toImmutableList(),
                     tagInput = "",
                     photoUri = item.photoUri,
                 )
@@ -269,12 +271,20 @@ class ItemDetailViewModel(
 
         data class TagAdded(private val tag: String) : ItemDetailStateChange {
             override fun reduce(state: ItemDetailUiState): ItemDetailUiState =
-                state.copy(tags = state.tags + tag, tagInput = "", error = null)
+                state.run {
+                    val updatedTags: kotlinx.collections.immutable.ImmutableList<String> =
+                        tags.toPersistentList().add(element = tag)
+                    copy(tags = updatedTags, tagInput = "", error = null)
+                }
         }
 
         data class TagRemoved(private val tag: String) : ItemDetailStateChange {
             override fun reduce(state: ItemDetailUiState): ItemDetailUiState =
-                state.copy(tags = state.tags - tag)
+                state.run {
+                    val updatedTags: kotlinx.collections.immutable.ImmutableList<String> =
+                        tags.filterNot { existingTag -> existingTag == tag }.toImmutableList()
+                    copy(tags = updatedTags)
+                }
         }
 
         data class PhotoUriUpdated(private val uri: String?) : ItemDetailStateChange {

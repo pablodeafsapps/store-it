@@ -14,20 +14,25 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
-import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.domain.usecase.AddItemUseCaseType
 import org.deafsapps.storeit.domain.usecase.GetRacksFlowUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
+import org.deafsapps.storeit.presentation.mapper.toRackSummaryVos
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.item.model.AddItemStep
 import org.deafsapps.storeit.presentation.item.model.AddItemUiEvent
 import org.deafsapps.storeit.presentation.item.model.AddItemUiState
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
@@ -83,8 +88,8 @@ class AddItemViewModel(
         getRacksFlowUseCase(input = Unit)
             .mapLatest { result ->
                 result.fold(
-                    ifErr = { error -> AddItemRacksState(racks = emptyList(), error = error.toErrorCause()) },
-                    ifOk = { racks -> AddItemRacksState(racks = racks, error = null) },
+                    ifErr = { error -> AddItemRacksState(racks = persistentListOf(), error = error.toErrorCause()) },
+                    ifOk = { racks -> AddItemRacksState(racks = racks.toRackSummaryVos(), error = null) },
                 )
             }
 
@@ -112,13 +117,18 @@ class AddItemViewModel(
         val tag = _uiState.value.tagInput.trim()
         if (tag.isNotEmpty()) {
             _uiState.update { state ->
-                state.copy(tags = state.tags + tag, tagInput = "", error = null)
+                val updatedTags: ImmutableList<String> = state.tags.toPersistentList().add(element = tag)
+                state.copy(tags = updatedTags, tagInput = "", error = null)
             }
         }
     }
 
     fun onRemoveTag(tag: String) {
-        _uiState.update { state -> state.copy(tags = state.tags - tag) }
+        _uiState.update { state ->
+            val updatedTags: ImmutableList<String> =
+                state.tags.filterNot { existingTag -> existingTag == tag }.toImmutableList()
+            state.copy(tags = updatedTags)
+        }
     }
 
     fun onUpdatePhotoUri(uri: String?) {
@@ -131,7 +141,7 @@ class AddItemViewModel(
         }
     }
 
-    fun onRackSelected(rack: Rack) {
+    fun onRackSelected(rack: RackSummaryVo) {
         _uiState.update { state -> state.copy(step = AddItemStep.SELECT_SLOT, selectedRackId = rack.id) }
     }
 
@@ -229,7 +239,7 @@ class AddItemViewModel(
 }
 
 private data class AddItemRacksState(
-    val racks: List<Rack>,
+    val racks: ImmutableList<RackSummaryVo>,
     val error: String?,
 )
 
