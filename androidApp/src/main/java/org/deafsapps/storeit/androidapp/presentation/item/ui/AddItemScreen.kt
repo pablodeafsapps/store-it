@@ -161,7 +161,7 @@ private fun AddItemScreenContent(
             onNavigateBack = onNavigateBack,
         )
         AddItemStep.SELECT_RACK -> SelectRackContent(
-            uiState = uiState,
+            racks = uiState.racks,
             onRackSelected = onRackSelected,
             onBack = onBackFromSelectRack,
             onNavigateToAddRack = onNavigateToAddRack,
@@ -417,7 +417,7 @@ private fun PhotoPickerSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectRackContent(
-    uiState: AddItemUiState,
+    racks: List<Rack>,
     onRackSelected: (Rack) -> Unit,
     onBack: () -> Unit,
     onNavigateToAddRack: () -> Unit = {},
@@ -441,7 +441,7 @@ private fun SelectRackContent(
             )
         },
     ) { paddingValues ->
-        if (uiState.racks.isEmpty()) {
+        if (racks.isEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -477,7 +477,7 @@ private fun SelectRackContent(
                 contentPadding = PaddingValues(Dimens.listContentPadding),
                 verticalArrangement = Arrangement.spacedBy(Dimens.listItemSpacing),
             ) {
-                items(uiState.racks, key = { it.id }) { rack ->
+                items(racks, key = { it.id }) { rack ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

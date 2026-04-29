@@ -61,9 +61,18 @@ internal fun AccountScreen(
                 .padding(Dimens.screenPadding),
             verticalArrangement = Arrangement.spacedBy(Dimens.listItemSpacing),
         ) {
-            AccountStatusContent(uiState = uiState)
+            AccountStatusContent(
+                requiresReconciliation = uiState.requiresReconciliation,
+                canRetryRestore = uiState.canRetryRestore,
+                syncStatus = uiState.syncStatus,
+                isDataBackedUp = uiState.isDataBackedUp,
+                hasPendingSyncWork = uiState.hasPendingSyncWork,
+                isAuthenticated = uiState.isAuthenticated,
+                accountEmail = uiState.accountEmail,
+            )
             AuthModeSelector(
-                uiState = uiState,
+                isSignInMode = uiState.isSignInMode,
+                isSignUpMode = uiState.isSignUpMode,
                 onSelectSignIn = onSelectSignIn,
                 onSelectSignUp = onSelectSignUp,
             )
@@ -126,7 +135,8 @@ internal fun AccountScreen(
 
 @Composable
 private fun AuthModeSelector(
-    uiState: AccountUiState,
+    isSignInMode: Boolean,
+    isSignUpMode: Boolean,
     onSelectSignIn: () -> Unit,
     onSelectSignUp: () -> Unit,
 ) {
@@ -135,7 +145,7 @@ private fun AuthModeSelector(
         modifier = Modifier.fillMaxWidth(),
     ) {
         FilterChip(
-            selected = uiState.isSignInMode,
+            selected = isSignInMode,
             onClick = onSelectSignIn,
             label = { Text(text = stringResource(R.string.account_sign_in)) },
             modifier = Modifier
@@ -143,7 +153,7 @@ private fun AuthModeSelector(
                 .testTag("accountSignInModeButton"),
         )
         FilterChip(
-            selected = uiState.isSignUpMode,
+            selected = isSignUpMode,
             onClick = onSelectSignUp,
             label = { Text(text = stringResource(R.string.account_sign_up)) },
             modifier = Modifier
@@ -154,16 +164,24 @@ private fun AuthModeSelector(
 }
 
 @Composable
-private fun AccountStatusContent(uiState: AccountUiState) {
+private fun AccountStatusContent(
+    requiresReconciliation: Boolean,
+    canRetryRestore: Boolean,
+    syncStatus: SyncStatus,
+    isDataBackedUp: Boolean,
+    hasPendingSyncWork: Boolean,
+    isAuthenticated: Boolean,
+    accountEmail: String?,
+) {
     val statusText = when {
-        uiState.requiresReconciliation -> stringResource(R.string.account_reconciliation_required)
-        uiState.canRetryRestore -> stringResource(R.string.account_restore_pending)
-        uiState.syncStatus == SyncStatus.Failed -> stringResource(R.string.account_failed)
-        uiState.isDataBackedUp -> stringResource(R.string.account_backed_up)
-        uiState.hasPendingSyncWork -> stringResource(R.string.account_pending)
-        uiState.isAuthenticated -> stringResource(
+        requiresReconciliation -> stringResource(R.string.account_reconciliation_required)
+        canRetryRestore -> stringResource(R.string.account_restore_pending)
+        syncStatus == SyncStatus.Failed -> stringResource(R.string.account_failed)
+        isDataBackedUp -> stringResource(R.string.account_backed_up)
+        hasPendingSyncWork -> stringResource(R.string.account_pending)
+        isAuthenticated -> stringResource(
             R.string.account_signed_in,
-            uiState.accountEmail.orEmpty(),
+            accountEmail.orEmpty(),
         )
         else -> stringResource(R.string.account_local_only)
     }

@@ -40,7 +40,10 @@ internal fun SearchScreen(
     onNavigateBack: () -> Unit,
 ) {
     SearchScreenContent(
-        uiState = uiState,
+        query = uiState.query,
+        results = uiState.results,
+        isLoading = uiState.isLoading,
+        error = uiState.error,
         onQueryChange = onQueryChange,
         onNavigateBack = onNavigateBack,
         onItemSelected = onItemSelected,
@@ -50,7 +53,10 @@ internal fun SearchScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchScreenContent(
-    uiState: SearchUiState,
+    query: String,
+    results: List<ItemWithPlacement>,
+    isLoading: Boolean,
+    error: String?,
     onQueryChange: (String) -> Unit,
     onItemSelected: (ItemWithPlacement) -> Unit,
     onNavigateBack: () -> Unit,
@@ -86,7 +92,7 @@ private fun SearchScreenContent(
                 .padding(horizontal = Dimens.screenPadding),
         ) {
             OutlinedTextField(
-                value = uiState.query,
+                value = query,
                 onValueChange = onQueryChange,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,7 +106,7 @@ private fun SearchScreenContent(
                     .fillMaxWidth(),
             ) {
                 when {
-                    uiState.isLoading -> {
+                    isLoading -> {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -110,16 +116,16 @@ private fun SearchScreenContent(
                             CircularProgressIndicator()
                         }
                     }
-                    uiState.error != null -> {
+                    error != null -> {
                         Text(
-                            text = uiState.error!!,
+                            text = error,
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier
                                 .padding(top = Dimens.screenPadding)
                                 .testTag("searchScreenError"),
                         )
                     }
-                    uiState.query.isBlank() -> {
+                    query.isBlank() -> {
                         Text(
                             text = stringResource(R.string.search_hint_type_to_search),
                             style = MaterialTheme.typography.bodyMedium,
@@ -129,7 +135,7 @@ private fun SearchScreenContent(
                                 .testTag("searchScreenHint"),
                         )
                     }
-                    uiState.results.isEmpty() -> {
+                    results.isEmpty() -> {
                         Text(
                             text = stringResource(R.string.search_no_results),
                             style = MaterialTheme.typography.bodyMedium,
@@ -146,7 +152,7 @@ private fun SearchScreenContent(
                                 .padding(top = Dimens.listContentPadding)
                                 .testTag("searchScreenResults"),
                         ) {
-                            items(uiState.results, key = { it.item.id }) { row ->
+                            items(results, key = { it.item.id }) { row ->
                                 SearchResultRow(
                                     row = row,
                                     onClick = { onItemSelected(row) },
@@ -198,12 +204,10 @@ private fun SearchResultRow(
 private fun SearchScreenContentPreview() {
     MaterialTheme {
         SearchScreenContent(
-            uiState = SearchUiState(
-                query = "tool",
-                results = emptyList(),
-                isLoading = false,
-                error = null,
-            ),
+            query = "tool",
+            results = emptyList(),
+            isLoading = false,
+            error = null,
             onQueryChange = {},
             onNavigateBack = {},
             onItemSelected = {},
