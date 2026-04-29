@@ -65,6 +65,7 @@ gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", versio
 gitlive-firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "gitlive-firebase" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-common = { module = "com.google.firebase:firebase-common" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
 
 [plugins]

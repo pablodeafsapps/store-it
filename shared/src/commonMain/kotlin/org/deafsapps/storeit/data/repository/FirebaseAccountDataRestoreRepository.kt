@@ -171,6 +171,9 @@ private fun RemotePhotoReference.toPhotoSyncScope(syncedAt: Long?): PhotoSyncSco
 )
 
 private fun DomainError.toRestoreFailureMessage(): String = when (this) {
+    is DomainError.AuthenticationFailed,
+    is DomainError.ServiceUnavailable,
+    is DomainError.ConfigurationError -> message
     is DomainError.NotFound -> "Restore failed because required $resource data could not be found."
     is DomainError.Unknown -> message
     is DomainError.ValidationError -> "Restore failed: $reason"

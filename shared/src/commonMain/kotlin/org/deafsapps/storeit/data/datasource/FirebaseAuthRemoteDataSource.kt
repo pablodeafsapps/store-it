@@ -3,13 +3,16 @@ package org.deafsapps.storeit.data.datasource
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.AuthResult
 import dev.gitlive.firebase.auth.FirebaseAuthException
+import dev.gitlive.firebase.auth.FirebaseAuthInvalidCredentialsException
+import dev.gitlive.firebase.auth.FirebaseAuthInvalidUserException
+import dev.gitlive.firebase.auth.FirebaseAuthUserCollisionException
 import dev.gitlive.firebase.auth.FirebaseUser
+import dev.gitlive.firebase.auth.FirebaseAuthWeakPasswordException
 import dev.gitlive.firebase.auth.auth
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
-import org.deafsapps.storeit.domain.model.toUnknownDomainError
 import org.koin.core.annotation.Single
 
 @Single(binds = [AuthRemoteDataSource::class])
@@ -23,7 +26,7 @@ internal class FirebaseAuthRemoteDataSource : AuthRemoteDataSource {
         }
 
         return authenticate(
-            operationName = "sign up",
+            operation = FirebaseAuthenticationOperation.SignUp,
             block = {
                 Firebase.auth.createUserWithEmailAndPassword(
                     email = credentials.email,
@@ -42,7 +45,7 @@ internal class FirebaseAuthRemoteDataSource : AuthRemoteDataSource {
         }
 
         return authenticate(
-            operationName = "sign in",
+            operation = FirebaseAuthenticationOperation.SignIn,
             block = {
                 Firebase.auth.signInWithEmailAndPassword(
                     email = credentials.email,
@@ -66,7 +69,7 @@ internal class FirebaseAuthRemoteDataSource : AuthRemoteDataSource {
             user.reload()
             user.toAuthenticatedRemoteAccount().ok()
         } catch (exception: FirebaseAuthException) {
-            exception.toUnknownDomainError(message = "Unable to restore Firebase account session").err()
+            exception.toDomainError(operation = FirebaseAuthenticationOperation.RestoreSession).err()
         }
     }
 
@@ -82,21 +85,20 @@ internal class FirebaseAuthRemoteDataSource : AuthRemoteDataSource {
             Firebase.auth.signOut()
             Unit.ok()
         } catch (exception: FirebaseAuthException) {
-            exception.toUnknownDomainError(message = "Unable to sign out from Firebase account").err()
+            exception.toDomainError(operation = FirebaseAuthenticationOperation.SignOut).err()
         }
     }
 
     private suspend fun authenticate(
-        operationName: String,
+        operation: FirebaseAuthenticationOperation,
         block: suspend () -> AuthResult,
     ): Result<DomainError, AuthenticatedRemoteAccount> = try {
         val user = block().user
         user?.toAuthenticatedRemoteAccount()?.ok()
-            ?: DomainError.Unknown(message = "Firebase $operationName did not return an authenticated user")
+            ?: DomainError.Unknown(message = "Firebase ${operation.description} did not return an authenticated user")
                 .err()
     } catch (exception: FirebaseAuthException) {
-        exception.toUnknownDomainError(message = "Unable to $operationName with Firebase account")
-            .err()
+        exception.toDomainError(operation = operation).err()
     }
 
     private suspend fun FirebaseUser.toAuthenticatedRemoteAccount(): AuthenticatedRemoteAccount =
@@ -127,3 +129,112 @@ internal class FirebaseAuthRemoteDataSource : AuthRemoteDataSource {
         else -> null
     }
 }
+
+internal enum class FirebaseAuthenticationOperation(
+    val description: String,
+) {
+    SignIn(description = "sign in"),
+    SignUp(description = "sign up"),
+    RestoreSession(description = "restore account session"),
+    SignOut(description = "sign out"),
+}
+
+internal enum class FirebaseAuthenticationFailureKind {
+    InvalidCredentials,
+    InvalidUser,
+    UserCollision,
+    WeakPassword,
+    Unknown,
+}
+
+internal data class FirebaseAuthenticationFailure(
+    val kind: FirebaseAuthenticationFailureKind,
+    val code: String?,
+)
+
+internal fun FirebaseAuthException.toDomainError(
+    operation: FirebaseAuthenticationOperation,
+): DomainError = toFirebaseAuthenticationFailure().toDomainError(
+    operation = operation,
+    cause = this,
+)
+
+internal fun FirebaseAuthenticationFailure.toDomainError(
+    operation: FirebaseAuthenticationOperation,
+    cause: Throwable?,
+): DomainError {
+    val normalizedCode = code?.uppercase()
+
+    if (normalizedCode == "CONFIGURATION_NOT_FOUND") {
+        return DomainError.ConfigurationError(
+            message = "Authentication is unavailable on this build. Check the Firebase configuration.",
+            cause = cause,
+        )
+    }
+
+    return when {
+        kind == FirebaseAuthenticationFailureKind.WeakPassword ->
+            DomainError.ValidationError(
+                field = "password",
+                reason = "Password is too weak",
+            )
+
+        kind == FirebaseAuthenticationFailureKind.UserCollision ->
+            DomainError.AuthenticationFailed(
+                message = "An account already exists for this email address.",
+                cause = cause,
+            )
+
+        operation == FirebaseAuthenticationOperation.SignIn &&
+            (kind == FirebaseAuthenticationFailureKind.InvalidCredentials ||
+                kind == FirebaseAuthenticationFailureKind.InvalidUser ||
+                normalizedCode == "INVALID_LOGIN_CREDENTIALS" ||
+                normalizedCode == "EMAIL_NOT_FOUND" ||
+                normalizedCode == "USER_NOT_FOUND") ->
+            DomainError.AuthenticationFailed(
+                message = "The email or password is incorrect.",
+                cause = cause,
+            )
+
+        operation == FirebaseAuthenticationOperation.SignUp &&
+            kind == FirebaseAuthenticationFailureKind.InvalidCredentials ->
+            DomainError.ValidationError(
+                field = "email",
+                reason = "Enter a valid email address",
+            )
+
+        normalizedCode == "NETWORK_REQUEST_FAILED" ||
+            normalizedCode == "TOO_MANY_ATTEMPTS_TRY_LATER" ||
+            normalizedCode == "TOO_MANY_REQUESTS" ||
+            normalizedCode == "INTERNAL_ERROR" ->
+            DomainError.ServiceUnavailable(
+                message = "Authentication is temporarily unavailable. Try again shortly.",
+                cause = cause,
+            )
+
+        else ->
+            DomainError.Unknown(
+                message = "Unable to ${operation.description} with Firebase account",
+                cause = cause,
+            )
+    }
+}
+
+private fun FirebaseAuthException.toFirebaseAuthenticationFailure(): FirebaseAuthenticationFailure =
+    FirebaseAuthenticationFailure(
+        kind = when (this) {
+            is FirebaseAuthWeakPasswordException -> FirebaseAuthenticationFailureKind.WeakPassword
+            is FirebaseAuthUserCollisionException -> FirebaseAuthenticationFailureKind.UserCollision
+            is FirebaseAuthInvalidUserException -> FirebaseAuthenticationFailureKind.InvalidUser
+            is FirebaseAuthInvalidCredentialsException -> FirebaseAuthenticationFailureKind.InvalidCredentials
+            else -> FirebaseAuthenticationFailureKind.Unknown
+        },
+        code = message.extractFirebaseAuthenticationCode(),
+    )
+
+private fun String?.extractFirebaseAuthenticationCode(): String? =
+    this
+        ?.substringAfterLast(delimiter = "[", missingDelimiterValue = "")
+        ?.substringBefore(delimiter = "]")
+        ?.trim()
+        ?.takeIf { code -> code.isNotEmpty() }

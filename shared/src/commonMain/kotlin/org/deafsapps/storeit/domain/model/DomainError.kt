@@ -8,6 +8,30 @@ import org.deafsapps.storeit.base.Error
  */
 sealed interface DomainError : Error {
     /**
+     * Signals that authentication failed for the provided account details.
+     */
+    data class AuthenticationFailed(
+        override val message: String = "Authentication failed",
+        override val cause: Throwable? = null,
+    ) : DomainError
+
+    /**
+     * Signals that a required external service is unavailable or temporarily failing.
+     */
+    data class ServiceUnavailable(
+        override val message: String = "Service is temporarily unavailable",
+        override val cause: Throwable? = null,
+    ) : DomainError
+
+    /**
+     * Signals that an external dependency is not configured correctly for this build.
+     */
+    data class ConfigurationError(
+        override val message: String = "Service is not configured correctly",
+        override val cause: Throwable? = null,
+    ) : DomainError
+
+    /**
      * Signals an unexpected failure that could not be mapped to a more specific domain error.
      */
     data class Unknown(

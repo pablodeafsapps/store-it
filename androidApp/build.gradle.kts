@@ -7,7 +7,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-if (file("google-services.json").exists()) {
+val googleServicesConfig = "google-services.json"
+if (file(googleServicesConfig).exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
 
@@ -49,6 +50,7 @@ dependencies {
     implementation(projects.shared)
     implementation(project.dependencies.platform(libs.firebase.bom))
     implementation(libs.firebase.common)
+    implementation(libs.firebase.analytics)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.annotations)
     ksp(libs.koin.ksp.compiler)
