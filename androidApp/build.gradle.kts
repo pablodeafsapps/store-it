@@ -8,15 +8,13 @@ plugins {
 }
 
 val googleServicesConfig = "google-services.json"
-if (file(googleServicesConfig).exists()) {
-    apply(plugin = "com.google.gms.google-services")
-}
 
 android {
     namespace = "org.deafsapps.storeit.androidapp"
     compileSdk = 36
 
     defaultConfig {
+        applicationId = "org.deafsapps.storeit.androidapp"
         minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -86,4 +84,8 @@ detekt {
     allRules = false
     config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
     baseline = file("${rootProject.projectDir}/config/detekt/baseline.xml")
+}
+
+if (file(googleServicesConfig).exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

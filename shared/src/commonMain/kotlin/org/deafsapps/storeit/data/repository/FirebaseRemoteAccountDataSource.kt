@@ -239,7 +239,8 @@ internal class FirebaseRemoteAccountDataSource : AccountRemoteDataSource {
 
     private fun itemsCollection(accountId: String) = accountDocument(accountId = accountId).collection(COLLECTION_ITEMS)
 
-    private fun photosCollection(accountId: String) = accountDocument(accountId = accountId).collection(COLLECTION_PHOTOS)
+    private fun photosCollection(accountId: String) =
+        accountDocument(accountId = accountId).collection(COLLECTION_PHOTOS)
 }
 
 private inline fun <T> runFirestoreOperation(
