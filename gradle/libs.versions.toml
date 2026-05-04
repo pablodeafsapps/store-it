@@ -24,6 +24,7 @@ gitlive-firebase = "2.4.0"
 firebase-bom = "34.12.0"
 google-services = "4.4.4"
 androidx-datastore = "1.2.1"
+dependency-conflict-analyzer = "1.4.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -84,3 +85,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 skie = { id = "co.touchlab.skie", version.ref = "skie" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 googleServices = { id = "com.google.gms.google-services", version.ref = "google-services" }
+dependencyConflictAnalyzer = { id = "io.github.solneo.dependency-conflict-analyzer", version.ref = "dependency-conflict-analyzer" }

@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.skie)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.dependencyConflictAnalyzer)
 }
 
 kotlin {
@@ -134,4 +135,8 @@ detekt {
     allRules = false
     config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
     baseline = file("${rootProject.projectDir}/config/detekt/baseline.xml")
+}
+
+dependencyConflictAnalyzer {
+    failOnConflict.set(true)
 }

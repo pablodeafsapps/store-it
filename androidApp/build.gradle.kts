@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.dependencyConflictAnalyzer)
 }
 
 val googleServicesConfig = "google-services.json"
@@ -84,6 +85,10 @@ detekt {
     allRules = false
     config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
     baseline = file("${rootProject.projectDir}/config/detekt/baseline.xml")
+}
+
+dependencyConflictAnalyzer {
+    failOnConflict.set(true)
 }
 
 if (file(googleServicesConfig).exists()) {
