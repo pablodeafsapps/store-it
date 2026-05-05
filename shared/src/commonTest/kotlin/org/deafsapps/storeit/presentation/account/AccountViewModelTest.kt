@@ -26,6 +26,7 @@ import org.deafsapps.storeit.domain.usecase.GetSyncStageUseCaseType
 import org.deafsapps.storeit.domain.usecase.RestoreAccountSessionUseCaseType
 import org.deafsapps.storeit.domain.usecase.RestoreAccountDataUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignInAccountUseCaseType
+import org.deafsapps.storeit.domain.usecase.SignOutAccountUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignUpAccountUseCaseType
 import org.deafsapps.storeit.domain.usecase.SyncStageAction
 import org.deafsapps.storeit.domain.usecase.SyncStageResult
@@ -35,6 +36,7 @@ import org.deafsapps.storeit.presentation.account.viewmodel.AccountViewModel
 class AccountViewModelTest {
     private lateinit var fakeSignUpAccountUseCase: FakeSignUpAccountUseCase
     private lateinit var fakeSignInAccountUseCase: FakeSignInAccountUseCase
+    private lateinit var fakeSignOutAccountUseCase: FakeSignOutAccountUseCase
     private lateinit var fakeRestoreAccountSessionUseCase: FakeRestoreAccountSessionUseCase
     private lateinit var fakeRestoreAccountDataUseCase: FakeRestoreAccountDataUseCase
     private lateinit var fakeGetSyncStageUseCase: FakeGetSyncStageUseCase
@@ -43,6 +45,7 @@ class AccountViewModelTest {
     fun setUp() {
         fakeSignUpAccountUseCase = FakeSignUpAccountUseCase()
         fakeSignInAccountUseCase = FakeSignInAccountUseCase()
+        fakeSignOutAccountUseCase = FakeSignOutAccountUseCase()
         fakeRestoreAccountSessionUseCase = FakeRestoreAccountSessionUseCase()
         fakeRestoreAccountDataUseCase = FakeRestoreAccountDataUseCase()
         fakeGetSyncStageUseCase = FakeGetSyncStageUseCase()
@@ -202,10 +205,67 @@ class AccountViewModelTest {
             )
         }
 
+    @Test
+    fun `GIVEN authenticated account WHEN sign out THEN clears authenticated state`() =
+        runTest {
+            val restoredSession = accountSession()
+            fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
+            fakeGetSyncStageUseCase.result = SyncStageResult(
+                nextAction = SyncStageAction.None,
+                dataMode = DataMode.AccountBackedSynchronized,
+                syncState = SyncState(
+                    status = SyncStatus.Synchronized,
+                    pendingOperationCount = 0,
+                ),
+            ).ok()
+
+            val sut = createSut(testScope = this)
+            collectUiState(sut = sut)
+            advanceUntilIdle()
+
+            sut.signOut()
+            advanceUntilIdle()
+
+            assertEquals(expected = restoredSession.accountId, actual = fakeSignOutAccountUseCase.lastAccountId)
+            assertEquals(expected = false, actual = sut.uiState.value.isAuthenticated)
+            assertEquals(expected = DataMode.LocalOnly, actual = sut.uiState.value.dataMode)
+            assertEquals(expected = null, actual = sut.uiState.value.accountEmail)
+        }
+
+    @Test
+    fun `GIVEN authenticated account WHEN sign out fails THEN keeps session and exposes failure`() =
+        runTest {
+            val restoredSession = accountSession()
+            fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
+            fakeGetSyncStageUseCase.result = SyncStageResult(
+                nextAction = SyncStageAction.None,
+                dataMode = DataMode.AccountBackedSynchronized,
+                syncState = SyncState(
+                    status = SyncStatus.Synchronized,
+                    pendingOperationCount = 0,
+                ),
+            ).ok()
+            fakeSignOutAccountUseCase.result = DomainError.ServiceUnavailable(
+                message = "Sign out is temporarily unavailable.",
+            ).err()
+
+            val sut = createSut(testScope = this)
+            collectUiState(sut = sut)
+            advanceUntilIdle()
+
+            sut.signOut()
+            advanceUntilIdle()
+
+            assertEquals(expected = true, actual = sut.uiState.value.isAuthenticated)
+            assertEquals(expected = restoredSession.email, actual = sut.uiState.value.accountEmail)
+            assertEquals(expected = "Sign out is temporarily unavailable.", actual = sut.uiState.value.failureMessage)
+        }
+
     private fun createSut(testScope: TestScope): AccountViewModel = AccountViewModel(
         coroutineScope = CoroutineScope(UnconfinedTestDispatcher(testScope.testScheduler)),
         signUpAccountUseCase = fakeSignUpAccountUseCase,
         signInAccountUseCase = fakeSignInAccountUseCase,
+        signOutAccountUseCase = fakeSignOutAccountUseCase,
         restoreAccountSessionUseCase = fakeRestoreAccountSessionUseCase,
         restoreAccountDataUseCase = fakeRestoreAccountDataUseCase,
         getSyncStageUseCase = fakeGetSyncStageUseCase,
@@ -241,6 +301,16 @@ private class FakeSignInAccountUseCase : SignInAccountUseCaseType {
 
     override suspend fun invoke(input: EmailPasswordCredentials): Result<DomainError, AccountSession> {
         lastCredentials = input
+        return result
+    }
+}
+
+private class FakeSignOutAccountUseCase : SignOutAccountUseCaseType {
+    var result: Result<DomainError, Unit> = Unit.ok()
+    var lastAccountId: String? = null
+
+    override suspend fun invoke(input: String): Result<DomainError, Unit> {
+        lastAccountId = input
         return result
     }
 }

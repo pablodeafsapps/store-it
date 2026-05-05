@@ -28,6 +28,7 @@ import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackBrowseScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
 import org.deafsapps.storeit.presentation.account.viewmodel.AccountViewModel
+import org.deafsapps.storeit.domain.model.SyncStatus
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
@@ -43,6 +44,8 @@ internal fun StoreItNavDisplay(
     isDarkModeEnabled: Boolean,
     onThemeModeToggle: () -> Unit,
 ) {
+    val accountViewModel: AccountViewModel = koinViewModel()
+
     BackHandler {
         if (backStack.size > 1) {
             backStack.removeAt(backStack.lastIndex)
@@ -73,6 +76,7 @@ internal fun StoreItNavDisplay(
                     RackListNavContent(
                         backStack = backStack,
                         rackListViewModel = rackListViewModel,
+                        accountViewModel = accountViewModel,
                         isDarkModeEnabled = isDarkModeEnabled,
                         onThemeModeToggle = onThemeModeToggle,
                     )
@@ -85,6 +89,7 @@ internal fun StoreItNavDisplay(
                 entry<NavScreen.Account> {
                     AccountNavContent(
                         backStack = backStack,
+                        accountViewModel = accountViewModel,
                     )
                 }
                 entry<NavScreen.AddRack> {
@@ -176,10 +181,12 @@ internal fun StoreItNavDisplay(
 private fun RackListNavContent(
     backStack: NavBackStack<NavKey>,
     rackListViewModel: () -> RackListViewModel,
+    accountViewModel: AccountViewModel,
     isDarkModeEnabled: Boolean,
     onThemeModeToggle: () -> Unit,
 ) {
     val uiState by rackListViewModel().uiState.collectAsStateWithLifecycle()
+    val accountUiState by accountViewModel.uiState.collectAsStateWithLifecycle()
     RackListScreen(
         uiState = uiState,
         uiEvent = { rackListViewModel().uiEvent },
@@ -190,6 +197,13 @@ private fun RackListNavContent(
         onNavigateToAddItem = { backStack.add(NavScreen.AddItem) },
         onNavigateToSearch = { backStack.add(NavScreen.Search) },
         onNavigateToAccount = { backStack.add(NavScreen.Account) },
+        isAccountAuthenticated = accountUiState.isAuthenticated,
+        accountEmail = accountUiState.accountEmail,
+        isAccountReady = accountUiState.isAccountReady,
+        isRestoreInProgress = accountUiState.isRestoreInProgress,
+        hasPendingSyncWork = accountUiState.hasPendingSyncWork,
+        hasAccountAttentionState = accountUiState.requiresReconciliation ||
+            accountUiState.syncStatus == SyncStatus.Failed,
         isDarkModeEnabled = isDarkModeEnabled,
         onThemeModeToggle = onThemeModeToggle,
     )
@@ -198,22 +212,9 @@ private fun RackListNavContent(
 @Composable
 private fun AccountNavContent(
     backStack: NavBackStack<NavKey>,
+    accountViewModel: AccountViewModel,
 ) {
-    val viewModelStoreOwner = remember {
-        object : ViewModelStoreOwner {
-            override val viewModelStore = ViewModelStore()
-        }
-    }
-    val accountViewModel: AccountViewModel = koinViewModel(
-        viewModelStoreOwner = viewModelStoreOwner,
-    )
     val uiState by accountViewModel.uiState.collectAsStateWithLifecycle()
-
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModelStoreOwner.viewModelStore.clear()
-        }
-    }
 
     AccountScreen(
         uiState = uiState,
@@ -222,6 +223,7 @@ private fun AccountNavContent(
         onEmailChange = accountViewModel::onEmailInputChanged,
         onPasswordChange = accountViewModel::onPasswordInputChanged,
         onSubmitCredentials = accountViewModel::submitCredentials,
+        onSignOut = accountViewModel::signOut,
         onRetryRestore = accountViewModel::retryRestore,
         onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
     )

@@ -20,14 +20,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.androidapp.design.backArrowIcon
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.item.model.toAddItemSlotVo
+import org.deafsapps.storeit.presentation.rack.model.RackSlotMarkerVo
+import org.deafsapps.storeit.presentation.rack.model.RackSlotPickerUiState
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
+import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackSlotPickerViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -56,6 +62,22 @@ internal fun RackSlotPickerScreen(
         }
     }
 
+    RackSlotPickerContent(
+        uiState = uiState,
+        onSlotSelectedForItem = onSlotSelectedForItem,
+        onNavigateBack = onNavigateBack,
+        onImageTap = viewModel::onImageTap,
+    )
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun RackSlotPickerContent(
+    uiState: RackSlotPickerUiState,
+    onSlotSelectedForItem: (rackId: String, slot: AddItemSlotVo) -> Unit,
+    onNavigateBack: () -> Unit,
+    onImageTap: (Float, Float) -> Unit,
+) {
     Scaffold(
         topBar = {
             val rackName = uiState.rack?.name ?: stringResource(R.string.rack_detail_title_default)
@@ -114,12 +136,69 @@ internal fun RackSlotPickerScreen(
                         photoUri = uiState.rack?.photoUri,
                         slots = uiState.slots,
                         selectedSlot = uiState.selectedSlot,
-                        onTap = viewModel::onImageTap,
+                        onTap = onImageTap,
                         onSlotMarkerDrag = { _, _, _ -> },
                         onSlotMarkerDragFinished = { _, _, _, _, _ -> },
                     )
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackSlotPickerLoadingPreview() {
+    MaterialTheme {
+        RackSlotPickerContent(
+            uiState = RackSlotPickerUiState.getDefault().copy(isLoading = true),
+            onSlotSelectedForItem = { _, _ -> },
+            onNavigateBack = {},
+            onImageTap = { _, _ -> },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackSlotPickerSelectionPreview() {
+    val selectedSlot = RackSlotMarkerVo(id = "slot-1", xRel = 0.35f, yRel = 0.4f)
+    MaterialTheme {
+        RackSlotPickerContent(
+            uiState = RackSlotPickerUiState.getDefault().copy(
+                rack = RackSummaryVo(
+                    id = "rack-1",
+                    name = "Garage shelf",
+                    location = "Garage",
+                    photoUri = null,
+                ),
+                slots = persistentListOf(
+                    selectedSlot,
+                    RackSlotMarkerVo(id = "slot-2", xRel = 0.7f, yRel = 0.5f),
+                ),
+                selectedSlot = selectedSlot,
+                selectedPlacementType = SlotPlacementType.EXISTING,
+                isLoading = false,
+            ),
+            onSlotSelectedForItem = { _, _ -> },
+            onNavigateBack = {},
+            onImageTap = { _, _ -> },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackSlotPickerErrorPreview() {
+    MaterialTheme {
+        RackSlotPickerContent(
+            uiState = RackSlotPickerUiState.getDefault().copy(
+                isLoading = false,
+                error = "Rack not found.",
+            ),
+            onSlotSelectedForItem = { _, _ -> },
+            onNavigateBack = {},
+            onImageTap = { _, _ -> },
+        )
     }
 }

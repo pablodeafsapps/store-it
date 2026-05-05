@@ -28,6 +28,7 @@ import org.deafsapps.storeit.domain.usecase.GetSyncStageUseCaseType
 import org.deafsapps.storeit.domain.usecase.RestoreAccountDataUseCaseType
 import org.deafsapps.storeit.domain.usecase.RestoreAccountSessionUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignInAccountUseCaseType
+import org.deafsapps.storeit.domain.usecase.SignOutAccountUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignUpAccountUseCaseType
 import org.deafsapps.storeit.domain.usecase.SyncStageResult
 import org.deafsapps.storeit.presentation.account.model.AccountAuthMode
@@ -42,6 +43,7 @@ class AccountViewModel internal constructor(
     coroutineScope: CoroutineScope?,
     private val signUpAccountUseCase: SignUpAccountUseCaseType,
     private val signInAccountUseCase: SignInAccountUseCaseType,
+    private val signOutAccountUseCase: SignOutAccountUseCaseType,
     private val restoreAccountSessionUseCase: RestoreAccountSessionUseCaseType,
     private val restoreAccountDataUseCase: RestoreAccountDataUseCaseType,
     private val getSyncStageUseCase: GetSyncStageUseCaseType,
@@ -109,10 +111,6 @@ class AccountViewModel internal constructor(
         }
     }
 
-    fun refreshSession() {
-        loadRequests.tryEmit(value = AccountLoadRequest.RefreshSession)
-    }
-
     fun selectSignInMode() {
         selectAuthMode(authMode = AccountAuthMode.SignIn)
     }
@@ -151,6 +149,26 @@ class AccountViewModel internal constructor(
                 },
                 ifOk = { session ->
                     restoreAuthenticatedAccountData(session = session)
+                },
+            )
+        }
+    }
+
+    fun signOut() {
+        val session = state.value.restoredSession
+        if (session == null) {
+            stateChanges.tryEmit(value = AccountStateChange.SignedOut)
+            return
+        }
+
+        viewModelScope.launch {
+            stateChanges.emit(value = AccountStateChange.SigningOut)
+            signOutAccountUseCase(input = session.accountId).fold(
+                ifErr = { error ->
+                    stateChanges.emit(value = AccountStateChange.SignOutFailed(error = error))
+                },
+                ifOk = {
+                    stateChanges.emit(value = AccountStateChange.SignedOut)
                 },
             )
         }
@@ -345,6 +363,30 @@ class AccountViewModel internal constructor(
                         syncStatus = SyncStatus.Idle,
                         pendingOperationCount = 0,
                         failureMessage = null,
+                    ),
+                )
+        }
+
+        data object SigningOut : AccountStateChange {
+            override fun reduce(state: AccountViewModelState): AccountViewModelState =
+                state.copy(
+                    uiState = state.uiState.copy(
+                        isLoading = true,
+                        isSubmitting = false,
+                        failureMessage = null,
+                    ),
+                )
+        }
+
+        data class SignOutFailed(
+            private val error: DomainError,
+        ) : AccountStateChange {
+            override fun reduce(state: AccountViewModelState): AccountViewModelState =
+                state.copy(
+                    uiState = state.uiState.copy(
+                        isLoading = false,
+                        isSubmitting = false,
+                        failureMessage = error.toErrorCause(),
                     ),
                 )
         }

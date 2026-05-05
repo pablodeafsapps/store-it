@@ -3,6 +3,7 @@
 
     <string name="common_back">Back</string>
     <string name="common_cancel">Cancel</string>
+    <string name="common_ok">OK</string>
     <string name="common_save">Save</string>
     <string name="common_remove">Remove</string>
     <string name="common_add">Add</string>
@@ -41,6 +42,7 @@
     <string name="account_password_label">Password</string>
     <string name="account_submit_sign_in">Sign in</string>
     <string name="account_submit_sign_up">Create account</string>
+    <string name="account_sign_out">Sign out</string>
     <string name="account_local_only">Your data is currently stored only on this device.</string>
     <string name="account_signed_in">Signed in as %1$s</string>
     <string name="account_backed_up">Your data is backed up.</string>
@@ -49,6 +51,14 @@
     <string name="account_failed">Account sync needs attention.</string>
     <string name="account_reconciliation_required">Choose how to reconcile local and remote data before continuing.</string>
     <string name="account_retry_restore">Retry restore</string>
+    <string name="account_status_title_local_only">Local-only mode</string>
+    <string name="account_status_title_connected">Account connected</string>
+    <string name="account_status_title_ready">Account ready</string>
+    <string name="account_status_title_restoring">Restoring your data</string>
+    <string name="account_status_title_pending">Sync pending</string>
+    <string name="account_status_title_attention">Sync needs attention</string>
+    <string name="account_status_title_reconciliation">Reconciliation required</string>
+    <string name="account_status_avatar_local_only">L</string>
 
     <string name="rack_detail_title_default">Rack</string>
     <string name="rack_detail_title_select_slot">%1$s - select slot</string>

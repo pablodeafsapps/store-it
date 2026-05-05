@@ -19,10 +19,19 @@ data class AccountUiState(
     val isLocalOnly: Boolean
         get() = dataMode == DataMode.LocalOnly
 
-    val isDataBackedUp: Boolean
+    val isAccountReady: Boolean
         get() = isAuthenticated &&
             dataMode == DataMode.AccountBackedSynchronized &&
             syncStatus == SyncStatus.Synchronized
+
+    val isRestoreInProgress: Boolean
+        get() = isAuthenticated &&
+            (isLoading ||
+                syncStatus == SyncStatus.RestorePending ||
+                syncStatus == SyncStatus.PendingDownload)
+
+    val isDataBackedUp: Boolean
+        get() = isAccountReady
 
     val hasPendingSyncWork: Boolean
         get() = pendingOperationCount > 0 ||
@@ -50,6 +59,9 @@ data class AccountUiState(
             !isSubmitting &&
             emailInput.isNotBlank() &&
             passwordInput.isNotBlank()
+
+    val canSignOut: Boolean
+        get() = isAuthenticated && !isLoading && !isSubmitting
 
     companion object {
         fun getDefault(): AccountUiState = AccountUiState(

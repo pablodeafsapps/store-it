@@ -42,3 +42,14 @@ internal class RestoreAccountSessionUseCase(
 
     suspend operator fun invoke(): Result<DomainError, AccountSession?> = invoke(input = Unit)
 }
+
+internal interface SignOutAccountUseCaseType :
+    UseCase<String, Result<DomainError, Unit>>
+
+@Factory(binds = [SignOutAccountUseCaseType::class])
+internal class SignOutAccountUseCase(
+    private val accountRepository: AccountRepository,
+) : SignOutAccountUseCaseType {
+    override suspend fun invoke(input: String): Result<DomainError, Unit> =
+        accountRepository.signOut(accountId = input)
+}

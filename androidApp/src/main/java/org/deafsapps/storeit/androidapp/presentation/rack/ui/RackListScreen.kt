@@ -50,6 +50,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import org.deafsapps.storeit.androidapp.R
+import org.deafsapps.storeit.androidapp.presentation.account.ui.AccountStatusAvatar
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
 import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
@@ -66,6 +67,12 @@ internal fun RackListScreen(
     onNavigateToAddItem: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToAccount: () -> Unit = {},
+    isAccountAuthenticated: Boolean = false,
+    accountEmail: String? = null,
+    isAccountReady: Boolean = false,
+    isRestoreInProgress: Boolean = false,
+    hasPendingSyncWork: Boolean = false,
+    hasAccountAttentionState: Boolean = false,
     isDarkModeEnabled: Boolean = false,
     onThemeModeToggle: () -> Unit = {},
 ) {
@@ -88,6 +95,21 @@ internal fun RackListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.rack_list_title)) },
                 actions = {
+                    if (isAccountAuthenticated) {
+                        IconButton(
+                            onClick = onNavigateToAccount,
+                            modifier = Modifier.testTag("rackListAccountStatusButton"),
+                        ) {
+                            AccountStatusAvatar(
+                                accountEmail = accountEmail,
+                                isAuthenticated = isAccountAuthenticated,
+                                isAccountReady = isAccountReady,
+                                isRestoreInProgress = isRestoreInProgress,
+                                hasPendingSyncWork = hasPendingSyncWork,
+                                hasAttentionState = hasAccountAttentionState,
+                            )
+                        }
+                    }
                     var showMenu by remember { mutableStateOf(false) }
                     IconButton(
                         onClick = { showMenu = true },

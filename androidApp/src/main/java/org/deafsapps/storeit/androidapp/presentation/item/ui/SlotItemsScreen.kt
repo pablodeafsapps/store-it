@@ -16,19 +16,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import org.deafsapps.storeit.androidapp.design.backArrowIcon
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.DisposableEffect
 import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.androidapp.R
+import kotlinx.collections.immutable.persistentListOf
+import org.deafsapps.storeit.presentation.item.model.ItemSummaryVo
+import org.deafsapps.storeit.presentation.item.model.SlotItemsUiState
 import org.deafsapps.storeit.presentation.item.viewmodel.SlotItemsViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -59,6 +63,26 @@ internal fun SlotItemsScreen(
         }
     }
 
+    SlotItemsContent(
+        uiState = uiState,
+        rackId = rackId,
+        slotId = slotId,
+        onNavigateBack = onNavigateBack,
+        onAddItem = onAddItem,
+        onItemSelected = onItemSelected,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SlotItemsContent(
+    uiState: SlotItemsUiState,
+    rackId: String,
+    slotId: String,
+    onNavigateBack: () -> Unit,
+    onAddItem: (rackId: String, slotId: String) -> Unit,
+    onItemSelected: (itemId: String) -> Unit,
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -159,5 +183,58 @@ internal fun SlotItemsScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SlotItemsScreenLoadingPreview() {
+    MaterialTheme {
+        SlotItemsContent(
+            uiState = SlotItemsUiState.getDefault(),
+            rackId = "rack-1",
+            slotId = "slot-1",
+            onNavigateBack = {},
+            onAddItem = { _, _ -> },
+            onItemSelected = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SlotItemsScreenEmptyPreview() {
+    MaterialTheme {
+        SlotItemsContent(
+            uiState = SlotItemsUiState.getDefault().copy(
+                isLoading = false,
+            ),
+            rackId = "rack-1",
+            slotId = "slot-1",
+            onNavigateBack = {},
+            onAddItem = { _, _ -> },
+            onItemSelected = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SlotItemsScreenItemsPreview() {
+    MaterialTheme {
+        SlotItemsContent(
+            uiState = SlotItemsUiState.getDefault().copy(
+                isLoading = false,
+                items = persistentListOf(
+                    ItemSummaryVo(id = "item-1", name = "Camping stove"),
+                    ItemSummaryVo(id = "item-2", name = "Lantern"),
+                ),
+            ),
+            rackId = "rack-1",
+            slotId = "slot-1",
+            onNavigateBack = {},
+            onAddItem = { _, _ -> },
+            onItemSelected = {},
+        )
     }
 }
