@@ -1,8 +1,10 @@
 "common_back" = "Back";
 "common_cancel" = "Cancel";
+"common_ok" = "OK";
 "common_save" = "Save";
 "common_remove" = "Remove";
 "common_add" = "Add";
+"common_error_title" = "Error";
 
 "racks_title" = "Racks";
 "rack_list_more_options" = "More options";

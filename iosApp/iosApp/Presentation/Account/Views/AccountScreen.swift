@@ -13,45 +13,9 @@ struct AccountScreen: View {
                         .font(.body)
                         .accessibilityIdentifier("accountStatusText")
 
-                    Picker("account_title", selection: authModeBinding(state)) {
-                        Text("account_sign_in").tag(AuthModeSelection.signIn)
-                        Text("account_sign_up").tag(AuthModeSelection.signUp)
+                    if !state.isAuthenticated {
+                        authenticationForm(state)
                     }
-                    .pickerStyle(.segmented)
-                    .accessibilityIdentifier("accountModePicker")
-
-                    TextField(
-                        "account_email_label",
-                        text: Binding(
-                            get: { state.emailInput },
-                            set: { viewModel.sharedVm.onEmailInputChanged(email: $0) }
-                        )
-                    )
-                    .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityIdentifier("accountEmailField")
-
-                    SecureField(
-                        "account_password_label",
-                        text: Binding(
-                            get: { state.passwordInput },
-                            set: { viewModel.sharedVm.onPasswordInputChanged(password: $0) }
-                        )
-                    )
-                    .textContentType(.password)
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityIdentifier("accountPasswordField")
-
-                    Button(action: { viewModel.sharedVm.submitCredentials() }) {
-                        Text(state.isSignInMode ? "account_submit_sign_in" : "account_submit_sign_up")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!state.canSubmitCredentials)
-                    .accessibilityIdentifier("accountSubmitButton")
 
                     if state.canRetryRestore {
                         Button("account_retry_restore") {
@@ -74,8 +38,60 @@ struct AccountScreen: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("common_back", action: onNavigateBack)
                 }
+                if state.isAuthenticated {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("account_sign_out") {
+                            viewModel.sharedVm.signOut()
+                        }
+                        .disabled(!state.canSignOut)
+                        .accessibilityIdentifier("accountSignOutButton")
+                    }
+                }
             }
         }
+    }
+
+    @ViewBuilder
+    private func authenticationForm(_ state: AccountUiState) -> some View {
+        Picker("account_title", selection: authModeBinding(state)) {
+            Text("account_sign_in").tag(AuthModeSelection.signIn)
+            Text("account_sign_up").tag(AuthModeSelection.signUp)
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("accountModePicker")
+
+        TextField(
+            "account_email_label",
+            text: Binding(
+                get: { state.emailInput },
+                set: { viewModel.sharedVm.onEmailInputChanged(email: $0) }
+            )
+        )
+        .textContentType(.emailAddress)
+        .keyboardType(.emailAddress)
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .textFieldStyle(.roundedBorder)
+        .accessibilityIdentifier("accountEmailField")
+
+        SecureField(
+            "account_password_label",
+            text: Binding(
+                get: { state.passwordInput },
+                set: { viewModel.sharedVm.onPasswordInputChanged(password: $0) }
+            )
+        )
+        .textContentType(.password)
+        .textFieldStyle(.roundedBorder)
+        .accessibilityIdentifier("accountPasswordField")
+
+        Button(action: { viewModel.sharedVm.submitCredentials() }) {
+            Text(state.isSignInMode ? "account_submit_sign_in" : "account_submit_sign_up")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(!state.canSubmitCredentials)
+        .accessibilityIdentifier("accountSubmitButton")
     }
 
     private func authModeBinding(_ state: AccountUiState) -> Binding<AuthModeSelection> {

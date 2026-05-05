@@ -4,7 +4,7 @@ import Shared
 struct RackListView: View {
     let uiState: RackListUiState
     let onAddRackSelected: () -> Void
-    let onRackSelected: (Rack) -> Void
+    let onRackSelected: (RackSummaryVo) -> Void
     let onNavigateToSearch: () -> Void
     let onNavigateToAccount: () -> Void
     let isDarkModeEnabled: Bool
@@ -114,7 +114,7 @@ struct RackListView: View {
 }
 
 private struct RackRowView: View {
-    let rack: Rack
+    let rack: RackSummaryVo
     let onTap: () -> Void
 
     var body: some View {

@@ -163,9 +163,6 @@ private struct RackDetailContent: View {
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityIdentifier("rackBrowseSlotHint")
-                        if !rack.description_.isEmpty {
-                            Text(rack.description_).font(.body)
-                        }
                         if !rack.location.isEmpty {
                             Text(String(format: NSLocalizedString("rack_location_prefix", comment: ""), rack.location))
                                 .font(.subheadline)

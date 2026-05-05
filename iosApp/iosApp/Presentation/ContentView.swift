@@ -60,8 +60,8 @@ struct ContentView: View {
             )
         case .search:
             SearchFlowScreen(
-                onItemSelected: { placement in
-                    path.append(.itemDetail(itemId: placement.item.id))
+                onItemSelected: { result in
+                    path.append(.itemDetail(itemId: result.itemId))
                 }
             )
         case .addRack:
@@ -148,9 +148,9 @@ struct ContentView: View {
 
 private struct SearchFlowScreen: View {
     @StateObject private var viewModel: ViewModelHolder<SearchViewModel>
-    let onItemSelected: (ItemWithPlacement) -> Void
+    let onItemSelected: (SearchResultVo) -> Void
 
-    init(onItemSelected: @escaping (ItemWithPlacement) -> Void) {
+    init(onItemSelected: @escaping (SearchResultVo) -> Void) {
         _viewModel = StateObject(wrappedValue: ViewModelHolder(IosKoinHelper().getSearchViewModel()))
         self.onItemSelected = onItemSelected
     }
@@ -232,6 +232,7 @@ private struct AddItemScreen: View {
 private struct ItemDetailScreen: View {
     private let itemId: String
     @StateObject private var itemDetailViewModel: ViewModelHolder<ItemDetailViewModel>
+    @State private var activeErrorMessage: String?
     let onNavigateBack: () -> Void
 
     init(itemId: String, onNavigateBack: @escaping () -> Void) {
@@ -271,8 +272,23 @@ private struct ItemDetailScreen: View {
             for await event in itemDetailViewModel.sharedVm.uiEvent {
                 if event is ItemDetailUiEventNavigateBack {
                     onNavigateBack()
+                } else if let error = event as? ItemDetailUiEventShowError {
+                    activeErrorMessage = error.message
                 }
             }
+        }
+        .alert(
+            NSLocalizedString("common_error_title", comment: ""),
+            isPresented: Binding(
+                get: { activeErrorMessage != nil },
+                set: { if !$0 { activeErrorMessage = nil } }
+            )
+        ) {
+            Button("common_ok", role: .cancel) {
+                activeErrorMessage = nil
+            }
+        } message: {
+            Text(activeErrorMessage ?? "")
         }
         .id(itemId)
     }
