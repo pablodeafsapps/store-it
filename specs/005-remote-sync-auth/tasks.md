@@ -134,6 +134,8 @@
 - [ ] T038 [P] Add sync telemetry and success-metric instrumentation points in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncTelemetry.kt`
 - [ ] T039 [P] Update feature documentation and add the planned privacy/security document reference in `specs/005-remote-sync-auth/quickstart.md`
 - [ ] T040 Run quickstart validation scenarios and record final implementation notes in `specs/005-remote-sync-auth/quickstart.md`
+- [X] T041 Add a visible signed-in account status header with avatar/initial and restore-complete state on the account screen in `androidApp/src/main/java/org/deafsapps/storeit/androidapp/presentation/account/ui/AccountScreen.kt`
+- [X] T042 Add shared sign-out support and a main rack-list app-bar account badge that reflects backup state in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/account/viewmodel/AccountViewModel.kt` and `androidApp/src/main/java/org/deafsapps/storeit/androidapp/presentation/rack/ui/RackListScreen.kt`
 
 ---
 
