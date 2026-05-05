@@ -326,8 +326,11 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 
 ### 7.5 Android Compose previews
 
-- **Requirement**: Every Android (Jetpack Compose) screen must provide **previews that cover all possible scenarios**.
-- Add `@Preview` composables for: loading state, empty state, error state, success state with data, and any other distinct UI states the screen can show (e.g. different steps in a flow, with/without optional content). This allows design and behaviour review without running the app and catches missing state handling.
+- **Requirement**: Every Android (Jetpack Compose) screen and every meaningful reusable Compose view must provide **previews that cover all possible scenarios**.
+- **Mapping rule**: The preview set must correspond to the composable's real UI-state branches. Add a distinct `@Preview` for each meaningful branch rather than a token single preview.
+- Add `@Preview` composables for: loading state, empty state, error state, success state with data, and any other distinct UI states the screen can show (e.g. different steps in a flow, authenticated vs unauthenticated mode, with/without optional content, dialogs visible, selection states, pending vs synchronized states).
+- If a screen is wrapped in Koin, navigation, or platform setup, extract a pure content composable and preview that content composable directly using representative state objects.
+- When a change introduces a new render branch in a composable, update the preview set in the same change so the preview mapping stays aligned with the implementation.
 
 ### 7.6 Shared vs Platform Tests
 

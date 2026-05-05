@@ -325,7 +325,9 @@ This section describes how an engineer (or automation agent) should add or modif
 - On Android:
   - Bind Compose UI to the **pure ViewModel** held by the wrapper (e.g. `androidRackListViewModel.rackListViewModel`).
   - Maintain unidirectional data flow: UI → events → ViewModel → state → UI.
-  - **Previews**: Every Compose screen must have `@Preview` composables that cover **all meaningful UI scenarios** (e.g. loading, empty state, error, success with data, different content sizes) so the screen can be reviewed in isolation without running the app.
+  - **Previews**: Every Compose screen and meaningful reusable Compose view must have `@Preview` composables that cover **all meaningful UI scenarios** (e.g. loading, empty state, error, success with data, different content sizes, different steps or modes in a flow).
+  - **Mapping rule**: The preview set must map explicitly to the composable's state branches. If the composable can render authenticated and unauthenticated layouts, empty and populated layouts, or dialog-hidden and dialog-shown variants, provide distinct previews for those branches rather than a single generic preview.
+  - **Pure content for previews**: If a screen is coupled to navigation, Koin, or a ViewModel wrapper, extract a pure content composable so previews can render direct state without depending on runtime wiring.
 - On iOS:
   - Bind SwiftUI views to the Swift wrapper; the wrapper holds and observes the pure Kotlin ViewModel.
   - Use Skie, `Observing`, or equivalent to observe KMP state/events consistently.

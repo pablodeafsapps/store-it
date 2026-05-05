@@ -129,6 +129,14 @@ For all new and modified Kotlin files in this project:
 - Keep unit tests pure and deterministic: no real network, database, filesystem, system clock, or randomness.
 - Prefer `commonTest` for platform-agnostic logic and use platform-specific tests only for platform behaviour.
 
+## Compose Previews
+
+- Every Android Compose screen and meaningful reusable Compose view must have `@Preview` composables.
+- Preview coverage must map to the composable's meaningful UI scenarios, not just exist nominally.
+- Add one preview per distinct state the composable can render, for example: loading, empty, error, success with representative data, authenticated vs unauthenticated mode, dialogs visible, optional content present/absent, and any other branch that changes layout or affordances materially.
+- If a screen is wrapped in navigation or Koin setup, extract or reuse a pure content composable so previews target UI state directly.
+- When a new UI state branch is added to a composable, update previews in the same change so the preview set stays in sync with the composable contract.
+
 ## Reference Files
 
 - `.ai/AGENTS.md`
