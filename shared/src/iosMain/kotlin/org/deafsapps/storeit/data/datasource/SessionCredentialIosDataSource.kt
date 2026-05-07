@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.foldMap
+import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.base.onOk
 import org.deafsapps.storeit.domain.model.DomainError

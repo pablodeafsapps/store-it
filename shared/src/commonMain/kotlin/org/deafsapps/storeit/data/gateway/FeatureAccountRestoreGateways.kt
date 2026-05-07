@@ -114,10 +114,8 @@ private suspend fun <T, Saved> List<T>.saveRestoredEntries(
     save: suspend (T) -> Result<DomainError, Saved>,
 ): Result<DomainError, Long> {
     var savedCount = 0L
-    forEach { entry ->
-        save(entry)
-            .failureOrNull()
-            ?.let { error -> return error.err() }
+    for (entry in this) {
+        save(entry).failureOrNull()?.let { error -> return error.err() }
         savedCount += 1L
     }
     return savedCount.ok()

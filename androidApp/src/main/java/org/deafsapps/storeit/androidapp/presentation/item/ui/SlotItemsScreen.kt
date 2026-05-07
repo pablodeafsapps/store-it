@@ -122,7 +122,7 @@ private fun SlotItemsContent(
                 }
                 uiState.error != null -> {
                     Text(
-                        text = uiState.error!!,
+                        text = uiState.error ?: return@Box,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier
                             .align(Alignment.Center)
