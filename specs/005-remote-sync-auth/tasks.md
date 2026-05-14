@@ -91,8 +91,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T023 [P] [US2] Record create, update, and delete sync operations from local organizer writes in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncOperationRecorder.kt`
-- [ ] T024 [P] [US2] Implement pending upload, pending restore, retry, and failure persistence rules in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/DefaultSyncRepository.kt`
+- [X] T023 [P] [US2] Record create, update, and delete sync operations from local organizer writes in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncOperationRecorder.kt`
+- [X] T024 [P] [US2] Implement pending upload, pending restore, retry, and failure persistence rules in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/DefaultSyncRepository.kt`
 - [ ] T025 [US2] Integrate sync operation recording into rack, slot, and item repositories in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/SyncAwareOrganizerRepositories.kt`
 - [ ] T026 [US2] Implement signed-in sync trigger use cases for retry and background catch-up in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/SyncAccountDataUseCases.kt`
 - [ ] T027 [US2] Expose user-visible sync status and recoverable failure messaging for pending upload, pending restore, failed, and synchronized states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/sync/model/SyncStatusUiState.kt`
