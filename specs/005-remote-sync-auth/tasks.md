@@ -87,7 +87,7 @@
 
 - [X] T020 [P] [US2] Add pending-operation queue, restore retry, and sync retry coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/SyncAccountDataUseCasesTest.kt`
 - [ ] T021 [P] [US2] Add offline mutation persistence coverage for organizer repositories in `shared/src/commonTest/kotlin/org/deafsapps/storeit/data/repository/OfflineMutationQueueTest.kt`
-- [ ] T022 [P] [US2] Add sync-status presentation coverage for pending and failed states in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/sync/SyncStatusViewModelTest.kt`
+- [X] T022 [P] [US2] Add sync-status presentation coverage for pending and failed states in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/sync/SyncStatusViewModelTest.kt`
 
 ### Implementation for User Story 2
 

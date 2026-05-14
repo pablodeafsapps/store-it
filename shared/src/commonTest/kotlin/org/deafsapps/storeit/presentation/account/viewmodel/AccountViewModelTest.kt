@@ -1,8 +1,7 @@
-package org.deafsapps.storeit.presentation.account
+package org.deafsapps.storeit.presentation.account.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -30,10 +29,11 @@ import org.deafsapps.storeit.domain.usecase.SignOutAccountUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignUpAccountUseCaseType
 import org.deafsapps.storeit.domain.usecase.SyncStageAction
 import org.deafsapps.storeit.domain.usecase.SyncStageResult
-import org.deafsapps.storeit.presentation.account.viewmodel.AccountViewModel
+import org.deafsapps.storeit.presentation.collectUiState
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AccountViewModelTest {
+internal class AccountViewModelTest {
+    private lateinit var sut: AccountViewModel
     private lateinit var fakeSignUpAccountUseCase: FakeSignUpAccountUseCase
     private lateinit var fakeSignInAccountUseCase: FakeSignInAccountUseCase
     private lateinit var fakeSignOutAccountUseCase: FakeSignOutAccountUseCase
@@ -54,7 +54,7 @@ class AccountViewModelTest {
     @Test
     fun `GIVEN restored active session with synchronized state WHEN AccountViewModel initializes THEN ui state shows authenticated synchronized account`() =
         runTest {
-            val restoredSession = accountSession()
+            val restoredSession = getAccountSession()
             fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
             fakeGetSyncStageUseCase.result = SyncStageResult(
                 nextAction = SyncStageAction.None,
@@ -65,24 +65,25 @@ class AccountViewModelTest {
                 ),
             ).ok()
 
-            val sut = createSut(testScope = this)
-            collectUiState(sut = sut)
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
 
             advanceUntilIdle()
 
+            val state = states.lastOrNull()
             assertTrue(actual = fakeRestoreAccountSessionUseCase.wasInvoked)
             assertEquals(expected = restoredSession, actual = fakeGetSyncStageUseCase.lastInput?.session)
-            assertEquals(expected = false, actual = sut.uiState.value.isLoading)
-            assertEquals(expected = true, actual = sut.uiState.value.isAuthenticated)
-            assertEquals(expected = restoredSession.email, actual = sut.uiState.value.accountEmail)
-            assertEquals(expected = DataMode.AccountBackedSynchronized, actual = sut.uiState.value.dataMode)
-            assertEquals(expected = SyncStatus.Synchronized, actual = sut.uiState.value.syncStatus)
+            assertEquals(expected = false, actual = state?.isLoading)
+            assertEquals(expected = true, actual = state?.isAuthenticated)
+            assertEquals(expected = restoredSession.email, actual = state?.accountEmail)
+            assertEquals(expected = DataMode.AccountBackedSynchronized, actual = state?.dataMode)
+            assertEquals(expected = SyncStatus.Synchronized, actual = state?.syncStatus)
         }
 
     @Test
     fun `GIVEN restored active session with restore pending state WHEN AccountViewModel initializes THEN ui state shows authenticated restore pending account`() =
         runTest {
-            val restoredSession = accountSession()
+            val restoredSession = getAccountSession()
             fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
             fakeGetSyncStageUseCase.result = SyncStageResult(
                 nextAction = SyncStageAction.RestoreRemoteDataset,
@@ -93,23 +94,80 @@ class AccountViewModelTest {
                 ),
             ).ok()
 
-            val sut = createSut(testScope = this)
-            collectUiState(sut = sut)
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
 
             advanceUntilIdle()
 
+            val state = states.lastOrNull()
             assertEquals(expected = restoredSession, actual = fakeGetSyncStageUseCase.lastInput?.session)
-            assertEquals(expected = true, actual = sut.uiState.value.isAuthenticated)
-            assertEquals(expected = DataMode.AccountBackedPendingSync, actual = sut.uiState.value.dataMode)
-            assertEquals(expected = SyncStatus.RestorePending, actual = sut.uiState.value.syncStatus)
-            assertEquals(expected = true, actual = sut.uiState.value.canRetryRestore)
+            assertEquals(expected = true, actual = state?.isAuthenticated)
+            assertEquals(expected = DataMode.AccountBackedPendingSync, actual = state?.dataMode)
+            assertEquals(expected = SyncStatus.RestorePending, actual = state?.syncStatus)
+            assertEquals(expected = true, actual = state?.canRetryRestore)
+        }
+
+    @Test
+    fun `GIVEN restored active session with pending upload sync state WHEN AccountViewModel initializes THEN ui state surfaces pending work`() =
+        runTest {
+            val restoredSession = getAccountSession()
+            fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
+            fakeGetSyncStageUseCase.result = SyncStageResult(
+                nextAction = SyncStageAction.UploadPendingChanges,
+                dataMode = DataMode.AccountBackedPendingSync,
+                syncState = SyncState(
+                    status = SyncStatus.PendingUpload,
+                    pendingOperationCount = 3,
+                ),
+            ).ok()
+
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
+
+            advanceUntilIdle()
+
+            val state = states.lastOrNull()
+            assertEquals(expected = true, actual = state?.isAuthenticated)
+            assertEquals(expected = DataMode.AccountBackedPendingSync, actual = state?.dataMode)
+            assertEquals(expected = SyncStatus.PendingUpload, actual = state?.syncStatus)
+            assertEquals(expected = 3, actual = state?.pendingOperationCount)
+            assertEquals(expected = null, actual = state?.failureMessage)
+        }
+
+    @Test
+    fun `GIVEN restored active session with failed sync state WHEN AccountViewModel initializes THEN ui state surfaces recoverable failure message`() =
+        runTest {
+            val restoredSession = getAccountSession()
+            fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
+            fakeGetSyncStageUseCase.result = SyncStageResult(
+                nextAction = SyncStageAction.RetryFailedSync,
+                dataMode = DataMode.AccountBackedPendingSync,
+                syncState = SyncState(
+                    status = SyncStatus.Failed,
+                    failureReason = "Upload failed due to timeout.",
+                    pendingOperationCount = 2,
+                ),
+            ).ok()
+
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
+
+            advanceUntilIdle()
+
+            val state = states.lastOrNull()
+            assertEquals(expected = true, actual = state?.isAuthenticated)
+            assertEquals(expected = DataMode.AccountBackedPendingSync, actual = state?.dataMode)
+            assertEquals(expected = SyncStatus.Failed, actual = state?.syncStatus)
+            assertEquals(expected = 2, actual = state?.pendingOperationCount)
+            assertEquals(expected = "Upload failed due to timeout.", actual = state?.failureMessage)
+            assertEquals(expected = false, actual = state?.canRetryRestore)
         }
 
     @Test
     fun `GIVEN sign in credentials WHEN submit sign in THEN authenticates restores account data and refreshes sync state`() =
         runTest {
-            val restoredSession = accountSession()
-            val signedInSession = accountSession(lastAuthenticatedAt = 20L)
+            val restoredSession = getAccountSession()
+            val signedInSession = getAccountSession(lastAuthenticatedAt = 20L)
             fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
             fakeSignInAccountUseCase.result = signedInSession.ok()
             fakeGetSyncStageUseCase.result = SyncStageResult(
@@ -121,8 +179,8 @@ class AccountViewModelTest {
                 ),
             ).ok()
 
-            val sut = createSut(testScope = this)
-            collectUiState(sut = sut)
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
 
             sut.selectSignInMode()
             sut.onEmailInputChanged(email = "user@example.com")
@@ -130,24 +188,25 @@ class AccountViewModelTest {
             sut.submitCredentials()
             advanceUntilIdle()
 
+            val state = states.lastOrNull()
             assertEquals(expected = "user@example.com", actual = fakeSignInAccountUseCase.lastCredentials?.email)
             assertEquals(expected = "passw0rd", actual = fakeSignInAccountUseCase.lastCredentials?.password)
             assertEquals(expected = signedInSession, actual = fakeRestoreAccountDataUseCase.lastSession)
             assertEquals(expected = signedInSession, actual = fakeGetSyncStageUseCase.lastInput?.session)
-            assertEquals(expected = false, actual = sut.uiState.value.isSubmitting)
-            assertEquals(expected = true, actual = sut.uiState.value.isAuthenticated)
-            assertEquals(expected = SyncStatus.Synchronized, actual = sut.uiState.value.syncStatus)
-            assertEquals(expected = null, actual = sut.uiState.value.failureMessage)
+            assertEquals(expected = false, actual = state?.isSubmitting)
+            assertEquals(expected = true, actual = state?.isAuthenticated)
+            assertEquals(expected = SyncStatus.Synchronized, actual = state?.syncStatus)
+            assertEquals(expected = null, actual = state?.failureMessage)
         }
 
     @Test
     fun `GIVEN sign up mode and credentials WHEN submit credentials THEN creates account before restore`() =
         runTest {
-            val signedUpSession = accountSession(lastAuthenticatedAt = 30L)
+            val signedUpSession = getAccountSession(lastAuthenticatedAt = 30L)
             fakeSignUpAccountUseCase.result = signedUpSession.ok()
 
-            val sut = createSut(testScope = this)
-            collectUiState(sut = sut)
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
 
             sut.selectSignUpMode()
             sut.onEmailInputChanged(email = "new@example.com")
@@ -155,10 +214,11 @@ class AccountViewModelTest {
             sut.submitCredentials()
             advanceUntilIdle()
 
+            val state = states.lastOrNull()
             assertEquals(expected = "new@example.com", actual = fakeSignUpAccountUseCase.lastCredentials?.email)
             assertEquals(expected = "new-pass", actual = fakeSignUpAccountUseCase.lastCredentials?.password)
             assertEquals(expected = signedUpSession, actual = fakeRestoreAccountDataUseCase.lastSession)
-            assertEquals(expected = true, actual = sut.uiState.value.isAuthenticated)
+            assertEquals(expected = true, actual = state?.isAuthenticated)
         }
 
     @Test
@@ -168,18 +228,19 @@ class AccountViewModelTest {
                 message = "The email or password is incorrect.",
             ).err()
 
-            val sut = createSut(testScope = this)
-            collectUiState(sut = sut)
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
 
             sut.onEmailInputChanged(email = "bad")
             sut.onPasswordInputChanged(password = "passw0rd")
             sut.submitCredentials()
             advanceUntilIdle()
 
-            assertEquals(expected = false, actual = sut.uiState.value.isSubmitting)
-            assertEquals(expected = false, actual = sut.uiState.value.isAuthenticated)
-            assertEquals(expected = DataMode.LocalOnly, actual = sut.uiState.value.dataMode)
-            assertEquals(expected = "The email or password is incorrect.", actual = sut.uiState.value.failureMessage)
+            val state = states.lastOrNull()
+            assertEquals(expected = false, actual = state?.isSubmitting)
+            assertEquals(expected = false, actual = state?.isAuthenticated)
+            assertEquals(expected = DataMode.LocalOnly, actual = state?.dataMode)
+            assertEquals(expected = "The email or password is incorrect.", actual = state?.failureMessage)
             assertEquals(expected = null, actual = fakeRestoreAccountDataUseCase.lastSession)
         }
 
@@ -190,25 +251,26 @@ class AccountViewModelTest {
                 message = "Authentication is unavailable on this build. Check the Firebase configuration.",
             ).err()
 
-            val sut = createSut(testScope = this)
-            collectUiState(sut = sut)
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
 
             sut.onEmailInputChanged(email = "user@example.com")
             sut.onPasswordInputChanged(password = "passw0rd")
             sut.submitCredentials()
             advanceUntilIdle()
 
-            assertEquals(expected = false, actual = sut.uiState.value.isSubmitting)
+            val state = states.lastOrNull()
+            assertEquals(expected = false, actual = state?.isSubmitting)
             assertEquals(
                 expected = "Authentication is unavailable on this build. Check the Firebase configuration.",
-                actual = sut.uiState.value.failureMessage,
+                actual = state?.failureMessage,
             )
         }
 
     @Test
     fun `GIVEN authenticated account WHEN sign out THEN clears authenticated state`() =
         runTest {
-            val restoredSession = accountSession()
+            val restoredSession = getAccountSession()
             fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
             fakeGetSyncStageUseCase.result = SyncStageResult(
                 nextAction = SyncStageAction.None,
@@ -219,23 +281,24 @@ class AccountViewModelTest {
                 ),
             ).ok()
 
-            val sut = createSut(testScope = this)
-            collectUiState(sut = sut)
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
             advanceUntilIdle()
 
             sut.signOut()
             advanceUntilIdle()
 
+            val state = states.lastOrNull()
             assertEquals(expected = restoredSession.accountId, actual = fakeSignOutAccountUseCase.lastAccountId)
-            assertEquals(expected = false, actual = sut.uiState.value.isAuthenticated)
-            assertEquals(expected = DataMode.LocalOnly, actual = sut.uiState.value.dataMode)
-            assertEquals(expected = null, actual = sut.uiState.value.accountEmail)
+            assertEquals(expected = false, actual = state?.isAuthenticated)
+            assertEquals(expected = DataMode.LocalOnly, actual = state?.dataMode)
+            assertEquals(expected = null, actual = state?.accountEmail)
         }
 
     @Test
     fun `GIVEN authenticated account WHEN sign out fails THEN keeps session and exposes failure`() =
         runTest {
-            val restoredSession = accountSession()
+            val restoredSession = getAccountSession()
             fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
             fakeGetSyncStageUseCase.result = SyncStageResult(
                 nextAction = SyncStageAction.None,
@@ -249,16 +312,17 @@ class AccountViewModelTest {
                 message = "Sign out is temporarily unavailable.",
             ).err()
 
-            val sut = createSut(testScope = this)
-            collectUiState(sut = sut)
+            sut = createSut(testScope = this)
+            val states = collectUiState(uiState = sut.uiState)
             advanceUntilIdle()
 
             sut.signOut()
             advanceUntilIdle()
 
-            assertEquals(expected = true, actual = sut.uiState.value.isAuthenticated)
-            assertEquals(expected = restoredSession.email, actual = sut.uiState.value.accountEmail)
-            assertEquals(expected = "Sign out is temporarily unavailable.", actual = sut.uiState.value.failureMessage)
+            val state = states.lastOrNull()
+            assertEquals(expected = true, actual = state?.isAuthenticated)
+            assertEquals(expected = restoredSession.email, actual = state?.accountEmail)
+            assertEquals(expected = "Sign out is temporarily unavailable.", actual = state?.failureMessage)
         }
 
     private fun createSut(testScope: TestScope): AccountViewModel = AccountViewModel(
@@ -270,15 +334,9 @@ class AccountViewModelTest {
         restoreAccountDataUseCase = fakeRestoreAccountDataUseCase,
         getSyncStageUseCase = fakeGetSyncStageUseCase,
     )
-
-    private fun TestScope.collectUiState(sut: AccountViewModel) {
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            sut.uiState.collect {}
-        }
-    }
 }
 
-private fun accountSession(lastAuthenticatedAt: Long? = 10L): AccountSession = AccountSession(
+private fun getAccountSession(lastAuthenticatedAt: Long? = 10L): AccountSession = AccountSession(
     accountId = "account-1",
     email = "user@example.com",
     sessionState = SessionState.Active,
@@ -286,7 +344,7 @@ private fun accountSession(lastAuthenticatedAt: Long? = 10L): AccountSession = A
 )
 
 private class FakeSignUpAccountUseCase : SignUpAccountUseCaseType {
-    var result: Result<DomainError, AccountSession> = accountSession().ok()
+    var result: Result<DomainError, AccountSession> = getAccountSession().ok()
     var lastCredentials: EmailPasswordCredentials? = null
 
     override suspend fun invoke(input: EmailPasswordCredentials): Result<DomainError, AccountSession> {
@@ -296,7 +354,7 @@ private class FakeSignUpAccountUseCase : SignUpAccountUseCaseType {
 }
 
 private class FakeSignInAccountUseCase : SignInAccountUseCaseType {
-    var result: Result<DomainError, AccountSession> = accountSession().ok()
+    var result: Result<DomainError, AccountSession> = getAccountSession().ok()
     var lastCredentials: EmailPasswordCredentials? = null
 
     override suspend fun invoke(input: EmailPasswordCredentials): Result<DomainError, AccountSession> {
