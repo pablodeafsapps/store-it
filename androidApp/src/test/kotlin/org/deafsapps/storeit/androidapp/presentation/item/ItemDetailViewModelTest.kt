@@ -1,15 +1,14 @@
 package org.deafsapps.storeit.androidapp.presentation.item
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeAddItemUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeDeleteItemUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeGetItemByIdUseCase
+import org.deafsapps.storeit.androidapp.presentation.collectUiState
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.presentation.item.viewmodel.ItemDetailViewModel
@@ -47,12 +46,13 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
-            collectUiState(sut = sut)
+            val states = collectUiState(uiState = sut.uiState)
 
             advanceUntilIdle()
 
-            assertFalse(sut.uiState.value.isLoading)
-            assertEquals("Drill", sut.uiState.value.name)
+            val state = states.lastOrNull()
+            assertFalse(state?.isLoading == true)
+            assertEquals("Drill", state?.name)
         }
 
     @Test
@@ -66,7 +66,7 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
-            collectUiState(sut = sut)
+            collectUiState(uiState = sut.uiState)
 
             advanceUntilIdle()
             sut.onUpdateName("Hammer")
@@ -87,7 +87,7 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
-            collectUiState(sut = sut)
+            collectUiState(uiState = sut.uiState)
 
             advanceUntilIdle()
             sut.onConfirmDelete()
@@ -95,10 +95,4 @@ internal class ItemDetailViewModelTest {
 
             assertEquals(itemId, fakeDelete.lastId)
         }
-
-    private fun TestScope.collectUiState(sut: ItemDetailViewModel) {
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            sut.uiState.collect {}
-        }
-    }
 }

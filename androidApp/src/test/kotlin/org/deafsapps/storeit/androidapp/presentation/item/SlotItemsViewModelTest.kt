@@ -1,20 +1,16 @@
 package org.deafsapps.storeit.androidapp.presentation.item
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeGetItemsBySlotUseCase
+import org.deafsapps.storeit.androidapp.presentation.collectUiState
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.Item
-import org.deafsapps.storeit.presentation.item.model.SlotItemsUiState
 import org.deafsapps.storeit.presentation.item.viewmodel.SlotItemsViewModel
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -46,14 +42,12 @@ internal class SlotItemsViewModelTest {
                 coroutineScope = testScope,
                 getItemsBySlotUseCase = fakeGetItemsBySlot,
             )
-            val states = mutableListOf<SlotItemsUiState>()
-            val job: Job = launch { sut.uiState.collect { states.add(it) } }
+            val states = collectUiState(uiState = sut.uiState)
             advanceUntilIdle()
 
             val loaded = states.first { !it.isLoading }
             assertEquals("Drill", loaded.items.single().name)
             assertNull(loaded.error)
-            job.cancel()
         }
 
     @Test
@@ -66,17 +60,12 @@ internal class SlotItemsViewModelTest {
                 coroutineScope = testScope,
                 getItemsBySlotUseCase = fakeGetItemsBySlot,
             )
-            collectUiState(sut = sut)
+            val states = collectUiState(uiState = sut.uiState)
 
             advanceUntilIdle()
 
-            assertTrue(sut.uiState.value.items.isEmpty())
-            assertFalse(sut.uiState.value.isLoading)
+            val state = states.lastOrNull()
+            assertTrue(state?.items?.isEmpty() == true)
+            assertTrue(state?.isLoading == false)
         }
-
-    private fun TestScope.collectUiState(sut: SlotItemsViewModel) {
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            sut.uiState.collect {}
-        }
-    }
 }

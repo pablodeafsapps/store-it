@@ -8,6 +8,8 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeSaveRackUseCase
+import org.deafsapps.storeit.androidapp.presentation.collectUiEvent
+import org.deafsapps.storeit.androidapp.presentation.collectUiState
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
@@ -134,16 +136,14 @@ internal class AddRackViewModelTest {
     fun `GIVEN valid name and save succeeds WHEN saveRack THEN form reset and uiEvent NavigateBack`() =
         runTest(testDispatcher) {
             sut = AddRackViewModel(coroutineScope = testScope, saveRackUseCase = fakeSaveRackUseCase)
-            val states = mutableListOf<AddRackUiState>()
-            val stateCollectJob: Job = launch { sut.uiState.collect { states.add(it) } }
+            val states = collectUiState(uiState = sut.uiState)
             advanceUntilIdle()
             sut.onUpdateName("Rack 1")
             advanceUntilIdle()
             val saved = Rack(id = "id1", name = "Rack 1")
             fakeSaveRackUseCase.invokeResult = saved.ok()
 
-            val events = mutableListOf<AddRackUiEvent?>()
-            val eventCollectJob: Job = launch { sut.uiEvent.collect { events.add(it) } }
+            val events = collectUiEvent(uiEvent = sut.uiEvent)
             advanceUntilIdle()
 
             sut.onSaveRack()
@@ -155,8 +155,6 @@ internal class AddRackViewModelTest {
             assertNull(state.error)
             val event = events.filterNotNull().single()
             assertTrue(event is AddRackUiEvent.NavigateBack)
-            stateCollectJob.cancel()
-            eventCollectJob.cancel()
         }
 
     @Test
