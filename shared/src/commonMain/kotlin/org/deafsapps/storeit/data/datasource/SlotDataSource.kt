@@ -9,7 +9,7 @@ internal interface SlotDataSource {
 
     suspend fun saveSlot(slot: ShelfSlot): Result<DomainError, ShelfSlot>
 
-    suspend fun deleteByRack(rackId: String): Result<DomainError, Unit>
+    suspend fun deleteByRack(rackId: String): Result<DomainError, Long>
 
     suspend fun clear()
 }

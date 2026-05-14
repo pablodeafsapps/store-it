@@ -209,7 +209,7 @@ private class FakeSlotDataSource(
     override suspend fun saveSlot(slot: ShelfSlot): Result<DomainError, ShelfSlot> =
         saveSlotResult ?: slot.also { savedSlots += it }.ok()
 
-    override suspend fun deleteByRack(rackId: String): Result<DomainError, Unit> = Unit.ok()
+    override suspend fun deleteByRack(rackId: String): Result<DomainError, Long> = 0L.ok()
 
     override suspend fun clear() {
         clearCalled = true

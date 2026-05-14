@@ -3,9 +3,9 @@ package org.deafsapps.storeit.data.gateway
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.failureOrNull
+import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.base.ok
-import org.deafsapps.storeit.base.suspendFlatMap
 import org.deafsapps.storeit.data.datasource.AccountDatasetDataSource
 import org.deafsapps.storeit.data.datasource.ItemDataSource
 import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
@@ -70,7 +70,7 @@ internal class PhotoSyncFeatureRestoreGateway(
         photoSyncScope: List<PhotoSyncScope>,
     ): Result<DomainError, Long> =
         photoSyncScopeDataSource.clearPhotoSyncScope()
-            .suspendFlatMap {
+            .flatMap {
                 photoSyncScope.saveRestoredEntries(save = photoSyncScopeDataSource::savePhotoSyncScope)
             }
 }
@@ -91,10 +91,10 @@ internal class AccountSyncFeatureRestoreMetadataGateway(
         syncState: SyncState,
     ): Result<DomainError, Unit> =
         accountDatasetDataSource.saveAccountDataset(accountDataset = accountDataset)
-            .suspendFlatMap {
+            .flatMap {
                 localDatasetStateDataSource.saveLocalDatasetState(localDatasetState = localDatasetState)
             }
-            .suspendFlatMap {
+            .flatMap {
                 syncStateDataSource.saveSyncState(syncState = syncState)
             }
             .map { Unit }
@@ -104,7 +104,7 @@ internal class AccountSyncFeatureRestoreMetadataGateway(
         syncState: SyncState,
     ): Result<DomainError, Unit> =
         localDatasetStateDataSource.saveLocalDatasetState(localDatasetState = localDatasetState)
-            .suspendFlatMap {
+            .flatMap {
                 syncStateDataSource.saveSyncState(syncState = syncState)
             }
             .map { Unit }

@@ -18,10 +18,13 @@ internal class FakeSlotRepository : SlotRepository {
         slot.ok().also { slots[slot.id] = slot }
     }
 
-    override suspend fun deleteByRack(rackId: String): Result<DomainError, Unit> = run {
-        Unit.ok().also {
-            slots.keys.toList().filter { slots[it]?.rackId == rackId }.forEach { slots.remove(it) }
-        }
+    override suspend fun deleteByRack(rackId: String): Result<DomainError, Long> = run {
+        val deletedCount = slots.keys
+            .toList()
+            .count { key -> slots[key]?.rackId == rackId }
+            .toLong()
+        slots.keys.toList().filter { key -> slots[key]?.rackId == rackId }.forEach { key -> slots.remove(key) }
+        deletedCount.ok()
     }
 
     override suspend fun clear() {

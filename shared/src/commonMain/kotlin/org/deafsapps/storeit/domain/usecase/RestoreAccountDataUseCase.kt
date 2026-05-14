@@ -3,8 +3,8 @@ package org.deafsapps.storeit.domain.usecase
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.UseCase
 import org.deafsapps.storeit.base.err
+import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.ok
-import org.deafsapps.storeit.base.suspendFlatMap
 import org.deafsapps.storeit.domain.model.AccountSession
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.SessionState
@@ -20,7 +20,7 @@ internal class RestoreAccountDataUseCase(
 
     override suspend fun invoke(input: AccountSession): Result<DomainError, Unit> =
         validateSession(session = input)
-            .suspendFlatMap { session ->
+            .flatMap { session ->
                 accountDataRestoreRepository.restoreAccountData(session = session)
             }
 

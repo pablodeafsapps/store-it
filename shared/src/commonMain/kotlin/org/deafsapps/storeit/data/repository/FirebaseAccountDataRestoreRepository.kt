@@ -5,8 +5,8 @@ import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
+import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.map
-import org.deafsapps.storeit.base.suspendFlatMap
 import org.deafsapps.storeit.data.datasource.AccountRemoteDataSource
 import org.deafsapps.storeit.data.datasource.RemoteAccountSnapshot
 import org.deafsapps.storeit.data.datasource.RemotePhotoReference
@@ -42,9 +42,9 @@ internal class FirebaseAccountDataRestoreRepository(
     override suspend fun restoreAccountData(session: AccountSession): Result<DomainError, Unit> {
         val localDatasetStateResult = accountRestoreMetadataGateway.getLocalDatasetState()
         val previousState = localDatasetStateResult.getOrNull()
-        val restoreResult = localDatasetStateResult.suspendFlatMap { localDatasetState ->
+        val restoreResult = localDatasetStateResult.flatMap { localDatasetState ->
             accountRemoteDataSource.fetchSnapshot(accountId = session.accountId)
-                .suspendFlatMap { snapshot ->
+                .flatMap { snapshot ->
                     validateSnapshot(
                         session = session,
                         snapshot = snapshot,
@@ -84,7 +84,7 @@ internal class FirebaseAccountDataRestoreRepository(
         previousState: LocalDatasetState?,
     ): Result<DomainError, Unit> =
         replaceLocalAccountDataset(snapshot = snapshot)
-            .suspendFlatMap {
+            .flatMap {
                 saveSynchronizedMetadata(
                     session = session,
                     snapshot = snapshot,
@@ -94,13 +94,13 @@ internal class FirebaseAccountDataRestoreRepository(
 
     private suspend fun replaceLocalAccountDataset(snapshot: RemoteAccountSnapshot): Result<DomainError, Unit> =
         rackRestoreGateway.replaceRestoredRacks(racks = snapshot.racks)
-            .suspendFlatMap {
+            .flatMap {
                 slotRestoreGateway.replaceRestoredSlots(slots = snapshot.slots)
             }
-            .suspendFlatMap {
+            .flatMap {
                 itemRestoreGateway.replaceRestoredItems(items = snapshot.items)
             }
-            .suspendFlatMap {
+            .flatMap {
                 photoRestoreGateway.replaceRestoredPhotoSyncScope(
                     photoSyncScope = snapshot.photos.map { photo ->
                         photo.toPhotoSyncScope(syncedAt = snapshot.syncCheckpoint.updatedAt)

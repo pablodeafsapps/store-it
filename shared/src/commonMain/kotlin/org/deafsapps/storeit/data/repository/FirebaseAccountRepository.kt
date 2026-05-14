@@ -7,7 +7,6 @@ import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.base.ok
-import org.deafsapps.storeit.base.suspendFlatMap
 import org.deafsapps.storeit.data.datasource.AccountSessionDataSource
 import org.deafsapps.storeit.data.datasource.AuthRemoteDataSource
 import org.deafsapps.storeit.data.datasource.AuthenticatedRemoteAccount
@@ -40,18 +39,18 @@ internal class FirebaseAccountRepository(
 
     override suspend fun signUp(credentials: EmailPasswordCredentials): Result<DomainError, AccountSession> =
         authRemoteDataSource.signUp(credentials = credentials.toDataSourceModel())
-            .suspendFlatMap(::persistAuthenticatedAccount)
+            .flatMap { remoteAccount -> persistAuthenticatedAccount(remoteAccount = remoteAccount) }
 
     override suspend fun signIn(credentials: EmailPasswordCredentials): Result<DomainError, AccountSession> =
         authRemoteDataSource.signIn(credentials = credentials.toDataSourceModel())
-            .suspendFlatMap(::persistAuthenticatedAccount)
+            .flatMap { remoteAccount -> persistAuthenticatedAccount(remoteAccount = remoteAccount) }
 
     override suspend fun restoreSession(): Result<DomainError, AccountSession?> =
         sessionCredentialDataSource.restore()
-            .suspendFlatMap { storedCredentials ->
+            .flatMap { storedCredentials ->
                 storedCredentials?.let { credentials ->
                     authRemoteDataSource.restoreSession(session = credentials)
-                        .suspendFlatMap(::persistAuthenticatedAccount)
+                        .flatMap { remoteAccount -> persistAuthenticatedAccount(remoteAccount = remoteAccount) }
                         .map { accountSession -> accountSession as AccountSession? }
                 } ?: null.ok()
             }
@@ -69,8 +68,8 @@ internal class FirebaseAccountRepository(
         }
 
         return accountSessionDataSource.getAccountSession(accountId = accountId)
-            .suspendFlatMap { existingSession ->
-                val resolvedSession = existingSession ?: return@suspendFlatMap DomainError.NotFound(
+            .flatMap { existingSession ->
+                val resolvedSession = existingSession ?: return@flatMap DomainError.NotFound(
                     resource = "AccountSession",
                     id = accountId,
                 ).err()
@@ -94,20 +93,20 @@ internal class FirebaseAccountRepository(
         }
 
         return authRemoteDataSource.signOut(accountId = accountId)
-            .suspendFlatMap { clearPersistedSession(accountId = accountId) }
+            .flatMap { clearPersistedSession(accountId = accountId) }
     }
 
     private suspend fun persistAuthenticatedAccount(
         remoteAccount: AuthenticatedRemoteAccount,
     ): Result<DomainError, AccountSession> =
         sessionCredentialDataSource.save(session = remoteAccount.session)
-            .suspendFlatMap {
+            .flatMap {
                 accountSessionDataSource.saveAccountSession(accountSession = remoteAccount.toAccountSession())
             }
 
     private suspend fun clearPersistedSession(accountId: String): Result<DomainError, Unit> =
         sessionCredentialDataSource.clear()
-            .suspendFlatMap {
+            .flatMap {
                 accountSessionDataSource.deleteAccountSession(accountId = accountId)
             }
             .map { Unit }

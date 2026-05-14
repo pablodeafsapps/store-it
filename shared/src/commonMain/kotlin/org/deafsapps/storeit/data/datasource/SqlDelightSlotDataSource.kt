@@ -74,9 +74,17 @@ internal class SqlDelightSlotDataSource(
         exception.toUnknownDomainError().err()
     }
 
-    override suspend fun deleteByRack(rackId: String): Result<DomainError, Unit> = try {
+    override suspend fun deleteByRack(rackId: String): Result<DomainError, Long> = try {
+        val deletedCount = databaseProvider.database.storeItDatabaseQueries
+            .selectSlotsByRack(
+                rack_id = rackId,
+                mapper = { _, _, _, _, _, _ -> 1L },
+            )
+            .executeAsList()
+            .size
+            .toLong()
         databaseProvider.database.storeItDatabaseQueries.deleteSlotsByRack(rack_id = rackId)
-        Unit.ok()
+        deletedCount.ok()
     } catch (exception: StoreItDatabaseException) {
         exception.toUnknownDomainError().err()
     }

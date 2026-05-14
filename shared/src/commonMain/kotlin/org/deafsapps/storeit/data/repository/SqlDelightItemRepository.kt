@@ -3,17 +3,22 @@ package org.deafsapps.storeit.data.repository
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.flatMap
+import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.data.datasource.ItemDataSource
+import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
+import org.deafsapps.storeit.domain.model.SyncEntityType
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.koin.core.annotation.Single
 
 @Single(binds = [ItemRepository::class])
 internal class SqlDelightItemRepository(
     private val itemDataSource: ItemDataSource,
+    private val syncOperationRepository: SyncOperationRepository,
+    private val localDatasetStateDataSource: LocalDatasetStateDataSource,
 ) : ItemRepository {
 
     override suspend fun getItemsByRack(rackId: String): Result<DomainError, List<Item>> =
@@ -70,7 +75,23 @@ internal class SqlDelightItemRepository(
             field = "slotId",
             reason = "Slot ID cannot be blank",
         ).err()
-        return itemDataSource.saveItem(item = item)
+        return itemDataSource.getItemById(id = item.id).flatMap { existingItem ->
+            itemDataSource.saveItem(item = item).flatMap { savedItem ->
+                if (existingItem == null) {
+                    syncOperationRepository.enqueueCreate(
+                        accountId = resolveAccountId(),
+                        entityType = SyncEntityType.Item,
+                        entityId = savedItem.id,
+                    ).map { savedItem }
+                } else {
+                    syncOperationRepository.enqueueUpdate(
+                        accountId = resolveAccountId(),
+                        entityType = SyncEntityType.Item,
+                        entityId = savedItem.id,
+                    ).map { savedItem }
+                }
+            }
+        }
     }
 
     override suspend fun deleteItem(id: String): Result<DomainError, Unit> =
@@ -82,7 +103,11 @@ internal class SqlDelightItemRepository(
         } else {
             itemDataSource.deleteItem(id = id).flatMap { deleted ->
                 if (deleted) {
-                    Unit.ok()
+                    syncOperationRepository.enqueueDelete(
+                        accountId = resolveAccountId(),
+                        entityType = SyncEntityType.Item,
+                        entityId = id,
+                    ).map { Unit }
                 } else {
                     DomainError.NotFound(
                         resource = "Item",
@@ -96,10 +121,25 @@ internal class SqlDelightItemRepository(
         if (rackId.isBlank()) {
             DomainError.ValidationError(field = "rackId", reason = "Rack ID cannot be blank").err()
         } else {
-            itemDataSource.deleteItemsByRack(rackId = rackId).map { Unit }
+            itemDataSource.getItemsByRack(rackId = rackId).flatMap { rackItems ->
+                itemDataSource.deleteItemsByRack(rackId = rackId).flatMap {
+                    for (item in rackItems) {
+                        val enqueueResult = syncOperationRepository.enqueueDelete(
+                            accountId = resolveAccountId(),
+                            entityType = SyncEntityType.Item,
+                            entityId = item.id,
+                        ).map { Unit }
+                        if (enqueueResult.isErr) return@flatMap enqueueResult
+                    }
+                    Unit.ok()
+                }
+            }
         }
 
     override suspend fun clear() {
         itemDataSource.clear()
     }
+
+    private suspend fun resolveAccountId(): String? =
+        localDatasetStateDataSource.getLocalDatasetState().getOrNull()?.accountId
 }
