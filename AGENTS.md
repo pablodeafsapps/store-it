@@ -128,6 +128,7 @@ For all new and modified Kotlin files in this project:
 - Prefer fakes over real implementations in unit tests. Use mocks only when interaction verification matters.
 - Keep unit tests pure and deterministic: no real network, database, filesystem, system clock, or randomness.
 - Prefer `commonTest` for platform-agnostic logic and use platform-specific tests only for platform behaviour.
+- Standardise `uiState` and `uiEvent` collection in tests through a shared `TestUtils` helper file (for example under `shared/src/commonTest/.../TestUtils.kt`) instead of duplicating ad-hoc collectors per test file.
 
 ## Compose Previews
 

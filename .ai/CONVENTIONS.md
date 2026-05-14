@@ -299,6 +299,7 @@ Inject interfaces; provide implementations in the platform or shared DI graph.
 - **Naming**: Use **GIVEN–WHEN–THEN** with the words **GIVEN**, **WHEN**, and **THEN** in caps in the test name (e.g. `` `GIVEN saved rack WHEN getRackById with existing id THEN returns rack`() ``). Alternative patterns: `methodUnderTest_scenario_expectedOutcome` or `shouldDoSomethingWhenCondition` only when GIVEN–WHEN–THEN does not fit.
 - **Test body structure**: Organise each test into three sections (setup → action → assertions) separated by **blank lines only**. Do not add `// GIVEN`, `// WHEN`, or `// THEN` comments. If there is no setup section, leave a single blank line after the test opening, then the action and assertion blocks.
 - **Coroutines / suspend**: For tests that call suspend functions, use `runTest { }` from `kotlinx-coroutines-test` (e.g. `fun testName() = runTest { ... }`). Do not use `runBlocking` in tests. Add `kotlinx-coroutines-test` to the test source set dependencies.
+- **Ui collectors**: Use a shared `TestUtils` file for `uiState` and `uiEvent` collection helpers. Do not duplicate ad-hoc collectors in each presentation test file.
 - One logical behaviour per test; avoid testing implementation details (e.g. exact call count unless contract requires it).
 
 ### 7.2 Dependencies: use fakes, not real implementations
