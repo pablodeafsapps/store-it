@@ -28,6 +28,7 @@ import org.deafsapps.storeit.domain.repository.SyncRepository
 class SyncAccountDataUseCasesTest {
     private lateinit var resolveAccountSyncStageUseCase: ResolveAccountSyncStageUseCaseType
     private lateinit var retryPendingSyncUseCase: RetryPendingSyncUseCaseType
+    private lateinit var catchUpSignedInSyncUseCase: CatchUpSignedInSyncUseCaseType
     private lateinit var fakeSyncRepository: FakeSyncRepository
     private lateinit var fakeAccountDataRestoreRepository: FakeRetryAccountDataRestoreRepository
     private lateinit var fakeUploadPendingAccountDataUseCase: FakeUploadPendingAccountDataUseCase
@@ -47,11 +48,18 @@ class SyncAccountDataUseCasesTest {
             uploadPendingAccountDataUseCase = fakeUploadPendingAccountDataUseCase,
             getSyncStageUseCase = GetSyncStageUseCase(),
         )
+        catchUpSignedInSyncUseCase = CatchUpSignedInSyncUseCase(
+            syncRepository = fakeSyncRepository,
+            accountDataRestoreRepository = fakeAccountDataRestoreRepository,
+            uploadPendingAccountDataUseCase = fakeUploadPendingAccountDataUseCase,
+            getSyncStageUseCase = GetSyncStageUseCase(),
+        )
     }
 
     @Test
     fun `GIVEN queued organizer mutation WHEN resolve account sync stage THEN returns pending-upload stage with queued count`() =
         runTest {
+            val sut = resolveAccountSyncStageUseCase
             fakeSyncRepository.localDatasetState = LocalDatasetState(
                 mode = DataMode.AccountBackedPendingSync,
                 accountId = "account-1",
@@ -61,7 +69,7 @@ class SyncAccountDataUseCasesTest {
                 queuedMutationOperation(),
             )
 
-            val result = resolveAccountSyncStageUseCase(input = activeSession())
+            val result = sut(input = activeSession())
 
             assertTrue(actual = result.isOk)
             assertEquals(expected = SyncStageAction.UploadPendingChanges, actual = result.getOrNull()?.nextAction)
@@ -72,6 +80,7 @@ class SyncAccountDataUseCasesTest {
     @Test
     fun `GIVEN restore-pending operation WHEN retry pending sync THEN retries account restore instead of upload`() =
         runTest {
+            val sut = retryPendingSyncUseCase
             fakeSyncRepository.localDatasetState = LocalDatasetState(
                 mode = DataMode.AccountBackedPendingSync,
                 accountId = "account-1",
@@ -81,7 +90,7 @@ class SyncAccountDataUseCasesTest {
                 restoreOperation(),
             )
 
-            val result = retryPendingSyncUseCase(input = activeSession())
+            val result = sut(input = activeSession())
 
             assertTrue(actual = result.isOk)
             assertEquals(expected = 1, actual = fakeAccountDataRestoreRepository.restoreCalls.size)
@@ -92,6 +101,7 @@ class SyncAccountDataUseCasesTest {
     @Test
     fun `GIVEN failed sync with queued organizer mutation WHEN retry pending sync THEN retries pending upload`() =
         runTest {
+            val sut = retryPendingSyncUseCase
             fakeSyncRepository.localDatasetState = LocalDatasetState(
                 mode = DataMode.AccountBackedPendingSync,
                 accountId = "account-1",
@@ -106,13 +116,52 @@ class SyncAccountDataUseCasesTest {
                 queuedMutationOperation(),
             )
 
-            val result = retryPendingSyncUseCase(input = activeSession())
+            val result = sut(input = activeSession())
 
             assertTrue(actual = result.isOk)
             assertEquals(expected = 0, actual = fakeAccountDataRestoreRepository.restoreCalls.size)
             assertEquals(expected = listOf("account-1"), actual = fakeUploadPendingAccountDataUseCase.invocations)
             assertEquals(expected = SyncStageAction.RetryFailedSync, actual = result.getOrNull()?.nextAction)
         }
+
+    @Test
+    fun `GIVEN pending upload stage WHEN catch-up signed-in sync THEN triggers pending upload`() = runTest {
+        val sut = catchUpSignedInSyncUseCase
+        fakeSyncRepository.localDatasetState = LocalDatasetState(
+            mode = DataMode.AccountBackedPendingSync,
+            accountId = "account-1",
+            hasPendingChanges = true,
+        )
+        fakeSyncRepository.pendingOperations = listOf(queuedMutationOperation())
+
+        val result = sut(input = activeSession())
+
+        assertTrue(actual = result.isOk)
+        assertEquals(expected = listOf("account-1"), actual = fakeUploadPendingAccountDataUseCase.invocations)
+    }
+
+    @Test
+    fun `GIVEN failed stage WHEN catch-up signed-in sync THEN does not trigger retry action`() = runTest {
+        val sut = catchUpSignedInSyncUseCase
+        fakeSyncRepository.localDatasetState = LocalDatasetState(
+            mode = DataMode.AccountBackedPendingSync,
+            accountId = "account-1",
+            hasPendingChanges = true,
+        )
+        fakeSyncRepository.persistedSyncState = SyncState(
+            status = SyncStatus.Failed,
+            failureReason = "Upload failed earlier",
+            pendingOperationCount = 1,
+        )
+        fakeSyncRepository.pendingOperations = listOf(queuedMutationOperation())
+
+        val result = sut(input = activeSession())
+
+        assertTrue(actual = result.isOk)
+        assertEquals(expected = 0, actual = fakeAccountDataRestoreRepository.restoreCalls.size)
+        assertEquals(expected = 0, actual = fakeUploadPendingAccountDataUseCase.invocations.size)
+        assertEquals(expected = SyncStageAction.RetryFailedSync, actual = result.getOrNull()?.nextAction)
+    }
 }
 
 private fun activeSession(): AccountSession = AccountSession(

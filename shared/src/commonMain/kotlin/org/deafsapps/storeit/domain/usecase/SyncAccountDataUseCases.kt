@@ -20,6 +20,7 @@ import org.deafsapps.storeit.domain.model.SyncState
 import org.deafsapps.storeit.domain.model.SyncStatus
 import org.deafsapps.storeit.domain.repository.AccountDataRestoreRepository
 import org.deafsapps.storeit.domain.repository.SyncRepository
+import org.koin.core.annotation.Factory
 
 internal interface UploadPendingAccountDataUseCaseType : UseCase<String, Result<DomainError, Unit>>
 
@@ -29,6 +30,36 @@ internal interface ResolveAccountSyncStageUseCaseType :
 internal interface RetryPendingSyncUseCaseType :
     UseCase<AccountSession, Result<DomainError, SyncStageResult>>
 
+internal interface CatchUpSignedInSyncUseCaseType :
+    UseCase<AccountSession, Result<DomainError, SyncStageResult>>
+
+@Factory(binds = [UploadPendingAccountDataUseCaseType::class])
+internal class UploadPendingAccountDataUseCase(
+    private val syncRepository: SyncRepository,
+) : UploadPendingAccountDataUseCaseType {
+    override suspend fun invoke(input: String): Result<DomainError, Unit> {
+        if (input.isBlank()) {
+            return DomainError.ValidationError(
+                field = "accountId",
+                reason = "Account ID cannot be blank",
+            ).err()
+        }
+
+        val pendingOperationCount = firstResultOrUnknown(
+            flow = syncRepository.observePendingOperations(),
+            missingEmissionMessage = "Pending operations flow emitted no values.",
+        ).map { operations -> operations.size }.getOrNull() ?: 0
+
+        return syncRepository.saveSyncState(
+            syncState = SyncState(
+                status = if (pendingOperationCount > 0) SyncStatus.PendingUpload else SyncStatus.Synchronized,
+                pendingOperationCount = pendingOperationCount,
+            ),
+        ).map { Unit }
+    }
+}
+
+@Factory(binds = [ResolveAccountSyncStageUseCaseType::class])
 internal class ResolveAccountSyncStageUseCase(
     private val syncRepository: SyncRepository,
     private val getSyncStageUseCase: GetSyncStageUseCaseType,
@@ -40,6 +71,7 @@ internal class ResolveAccountSyncStageUseCase(
         ).flatMap { snapshot -> getSyncStageUseCase(input = snapshot.toStageInput(session = input)) }
 }
 
+@Factory(binds = [RetryPendingSyncUseCaseType::class])
 internal class RetryPendingSyncUseCase(
     private val syncRepository: SyncRepository,
     private val accountDataRestoreRepository: AccountDataRestoreRepository,
@@ -58,15 +90,49 @@ internal class RetryPendingSyncUseCase(
                     session = input,
                     snapshot = snapshot,
                     stage = stage,
+                    failedStagePolicy = FailedStagePolicy.TriggerRetryAction,
+                    accountDataRestoreRepository = accountDataRestoreRepository,
+                    uploadPendingAccountDataUseCase = uploadPendingAccountDataUseCase,
                 ).map { stage }
             }
         }
+}
 
-    private suspend fun executeRetryAction(
-        session: AccountSession,
-        snapshot: SyncRepositorySnapshot,
-        stage: SyncStageResult,
-    ): Result<DomainError, Unit> = when (stage.nextAction) {
+@Factory(binds = [CatchUpSignedInSyncUseCaseType::class])
+internal class CatchUpSignedInSyncUseCase(
+    private val syncRepository: SyncRepository,
+    private val accountDataRestoreRepository: AccountDataRestoreRepository,
+    private val uploadPendingAccountDataUseCase: UploadPendingAccountDataUseCaseType,
+    private val getSyncStageUseCase: GetSyncStageUseCaseType,
+) : CatchUpSignedInSyncUseCaseType {
+    override suspend fun invoke(input: AccountSession): Result<DomainError, SyncStageResult> =
+        loadSyncSnapshot(
+            session = input,
+            syncRepository = syncRepository,
+        ).flatMap { snapshot ->
+            getSyncStageUseCase(
+                input = snapshot.toStageInput(session = input),
+            ).flatMap { stage ->
+                executeRetryAction(
+                    session = input,
+                    snapshot = snapshot,
+                    stage = stage,
+                    failedStagePolicy = FailedStagePolicy.SkipRetryAction,
+                    accountDataRestoreRepository = accountDataRestoreRepository,
+                    uploadPendingAccountDataUseCase = uploadPendingAccountDataUseCase,
+                ).map { stage }
+            }
+        }
+}
+
+private suspend fun executeRetryAction(
+    session: AccountSession,
+    snapshot: SyncRepositorySnapshot,
+    stage: SyncStageResult,
+    failedStagePolicy: FailedStagePolicy,
+    accountDataRestoreRepository: AccountDataRestoreRepository,
+    uploadPendingAccountDataUseCase: UploadPendingAccountDataUseCaseType,
+): Result<DomainError, Unit> = when (stage.nextAction) {
         SyncStageAction.None,
         SyncStageAction.AwaitReconciliation -> Unit.ok()
         SyncStageAction.RestoreRemoteDataset ->
@@ -74,12 +140,20 @@ internal class RetryPendingSyncUseCase(
         SyncStageAction.UploadPendingChanges ->
             uploadPendingAccountDataUseCase(input = session.accountId)
         SyncStageAction.RetryFailedSync ->
-            if (snapshot.shouldRetryRestore()) {
-                accountDataRestoreRepository.restoreAccountData(session = session)
-            } else {
-                uploadPendingAccountDataUseCase(input = session.accountId)
+            when (failedStagePolicy) {
+                FailedStagePolicy.SkipRetryAction -> Unit.ok()
+                FailedStagePolicy.TriggerRetryAction ->
+                    if (snapshot.shouldRetryRestore()) {
+                        accountDataRestoreRepository.restoreAccountData(session = session)
+                    } else {
+                        uploadPendingAccountDataUseCase(input = session.accountId)
+                    }
             }
-    }
+}
+
+private enum class FailedStagePolicy {
+    TriggerRetryAction,
+    SkipRetryAction,
 }
 
 private suspend fun loadSyncSnapshot(
