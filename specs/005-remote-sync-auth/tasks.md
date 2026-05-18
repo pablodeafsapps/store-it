@@ -96,7 +96,7 @@
 - [X] T025 [US2] Integrate sync operation recording into rack, slot, and item repositories in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/SyncAwareOrganizerRepositories.kt`
 - [X] T026 [US2] Implement signed-in sync trigger use cases for retry and background catch-up in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/SyncAccountDataUseCases.kt`
 - [X] T027 [US2] Expose user-visible sync status and recoverable failure messaging for pending upload, pending restore, failed, and synchronized states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/sync/model/SyncStatusUiState.kt`
-- [ ] T028 [US2] Implement shared sync status view model for pending upload, pending restore, failed, and synchronized states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/sync/viewmodel/SyncStatusViewModel.kt`
+- [X] T028 [US2] Implement shared sync status view model for pending upload, pending restore, failed, and synchronized states in `shared/src/commonMain/kotlin/org/deafsapps/storeit/presentation/sync/viewmodel/SyncStatusViewModel.kt`
 
 **Checkpoint**: User Stories 1 and 2 should both work independently.
 
