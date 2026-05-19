@@ -7,6 +7,12 @@ struct RackListView: View {
     let onRackSelected: (RackSummaryVo) -> Void
     let onNavigateToSearch: () -> Void
     let onNavigateToAccount: () -> Void
+    let isAccountAuthenticated: Bool
+    let accountEmail: String?
+    let isAccountReady: Bool
+    let isRestoreInProgress: Bool
+    let hasPendingSyncWork: Bool
+    let hasAccountAttentionState: Bool
     let isDarkModeEnabled: Bool
     let onThemeModeToggle: () -> Void
 
@@ -36,6 +42,21 @@ struct RackListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("racksListScreen")
         .toolbar {
+            if isAccountAuthenticated {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: onNavigateToAccount) {
+                        AccountStatusAvatarView(
+                            accountEmail: accountEmail,
+                            isAuthenticated: isAccountAuthenticated,
+                            isAccountReady: isAccountReady,
+                            isRestoreInProgress: isRestoreInProgress,
+                            hasPendingSyncWork: hasPendingSyncWork,
+                            hasAttentionState: hasAccountAttentionState
+                        )
+                    }
+                    .accessibilityIdentifier("rackListAccountStatusButton")
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button(
@@ -110,6 +131,44 @@ struct RackListView: View {
                 }
             }
         }
+    }
+}
+
+private struct AccountStatusAvatarView: View {
+    let accountEmail: String?
+    let isAuthenticated: Bool
+    let isAccountReady: Bool
+    let isRestoreInProgress: Bool
+    let hasPendingSyncWork: Bool
+    let hasAttentionState: Bool
+
+    var body: some View {
+        let symbol: String = {
+            if !isAuthenticated { return "person.crop.circle" }
+            if hasAttentionState { return "exclamationmark.triangle.fill" }
+            if isRestoreInProgress { return "arrow.clockwise.circle.fill" }
+            if hasPendingSyncWork { return "icloud.and.arrow.up.fill" }
+            if isAccountReady { return "checkmark.seal.fill" }
+            return "person.crop.circle.fill"
+        }()
+
+        Image(systemName: symbol)
+            .foregroundColor(color)
+            .accessibilityLabel(accessibilityTitle)
+    }
+
+    private var color: Color {
+        if hasAttentionState { return .red }
+        if isAccountReady { return .green }
+        if isRestoreInProgress || hasPendingSyncWork { return .orange }
+        return .primary
+    }
+
+    private var accessibilityTitle: String {
+        if let accountEmail, isAuthenticated {
+            return "Account \(accountEmail)"
+        }
+        return "Account status"
     }
 }
 

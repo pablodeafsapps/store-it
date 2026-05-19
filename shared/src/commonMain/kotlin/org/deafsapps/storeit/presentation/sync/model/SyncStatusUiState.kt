@@ -3,13 +3,35 @@ package org.deafsapps.storeit.presentation.sync.model
 import org.deafsapps.storeit.domain.model.DataMode
 import org.deafsapps.storeit.domain.model.SyncStatus
 
-internal data class SyncStatusUiState(
+data class SyncStatusUiState(
     val isAuthenticated: Boolean,
     val dataMode: DataMode,
     val syncStatus: SyncStatus,
     val pendingOperationCount: Int,
     val failureMessage: String?,
 ) {
+    val accountStatusState: AccountSyncStatusState
+        get() = when {
+            requiresReconciliation -> AccountSyncStatusState.ReconciliationRequired
+            syncStatus == SyncStatus.RestorePending -> AccountSyncStatusState.RestorePending
+            syncStatus == SyncStatus.Failed -> AccountSyncStatusState.Failed
+            isDataBackedUp -> AccountSyncStatusState.BackedUp
+            hasPendingWork -> AccountSyncStatusState.Pending
+            isAuthenticated -> AccountSyncStatusState.SignedIn
+            else -> AccountSyncStatusState.LocalOnly
+        }
+
+    val accountHeaderState: AccountSyncHeaderState
+        get() = when {
+            requiresReconciliation -> AccountSyncHeaderState.Reconciliation
+            syncStatus == SyncStatus.Failed -> AccountSyncHeaderState.Attention
+            isRestoreInProgress -> AccountSyncHeaderState.Restoring
+            isDataBackedUp -> AccountSyncHeaderState.Ready
+            hasPendingWork -> AccountSyncHeaderState.Pending
+            isAuthenticated -> AccountSyncHeaderState.Connected
+            else -> AccountSyncHeaderState.LocalOnly
+        }
+
     val isLocalOnly: Boolean
         get() = dataMode == DataMode.LocalOnly
 
@@ -23,9 +45,16 @@ internal data class SyncStatusUiState(
             dataMode == DataMode.AccountBackedPendingSync ||
             syncStatus in pendingStatuses
 
+    val isRestoreInProgress: Boolean
+        get() = syncStatus == SyncStatus.RestorePending ||
+            syncStatus == SyncStatus.PendingDownload
+
     val requiresReconciliation: Boolean
         get() = dataMode == DataMode.ReconciliationRequired ||
             syncStatus == SyncStatus.BlockedByReconciliation
+
+    val hasAttentionState: Boolean
+        get() = requiresReconciliation || syncStatus == SyncStatus.Failed
 
     val canRetry: Boolean
         get() = isAuthenticated && syncStatus in retryableStatuses
@@ -61,4 +90,24 @@ internal data class SyncStatusUiState(
             SyncStatus.RestorePending,
         )
     }
+}
+
+enum class AccountSyncStatusState {
+    LocalOnly,
+    SignedIn,
+    Pending,
+    BackedUp,
+    Failed,
+    RestorePending,
+    ReconciliationRequired,
+}
+
+enum class AccountSyncHeaderState {
+    LocalOnly,
+    Connected,
+    Pending,
+    Ready,
+    Restoring,
+    Attention,
+    Reconciliation,
 }

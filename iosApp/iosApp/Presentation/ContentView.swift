@@ -3,38 +3,50 @@ import Shared
 
 struct ContentView: View {
     @StateObject private var rackListViewModel: ViewModelHolder<RackListViewModel> = ViewModelHolder(IosKoinHelper().getRackListViewModel())
+    @StateObject private var accountViewModel: ViewModelHolder<AccountViewModel> = ViewModelHolder(IosKoinHelper().getAccountViewModel())
+    @StateObject private var syncStatusViewModel: ViewModelHolder<SyncStatusViewModel> = ViewModelHolder(IosKoinHelper().getSyncStatusViewModel())
     @State private var path: [AppRoute] = []
     @AppStorage("isDarkModeEnabled") private var isDarkModeEnabled = false
 
     var body: some View {
         NavigationStack(path: $path) {
             Observing(rackListViewModel.sharedVm.uiState) { state in
-                ZStack {
-                    RackListView(
-                        uiState: state,
-                        onAddRackSelected: { rackListViewModel.sharedVm.onAddRackSelected() },
-                        onRackSelected: { rack in rackListViewModel.sharedVm.onRackSelected(rack: rack) },
-                        onNavigateToSearch: { path.append(.search) },
-                        onNavigateToAccount: { path.append(.account) },
-                        isDarkModeEnabled: isDarkModeEnabled,
-                        onThemeModeToggle: { isDarkModeEnabled.toggle() }
-                    )
+                Observing(accountViewModel.sharedVm.uiState) { accountState in
+                    Observing(syncStatusViewModel.sharedVm.uiState) { syncState in
+                        ZStack {
+                            RackListView(
+                                uiState: state,
+                                onAddRackSelected: { rackListViewModel.sharedVm.onAddRackSelected() },
+                                onRackSelected: { rack in rackListViewModel.sharedVm.onRackSelected(rack: rack) },
+                                onNavigateToSearch: { path.append(.search) },
+                                onNavigateToAccount: { path.append(.account) },
+                                isAccountAuthenticated: accountState.isAuthenticated,
+                                accountEmail: accountState.accountEmail,
+                                isAccountReady: syncState.isDataBackedUp,
+                                isRestoreInProgress: syncState.isRestoreInProgress,
+                                hasPendingSyncWork: syncState.hasPendingWork,
+                                hasAccountAttentionState: syncState.hasAttentionState,
+                                isDarkModeEnabled: isDarkModeEnabled,
+                                onThemeModeToggle: { isDarkModeEnabled.toggle() }
+                            )
 
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            Button(action: {
-                                path.append(.addItem)
-                            }) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 28))
+                            VStack {
+                                Spacer()
+                                HStack {
+                                    Spacer()
+                                    Button(action: {
+                                        path.append(.addItem)
+                                    }) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 28))
+                                    }
+                                    .disabled(state.racks.isEmpty)
+                                    .opacity(state.racks.isEmpty ? 0.5 : 1)
+                                    .padding()
+                                    .accessibilityIdentifier("addItemFloatingButton")
+                                    .accessibilityHint(state.racks.isEmpty ? "add_item_hint_add_rack_first" : "add_item_hint_add_item")
+                                }
                             }
-                            .disabled(state.racks.isEmpty)
-                            .opacity(state.racks.isEmpty ? 0.5 : 1)
-                            .padding()
-                            .accessibilityIdentifier("addItemFloatingButton")
-                            .accessibilityHint(state.racks.isEmpty ? "add_item_hint_add_rack_first" : "add_item_hint_add_item")
                         }
                     }
                 }

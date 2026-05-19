@@ -31,7 +31,7 @@ import org.koin.core.annotation.Factory
 private const val STOP_SHARE_TIMEOUT_MILLIS = 5_000L
 
 @Factory
-internal class SyncStatusViewModel(
+class SyncStatusViewModel internal constructor(
     coroutineScope: CoroutineScope?,
     private val restoreAccountSessionUseCase: RestoreAccountSessionUseCaseType,
     private val catchUpSignedInSyncUseCase: CatchUpSignedInSyncUseCaseType,

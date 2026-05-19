@@ -11,6 +11,7 @@ import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackSlotPickerViewModel
 import org.deafsapps.storeit.presentation.search.viewmodel.SearchViewModel
+import org.deafsapps.storeit.presentation.sync.viewmodel.SyncStatusViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.parameter.parametersOf
@@ -49,4 +50,6 @@ object IosKoinHelper : KoinComponent {
     fun getSearchViewModel(): SearchViewModel = get()
 
     fun getAccountViewModel(): AccountViewModel = get()
+
+    fun getSyncStatusViewModel(): SyncStatusViewModel = get()
 }

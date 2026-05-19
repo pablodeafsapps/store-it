@@ -38,12 +38,16 @@ import org.deafsapps.storeit.androidapp.R
 import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.domain.model.DataMode
 import org.deafsapps.storeit.domain.model.SyncStatus
+import org.deafsapps.storeit.presentation.sync.model.AccountSyncHeaderState
+import org.deafsapps.storeit.presentation.sync.model.AccountSyncStatusState
 import org.deafsapps.storeit.presentation.account.model.AccountUiState
+import org.deafsapps.storeit.presentation.sync.model.SyncStatusUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AccountScreen(
-    uiState: AccountUiState,
+    accountUiState: AccountUiState,
+    syncUiState: SyncStatusUiState,
     onSelectSignIn: () -> Unit,
     onSelectSignUp: () -> Unit,
     onEmailChange: (String) -> Unit,
@@ -63,10 +67,10 @@ internal fun AccountScreen(
                     }
                 },
                 actions = {
-                    if (uiState.isAuthenticated) {
+                    if (accountUiState.isAuthenticated) {
                         TextButton(
                             onClick = onSignOut,
-                            enabled = uiState.canSignOut,
+                            enabled = accountUiState.canSignOut,
                             modifier = Modifier.testTag("accountSignOutButton"),
                         ) {
                             Text(text = stringResource(R.string.account_sign_out))
@@ -85,24 +89,18 @@ internal fun AccountScreen(
             verticalArrangement = Arrangement.spacedBy(Dimens.listItemSpacing),
         ) {
             AccountStatusContent(
-                requiresReconciliation = uiState.requiresReconciliation,
-                canRetryRestore = uiState.canRetryRestore,
-                syncStatus = uiState.syncStatus,
-                isDataBackedUp = uiState.isDataBackedUp,
-                isAccountReady = uiState.isAccountReady,
-                isRestoreInProgress = uiState.isRestoreInProgress,
-                hasPendingSyncWork = uiState.hasPendingSyncWork,
-                isAuthenticated = uiState.isAuthenticated,
-                accountEmail = uiState.accountEmail,
-                hasAttentionState = uiState.requiresReconciliation || uiState.syncStatus == SyncStatus.Failed,
+                accountStatusState = syncUiState.accountStatusState,
+                accountHeaderState = syncUiState.accountHeaderState,
+                isAuthenticated = accountUiState.isAuthenticated,
+                accountEmail = accountUiState.accountEmail,
             )
-            if (!uiState.isAuthenticated) {
+            if (!accountUiState.isAuthenticated) {
                 AccountAuthenticationForm(
-                    isSignInMode = uiState.isSignInMode,
-                    isSignUpMode = uiState.isSignUpMode,
-                    emailInput = uiState.emailInput,
-                    passwordInput = uiState.passwordInput,
-                    canSubmitCredentials = uiState.canSubmitCredentials,
+                    isSignInMode = accountUiState.isSignInMode,
+                    isSignUpMode = accountUiState.isSignUpMode,
+                    emailInput = accountUiState.emailInput,
+                    passwordInput = accountUiState.passwordInput,
+                    canSubmitCredentials = accountUiState.canSubmitCredentials,
                     onSelectSignIn = onSelectSignIn,
                     onSelectSignUp = onSelectSignUp,
                     onEmailChange = onEmailChange,
@@ -110,7 +108,7 @@ internal fun AccountScreen(
                     onSubmitCredentials = onSubmitCredentials,
                 )
             }
-            if (uiState.canRetryRestore) {
+            if (syncUiState.canRetry) {
                 TextButton(
                     onClick = onRetryRestore,
                     modifier = Modifier.testTag("accountRetryRestoreButton"),
@@ -118,9 +116,10 @@ internal fun AccountScreen(
                     Text(text = stringResource(R.string.account_retry_restore))
                 }
             }
-            uiState.failureMessage?.let { failureMessage ->
+            val failureMessage = accountUiState.failureMessage ?: syncUiState.userMessage
+            failureMessage?.let {
                 Text(
-                    text = failureMessage,
+                    text = it,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.testTag("accountFailureMessage"),
                 )
@@ -220,38 +219,37 @@ private fun AuthModeSelector(
 
 @Composable
 private fun AccountStatusContent(
-    requiresReconciliation: Boolean,
-    canRetryRestore: Boolean,
-    syncStatus: SyncStatus,
-    isDataBackedUp: Boolean,
-    isAccountReady: Boolean,
-    isRestoreInProgress: Boolean,
-    hasPendingSyncWork: Boolean,
+    accountStatusState: AccountSyncStatusState,
+    accountHeaderState: AccountSyncHeaderState,
     isAuthenticated: Boolean,
     accountEmail: String?,
-    hasAttentionState: Boolean,
 ) {
-    val statusText = when {
-        requiresReconciliation -> stringResource(R.string.account_reconciliation_required)
-        canRetryRestore -> stringResource(R.string.account_restore_pending)
-        syncStatus == SyncStatus.Failed -> stringResource(R.string.account_failed)
-        isDataBackedUp -> stringResource(R.string.account_backed_up)
-        hasPendingSyncWork -> stringResource(R.string.account_pending)
-        isAuthenticated -> stringResource(
+    val statusText = when (accountStatusState) {
+        AccountSyncStatusState.ReconciliationRequired -> stringResource(R.string.account_reconciliation_required)
+        AccountSyncStatusState.RestorePending -> stringResource(R.string.account_restore_pending)
+        AccountSyncStatusState.Failed -> stringResource(R.string.account_failed)
+        AccountSyncStatusState.BackedUp -> stringResource(R.string.account_backed_up)
+        AccountSyncStatusState.Pending -> stringResource(R.string.account_pending)
+        AccountSyncStatusState.SignedIn -> stringResource(
             R.string.account_signed_in,
             accountEmail.orEmpty(),
         )
-        else -> stringResource(R.string.account_local_only)
+        AccountSyncStatusState.LocalOnly -> stringResource(R.string.account_local_only)
     }
-    val headerTitle = when {
-        requiresReconciliation -> stringResource(R.string.account_status_title_reconciliation)
-        syncStatus == SyncStatus.Failed -> stringResource(R.string.account_status_title_attention)
-        isRestoreInProgress -> stringResource(R.string.account_status_title_restoring)
-        isAccountReady -> stringResource(R.string.account_status_title_ready)
-        hasPendingSyncWork -> stringResource(R.string.account_status_title_pending)
-        isAuthenticated -> stringResource(R.string.account_status_title_connected)
-        else -> stringResource(R.string.account_status_title_local_only)
+    val headerTitle = when (accountHeaderState) {
+        AccountSyncHeaderState.Reconciliation -> stringResource(R.string.account_status_title_reconciliation)
+        AccountSyncHeaderState.Attention -> stringResource(R.string.account_status_title_attention)
+        AccountSyncHeaderState.Restoring -> stringResource(R.string.account_status_title_restoring)
+        AccountSyncHeaderState.Ready -> stringResource(R.string.account_status_title_ready)
+        AccountSyncHeaderState.Pending -> stringResource(R.string.account_status_title_pending)
+        AccountSyncHeaderState.Connected -> stringResource(R.string.account_status_title_connected)
+        AccountSyncHeaderState.LocalOnly -> stringResource(R.string.account_status_title_local_only)
     }
+    val isAccountReady = accountHeaderState == AccountSyncHeaderState.Ready
+    val isRestoreInProgress = accountHeaderState == AccountSyncHeaderState.Restoring
+    val hasPendingSyncWork = accountHeaderState == AccountSyncHeaderState.Pending
+    val hasAttentionState = accountHeaderState == AccountSyncHeaderState.Attention ||
+        accountHeaderState == AccountSyncHeaderState.Reconciliation
     Surface(
         tonalElevation = Dimens.cardElevation,
         shape = MaterialTheme.shapes.large,
@@ -328,12 +326,13 @@ private fun AccountReadyIndicator(
 private fun AccountScreenSignedOutPreview() {
     MaterialTheme {
         AccountScreen(
-            uiState = AccountUiState.getDefault().copy(
+            accountUiState = AccountUiState.getDefault().copy(
                 isLoading = false,
                 authMode = org.deafsapps.storeit.presentation.account.model.AccountAuthMode.SignIn,
                 emailInput = "user@example.com",
                 passwordInput = "passw0rd",
             ),
+            syncUiState = SyncStatusUiState.getDefault(),
             onSelectSignIn = {},
             onSelectSignUp = {},
             onEmailChange = {},
@@ -351,10 +350,13 @@ private fun AccountScreenSignedOutPreview() {
 private fun AccountScreenReadyPreview() {
     MaterialTheme {
         AccountScreen(
-            uiState = AccountUiState.getDefault().copy(
+            accountUiState = AccountUiState.getDefault().copy(
                 isLoading = false,
                 isAuthenticated = true,
                 accountEmail = "user@example.com",
+            ),
+            syncUiState = SyncStatusUiState.getDefault().copy(
+                isAuthenticated = true,
                 dataMode = DataMode.AccountBackedSynchronized,
                 syncStatus = SyncStatus.Synchronized,
             ),
@@ -375,10 +377,13 @@ private fun AccountScreenReadyPreview() {
 private fun AccountScreenRestorePendingPreview() {
     MaterialTheme {
         AccountScreen(
-            uiState = AccountUiState.getDefault().copy(
+            accountUiState = AccountUiState.getDefault().copy(
                 isLoading = false,
                 isAuthenticated = true,
                 accountEmail = "user@example.com",
+            ),
+            syncUiState = SyncStatusUiState.getDefault().copy(
+                isAuthenticated = true,
                 dataMode = DataMode.AccountBackedPendingSync,
                 syncStatus = SyncStatus.RestorePending,
                 pendingOperationCount = 2,

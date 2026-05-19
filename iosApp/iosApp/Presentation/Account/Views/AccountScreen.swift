@@ -3,48 +3,51 @@ import Shared
 
 struct AccountScreen: View {
     @StateObject private var viewModel: ViewModelHolder<AccountViewModel> = ViewModelHolder(IosKoinHelper().getAccountViewModel())
+    @StateObject private var syncStatusViewModel: ViewModelHolder<SyncStatusViewModel> = ViewModelHolder(IosKoinHelper().getSyncStatusViewModel())
     let onNavigateBack: () -> Void
 
     var body: some View {
-        Observing(viewModel.sharedVm.uiState) { state in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    statusText(state)
-                        .font(.body)
-                        .accessibilityIdentifier("accountStatusText")
+        Observing(viewModel.sharedVm.uiState) { accountState in
+            Observing(syncStatusViewModel.sharedVm.uiState) { syncState in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        statusText(accountState, syncState)
+                            .font(.body)
+                            .accessibilityIdentifier("accountStatusText")
 
-                    if !state.isAuthenticated {
-                        authenticationForm(state)
-                    }
-
-                    if state.canRetryRestore {
-                        Button("account_retry_restore") {
-                            viewModel.sharedVm.retryRestore()
+                        if !accountState.isAuthenticated {
+                            authenticationForm(accountState)
                         }
-                        .accessibilityIdentifier("accountRetryRestoreButton")
-                    }
 
-                    if let failure = state.failureMessage {
-                        Text(failure)
-                            .foregroundColor(.red)
-                            .accessibilityIdentifier("accountFailureMessage")
-                    }
-                }
-                .padding(16)
-            }
-            .navigationTitle("account_title")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("common_back", action: onNavigateBack)
-                }
-                if state.isAuthenticated {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("account_sign_out") {
-                            viewModel.sharedVm.signOut()
+                        if syncState.canRetry {
+                            Button("account_retry_restore") {
+                                syncStatusViewModel.sharedVm.retry()
+                            }
+                            .accessibilityIdentifier("accountRetryRestoreButton")
                         }
-                        .disabled(!state.canSignOut)
-                        .accessibilityIdentifier("accountSignOutButton")
+
+                        if let failure = accountState.failureMessage ?? syncState.userMessage {
+                            Text(failure)
+                                .foregroundColor(.red)
+                                .accessibilityIdentifier("accountFailureMessage")
+                        }
+                    }
+                    .padding(16)
+                }
+                .navigationTitle("account_title")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("common_back", action: onNavigateBack)
+                    }
+                    if accountState.isAuthenticated {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("account_sign_out") {
+                                viewModel.sharedVm.signOut()
+                            }
+                            .disabled(!accountState.canSignOut)
+                            .accessibilityIdentifier("accountSignOutButton")
+                        }
                     }
                 }
             }
@@ -109,19 +112,19 @@ struct AccountScreen: View {
     }
 
     @ViewBuilder
-    private func statusText(_ state: AccountUiState) -> some View {
-        if state.requiresReconciliation {
+    private func statusText(_ accountState: AccountUiState, _ syncState: SyncStatusUiState) -> some View {
+        if syncState.accountStatusState == AccountSyncStatusState.reconciliationRequired {
             Text("account_reconciliation_required")
-        } else if state.canRetryRestore {
+        } else if syncState.accountStatusState == AccountSyncStatusState.restorePending {
             Text("account_restore_pending")
-        } else if state.syncStatus == SyncStatus.failed {
+        } else if syncState.accountStatusState == AccountSyncStatusState.failed {
             Text("account_failed")
-        } else if state.isDataBackedUp {
+        } else if syncState.accountStatusState == AccountSyncStatusState.backedUp {
             Text("account_backed_up")
-        } else if state.hasPendingSyncWork {
+        } else if syncState.accountStatusState == AccountSyncStatusState.pending {
             Text("account_pending")
-        } else if state.isAuthenticated {
-            Text(String(format: NSLocalizedString("account_signed_in", comment: ""), state.accountEmail ?? ""))
+        } else if syncState.accountStatusState == AccountSyncStatusState.signedIn {
+            Text(String(format: NSLocalizedString("account_signed_in", comment: ""), accountState.accountEmail ?? ""))
         } else {
             Text("account_local_only")
         }
