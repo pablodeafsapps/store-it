@@ -12,6 +12,7 @@ import org.deafsapps.storeit.domain.model.LocalDatasetState
 import org.deafsapps.storeit.domain.model.PhotoSyncScope
 import org.deafsapps.storeit.domain.model.ReconciliationDecision
 import org.deafsapps.storeit.domain.model.ReconciliationDecisionType
+import org.deafsapps.storeit.domain.model.ReconciliationSummary
 import org.deafsapps.storeit.domain.model.SessionState
 import org.deafsapps.storeit.domain.model.SyncOperation
 import org.deafsapps.storeit.domain.model.SyncState
@@ -133,6 +134,11 @@ interface ReconciliationRepository {
      * Returns whether the current device state requires reconciliation.
      */
     suspend fun requiresReconciliation(accountId: String): Result<DomainError, Boolean>
+
+    /**
+     * Returns a summary to drive explicit keep-local vs keep-remote reconciliation choices.
+     */
+    suspend fun getReconciliationSummary(accountId: String): Result<DomainError, ReconciliationSummary>
 
     /**
      * Returns the current local dataset state that drove reconciliation.

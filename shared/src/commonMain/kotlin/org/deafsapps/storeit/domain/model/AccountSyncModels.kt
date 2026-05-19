@@ -431,3 +431,37 @@ enum class ReconciliationDecisionType {
     KeepLocal,
     KeepRemote,
 }
+
+interface ReconciliationSummary {
+    val accountId: String
+    val hasLocalData: Boolean
+    val hasRemoteData: Boolean
+    val localMode: DataMode
+    val localPendingChanges: Boolean
+    val remoteDatasetVersion: String?
+}
+
+internal data class ReconciliationSummaryModel(
+    override val accountId: String,
+    override val hasLocalData: Boolean,
+    override val hasRemoteData: Boolean,
+    override val localMode: DataMode,
+    override val localPendingChanges: Boolean,
+    override val remoteDatasetVersion: String?,
+) : ReconciliationSummary
+
+fun ReconciliationSummary(
+    accountId: String,
+    hasLocalData: Boolean,
+    hasRemoteData: Boolean,
+    localMode: DataMode,
+    localPendingChanges: Boolean,
+    remoteDatasetVersion: String?,
+): ReconciliationSummary = ReconciliationSummaryModel(
+    accountId = accountId,
+    hasLocalData = hasLocalData,
+    hasRemoteData = hasRemoteData,
+    localMode = localMode,
+    localPendingChanges = localPendingChanges,
+    remoteDatasetVersion = remoteDatasetVersion,
+)

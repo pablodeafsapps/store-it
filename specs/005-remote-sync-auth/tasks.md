@@ -117,7 +117,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T032 [P] [US3] Implement reconciliation detection and summary generation for explicit keep-local vs keep-remote choice in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/DefaultReconciliationRepository.kt`
+- [X] T032 [P] [US3] Implement reconciliation detection and summary generation for explicit keep-local vs keep-remote choice in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/repository/DefaultReconciliationRepository.kt`
 - [ ] T033 [P] [US3] Implement reconciliation decision use cases for keep-local and keep-remote flows in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/ReconcileDatasetsUseCases.kt`
 - [ ] T034 [US3] Implement local-only to account-backed migration flow for empty-remote upload and non-empty-remote reconciliation in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/LocalToAccountMigrationCoordinator.kt`
 - [ ] T035 [US3] Implement sign-out safeguards for pending changes and transition into local-only retained data in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/SignOutAccountUseCase.kt`
