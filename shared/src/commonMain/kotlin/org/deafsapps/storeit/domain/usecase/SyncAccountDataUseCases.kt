@@ -45,17 +45,18 @@ internal class UploadPendingAccountDataUseCase(
             ).err()
         }
 
-        val pendingOperationCount = firstResultOrUnknown(
+        return firstResultOrUnknown(
             flow = syncRepository.observePendingOperations(),
             missingEmissionMessage = "Pending operations flow emitted no values.",
-        ).map { operations -> operations.size }.getOrNull() ?: 0
-
-        return syncRepository.saveSyncState(
-            syncState = SyncState(
-                status = if (pendingOperationCount > 0) SyncStatus.PendingUpload else SyncStatus.Synchronized,
-                pendingOperationCount = pendingOperationCount,
-            ),
-        ).map { Unit }
+        ).flatMap { operations ->
+            val pendingOperationCount = operations.size
+            syncRepository.saveSyncState(
+                syncState = SyncState(
+                    status = if (pendingOperationCount > 0) SyncStatus.PendingUpload else SyncStatus.Synchronized,
+                    pendingOperationCount = pendingOperationCount,
+                ),
+            ).map { Unit }
+        }
     }
 }
 

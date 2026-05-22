@@ -19,6 +19,7 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.model.RackData
 import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
+import org.deafsapps.storeit.domain.usecase.DeleteRackOutcome
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
 import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
@@ -254,7 +255,11 @@ internal class RackDetailViewModelTest {
                 shelfSlots = emptyList(),
                 items = emptyList(),
             ).ok()
-            fakeDeleteRack.invokeResult = Unit.ok()
+            fakeDeleteRack.invokeResult = DeleteRackOutcome.Deleted(
+                rackId = dummyRackId,
+                deletedSlotCount = 0L,
+                deletedItemCount = 0,
+            ).ok()
             sut = getDummyRackDetailViewModel()
             advanceUntilIdle()
             sut.onRemoveRackSelected()

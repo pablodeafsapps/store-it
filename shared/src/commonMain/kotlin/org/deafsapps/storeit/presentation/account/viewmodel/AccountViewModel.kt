@@ -22,6 +22,7 @@ import org.deafsapps.storeit.domain.model.EmailPasswordCredentials
 import org.deafsapps.storeit.domain.usecase.RestoreAccountSessionUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignInAccountUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignOutAccountUseCaseType
+import org.deafsapps.storeit.domain.usecase.SignOutAccountOutcome
 import org.deafsapps.storeit.domain.usecase.SignUpAccountUseCaseType
 import org.deafsapps.storeit.presentation.account.model.AccountAuthMode
 import org.deafsapps.storeit.presentation.StoreItViewModel
@@ -131,8 +132,15 @@ class AccountViewModel internal constructor(
                 ifErr = { error ->
                     stateChanges.emit(value = AccountStateChange.SignOutFailed(error = error))
                 },
-                ifOk = {
-                    stateChanges.emit(value = AccountStateChange.SignedOut)
+                ifOk = { outcome ->
+                    when (outcome) {
+                        SignOutAccountOutcome.SignedOut ->
+                            stateChanges.emit(value = AccountStateChange.SignedOut)
+                        is SignOutAccountOutcome.SignedOutWithLocalStateWarning ->
+                            stateChanges.emit(
+                                value = AccountStateChange.SignedOutWithWarning(error = outcome.error),
+                            )
+                    }
                 },
             )
         }
@@ -248,6 +256,22 @@ class AccountViewModel internal constructor(
                         isAuthenticated = false,
                         accountEmail = null,
                         failureMessage = null,
+                    ),
+                )
+        }
+
+        data class SignedOutWithWarning(
+            private val error: DomainError,
+        ) : AccountStateChange {
+            override fun reduce(state: AccountViewModelState): AccountViewModelState =
+                state.copy(
+                    restoredSession = null,
+                    uiState = state.uiState.copy(
+                        isLoading = false,
+                        isSubmitting = false,
+                        isAuthenticated = false,
+                        accountEmail = null,
+                        failureMessage = "You are signed out, but the local mode update failed: ${error.toErrorCause()}",
                     ),
                 )
         }

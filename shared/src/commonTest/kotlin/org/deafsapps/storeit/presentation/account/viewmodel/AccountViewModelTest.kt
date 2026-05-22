@@ -19,6 +19,7 @@ import org.deafsapps.storeit.domain.model.SessionState
 import org.deafsapps.storeit.domain.usecase.RestoreAccountSessionUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignInAccountUseCaseType
 import org.deafsapps.storeit.domain.usecase.SignOutAccountUseCaseType
+import org.deafsapps.storeit.domain.usecase.SignOutAccountOutcome
 import org.deafsapps.storeit.domain.usecase.SignUpAccountUseCaseType
 import org.deafsapps.storeit.presentation.collectUiState
 
@@ -129,6 +130,29 @@ internal class AccountViewModelTest {
         assertEquals(expected = null, actual = state.accountEmail)
     }
 
+    @Test
+    fun `GIVEN sign out local-state warning WHEN sign out THEN clears session and exposes warning message`() = runTest {
+        val restoredSession = getAccountSession()
+        fakeRestoreAccountSessionUseCase.result = restoredSession.ok()
+        fakeSignOutAccountUseCase.result = SignOutAccountOutcome.SignedOutWithLocalStateWarning(
+            error = DomainError.Unknown(message = "Could not persist signed-out mode"),
+        ).ok()
+        val sut = createSut(testScope = this)
+        val states = collectUiState(uiState = sut.uiState)
+        advanceUntilIdle()
+
+        sut.signOut()
+        advanceUntilIdle()
+
+        val state = states.last()
+        assertEquals(expected = false, actual = state.isAuthenticated)
+        assertEquals(expected = null, actual = state.accountEmail)
+        assertEquals(
+            expected = "You are signed out, but the local mode update failed: Could not persist signed-out mode",
+            actual = state.failureMessage,
+        )
+    }
+
     private fun createSut(testScope: TestScope): AccountViewModel = AccountViewModel(
         coroutineScope = CoroutineScope(UnconfinedTestDispatcher(testScope.testScheduler)),
         signUpAccountUseCase = fakeSignUpAccountUseCase,
@@ -166,10 +190,10 @@ private class FakeSignInAccountUseCase : SignInAccountUseCaseType {
 }
 
 private class FakeSignOutAccountUseCase : SignOutAccountUseCaseType {
-    var result: Result<DomainError, Unit> = Unit.ok()
+    var result: Result<DomainError, SignOutAccountOutcome> = SignOutAccountOutcome.SignedOut.ok()
     var lastAccountId: String? = null
 
-    override suspend fun invoke(input: String): Result<DomainError, Unit> {
+    override suspend fun invoke(input: String): Result<DomainError, SignOutAccountOutcome> {
         lastAccountId = input
         return result
     }
