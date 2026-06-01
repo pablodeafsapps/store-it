@@ -9,9 +9,12 @@ import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.data.datasource.AccountRemoteDataSource
 import org.deafsapps.storeit.data.datasource.RemoteAccountSnapshot
+import org.deafsapps.storeit.data.datasource.RemoteDatasetMutation
 import org.deafsapps.storeit.data.datasource.RemotePhotoReference
 import org.deafsapps.storeit.domain.gateway.AccountRestoreMetadataGateway
 import org.deafsapps.storeit.domain.gateway.ItemRestoreGateway
+import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetGateway
+import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetSnapshot
 import org.deafsapps.storeit.domain.gateway.PhotoRestoreGateway
 import org.deafsapps.storeit.domain.gateway.RackRestoreGateway
 import org.deafsapps.storeit.domain.gateway.SlotRestoreGateway
@@ -33,6 +36,7 @@ import org.koin.core.annotation.Single
 internal class FirebaseAccountDataRestoreRepository(
     private val accountRemoteDataSource: AccountRemoteDataSource,
     private val accountRestoreMetadataGateway: AccountRestoreMetadataGateway,
+    private val localAccountDatasetGateway: LocalAccountDatasetGateway,
     private val rackRestoreGateway: RackRestoreGateway,
     private val slotRestoreGateway: SlotRestoreGateway,
     private val itemRestoreGateway: ItemRestoreGateway,
@@ -48,7 +52,7 @@ internal class FirebaseAccountDataRestoreRepository(
                     validateSnapshot(
                         session = session,
                         snapshot = snapshot,
-                    )?.err() ?: applySnapshot(
+                    )?.err() ?: applySnapshotOrBootstrapUpload(
                         session = session,
                         snapshot = snapshot,
                         previousState = localDatasetState,
@@ -91,6 +95,78 @@ internal class FirebaseAccountDataRestoreRepository(
                     previousState = previousState,
                 )
             }
+
+    private suspend fun applySnapshotOrBootstrapUpload(
+        session: AccountSession,
+        snapshot: RemoteAccountSnapshot,
+        previousState: LocalDatasetState?,
+    ): Result<DomainError, Unit> {
+        if (!shouldBootstrapFromLocal(snapshot = snapshot, previousState = previousState)) {
+            return applySnapshot(
+                session = session,
+                snapshot = snapshot,
+                previousState = previousState,
+            )
+        }
+
+        return localAccountDatasetGateway.loadLocalSnapshot()
+            .flatMap { localSnapshot ->
+                if (localSnapshot.isEmpty()) {
+                    applySnapshot(
+                        session = session,
+                        snapshot = snapshot,
+                        previousState = previousState,
+                    )
+                } else {
+                    bootstrapRemoteFromLocal(
+                        session = session,
+                        localSnapshot = localSnapshot,
+                        previousState = previousState,
+                    )
+                }
+            }
+    }
+
+    private fun shouldBootstrapFromLocal(
+        snapshot: RemoteAccountSnapshot,
+        previousState: LocalDatasetState?,
+    ): Boolean =
+        previousState?.mode == DataMode.LocalOnly &&
+            snapshot.racks.isEmpty() &&
+            snapshot.slots.isEmpty() &&
+            snapshot.items.isEmpty() &&
+            snapshot.photos.isEmpty()
+
+    private suspend fun bootstrapRemoteFromLocal(
+        session: AccountSession,
+        localSnapshot: LocalAccountDatasetSnapshot,
+        previousState: LocalDatasetState?,
+    ): Result<DomainError, Unit> =
+        accountRemoteDataSource.applyMutations(
+            accountId = session.accountId,
+            mutations = localSnapshot.toUpsertMutations(),
+        ).flatMap { checkpoint ->
+            accountRestoreMetadataGateway.markRestoreSynchronized(
+                accountDataset = AccountDataset(
+                    accountId = session.accountId,
+                    datasetVersion = checkpoint.value,
+                    lastSyncedAt = checkpoint.updatedAt,
+                ),
+                localDatasetState = LocalDatasetState(
+                    mode = DataMode.AccountBackedSynchronized,
+                    accountId = session.accountId,
+                    lastLocalChangeAt = previousState?.lastLocalChangeAt,
+                    lastRemoteSyncAt = checkpoint.updatedAt,
+                    hasPendingChanges = false,
+                ),
+                syncState = SyncState(
+                    status = SyncStatus.Synchronized,
+                    failureReason = null,
+                    lastAttemptAt = checkpoint.updatedAt,
+                    pendingOperationCount = 0,
+                ),
+            )
+        }
 
     private suspend fun replaceLocalAccountDataset(snapshot: RemoteAccountSnapshot): Result<DomainError, Unit> =
         rackRestoreGateway.replaceRestoredRacks(racks = snapshot.racks)
@@ -178,3 +254,10 @@ private fun DomainError.toRestoreFailureMessage(): String = when (this) {
     is DomainError.Unknown -> message
     is DomainError.ValidationError -> "Restore failed: $reason"
 }
+
+private fun LocalAccountDatasetSnapshot.toUpsertMutations(): List<RemoteDatasetMutation> =
+    buildList {
+        racks.forEach { rack -> add(RemoteDatasetMutation.UpsertRack(rack = rack)) }
+        slots.forEach { slot -> add(RemoteDatasetMutation.UpsertSlot(slot = slot)) }
+        items.forEach { item -> add(RemoteDatasetMutation.UpsertItem(item = item)) }
+    }

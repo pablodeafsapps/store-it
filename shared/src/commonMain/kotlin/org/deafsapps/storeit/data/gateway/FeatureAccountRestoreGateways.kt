@@ -1,9 +1,11 @@
 package org.deafsapps.storeit.data.gateway
 
+import kotlinx.coroutines.flow.firstOrNull
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.flatMap
+import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.data.datasource.AccountDatasetDataSource
@@ -15,6 +17,8 @@ import org.deafsapps.storeit.data.datasource.SlotDataSource
 import org.deafsapps.storeit.data.datasource.SyncStateDataSource
 import org.deafsapps.storeit.domain.gateway.AccountRestoreMetadataGateway
 import org.deafsapps.storeit.domain.gateway.ItemRestoreGateway
+import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetGateway
+import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetSnapshot
 import org.deafsapps.storeit.domain.gateway.PhotoRestoreGateway
 import org.deafsapps.storeit.domain.gateway.RackRestoreGateway
 import org.deafsapps.storeit.domain.gateway.SlotRestoreGateway
@@ -108,6 +112,41 @@ internal class AccountSyncFeatureRestoreMetadataGateway(
                 syncStateDataSource.saveSyncState(syncState = syncState)
             }
             .map { Unit }
+}
+
+@Single(binds = [LocalAccountDatasetGateway::class])
+internal class LocalFeatureAccountDatasetGateway(
+    private val rackDataSource: RackDataSource,
+    private val slotDataSource: SlotDataSource,
+    private val itemDataSource: ItemDataSource,
+) : LocalAccountDatasetGateway {
+
+    override suspend fun loadLocalSnapshot(): Result<DomainError, LocalAccountDatasetSnapshot> {
+        val racksResult = rackDataSource.getAllRacksFlow().firstOrNull()
+            ?: return DomainError.Unknown(message = "Rack flow emitted no values while loading local snapshot").err()
+        val racks = racksResult.failureOrNull()?.let { error -> return error.err() }
+            ?: racksResult.getOrNull().orEmpty()
+
+        val slots = mutableListOf<ShelfSlot>()
+        val items = mutableListOf<Item>()
+        for (rack in racks) {
+            val rackSlotsResult = slotDataSource.getSlotsByRack(rackId = rack.id)
+            val rackSlots = rackSlotsResult.failureOrNull()?.let { error -> return error.err() }
+                ?: rackSlotsResult.getOrNull().orEmpty()
+            slots += rackSlots
+
+            val rackItemsResult = itemDataSource.getItemsByRack(rackId = rack.id)
+            val rackItems = rackItemsResult.failureOrNull()?.let { error -> return error.err() }
+                ?: rackItemsResult.getOrNull().orEmpty()
+            items += rackItems
+        }
+
+        return LocalAccountDatasetSnapshot(
+            racks = racks,
+            slots = slots,
+            items = items,
+        ).ok()
+    }
 }
 
 private suspend fun <T, Saved> List<T>.saveRestoredEntries(

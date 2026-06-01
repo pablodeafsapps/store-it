@@ -87,3 +87,21 @@ interface AccountRestoreMetadataGateway {
         syncState: SyncState,
     ): Result<DomainError, Unit>
 }
+
+/**
+ * Gateway owned by local-feature storage for reading current local data during first account bootstrap.
+ */
+interface LocalAccountDatasetGateway {
+    /**
+     * Loads the current local snapshot used to bootstrap a newly created or empty remote account dataset.
+     */
+    suspend fun loadLocalSnapshot(): Result<DomainError, LocalAccountDatasetSnapshot>
+}
+
+data class LocalAccountDatasetSnapshot(
+    val racks: List<Rack>,
+    val slots: List<ShelfSlot>,
+    val items: List<Item>,
+) {
+    fun isEmpty(): Boolean = racks.isEmpty() && slots.isEmpty() && items.isEmpty()
+}

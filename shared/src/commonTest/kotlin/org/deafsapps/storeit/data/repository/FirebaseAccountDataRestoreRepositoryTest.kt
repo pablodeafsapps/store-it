@@ -16,6 +16,8 @@ import org.deafsapps.storeit.data.datasource.RemotePhotoReference
 import org.deafsapps.storeit.data.datasource.RemoteSyncCheckpoint
 import org.deafsapps.storeit.domain.gateway.AccountRestoreMetadataGateway
 import org.deafsapps.storeit.domain.gateway.ItemRestoreGateway
+import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetGateway
+import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetSnapshot
 import org.deafsapps.storeit.domain.gateway.PhotoRestoreGateway
 import org.deafsapps.storeit.domain.gateway.RackRestoreGateway
 import org.deafsapps.storeit.domain.gateway.SlotRestoreGateway
@@ -37,6 +39,7 @@ class FirebaseAccountDataRestoreRepositoryTest {
     private lateinit var sut: FirebaseAccountDataRestoreRepository
     private lateinit var fakeAccountRemoteDataSource: FakeAccountRemoteDataSource
     private lateinit var fakeAccountRestoreMetadataGateway: FakeAccountRestoreMetadataGateway
+    private lateinit var fakeLocalAccountDatasetGateway: FakeLocalAccountDatasetGateway
     private lateinit var fakeRackRestoreGateway: FakeRackRestoreGateway
     private lateinit var fakeSlotRestoreGateway: FakeSlotRestoreGateway
     private lateinit var fakeItemRestoreGateway: FakeItemRestoreGateway
@@ -46,6 +49,7 @@ class FirebaseAccountDataRestoreRepositoryTest {
     fun setUp() {
         fakeAccountRemoteDataSource = FakeAccountRemoteDataSource()
         fakeAccountRestoreMetadataGateway = FakeAccountRestoreMetadataGateway()
+        fakeLocalAccountDatasetGateway = FakeLocalAccountDatasetGateway()
         fakeRackRestoreGateway = FakeRackRestoreGateway()
         fakeSlotRestoreGateway = FakeSlotRestoreGateway()
         fakeItemRestoreGateway = FakeItemRestoreGateway()
@@ -53,6 +57,7 @@ class FirebaseAccountDataRestoreRepositoryTest {
         sut = FirebaseAccountDataRestoreRepository(
             accountRemoteDataSource = fakeAccountRemoteDataSource,
             accountRestoreMetadataGateway = fakeAccountRestoreMetadataGateway,
+            localAccountDatasetGateway = fakeLocalAccountDatasetGateway,
             rackRestoreGateway = fakeRackRestoreGateway,
             slotRestoreGateway = fakeSlotRestoreGateway,
             itemRestoreGateway = fakeItemRestoreGateway,
@@ -140,6 +145,38 @@ class FirebaseAccountDataRestoreRepositoryTest {
                 actual = fakeAccountRestoreMetadataGateway.pendingSyncState?.status,
             )
         }
+
+    @Test
+    fun `GIVEN local-only data and empty remote snapshot WHEN restoreAccountData THEN bootstraps remote and records synchronized metadata`() =
+        runTest {
+            val session = accountSession()
+            fakeAccountRemoteDataSource.fetchSnapshotResult = emptyRemoteSnapshot(accountId = session.accountId).ok()
+            fakeAccountRemoteDataSource.applyMutationsResult = RemoteSyncCheckpoint(
+                value = "checkpoint-bootstrap",
+                updatedAt = 200L,
+            ).ok()
+            fakeAccountRestoreMetadataGateway.getLocalDatasetStateResult = LocalDatasetState(
+                mode = DataMode.LocalOnly,
+                accountId = null,
+                hasPendingChanges = true,
+            ).ok()
+            fakeLocalAccountDatasetGateway.loadLocalSnapshotResult = LocalAccountDatasetSnapshot(
+                racks = remoteAccountSnapshot().racks,
+                slots = remoteAccountSnapshot().slots,
+                items = remoteAccountSnapshot().items,
+            ).ok()
+
+            val result: Result<DomainError, Unit> = sut.restoreAccountData(session = session)
+
+            assertTrue(actual = result.isOk)
+            assertEquals(expected = 3, actual = fakeAccountRemoteDataSource.appliedMutations.size)
+            assertEquals(expected = "checkpoint-bootstrap", actual = fakeAccountRestoreMetadataGateway.synchronizedAccountDataset?.datasetVersion)
+            assertEquals(expected = DataMode.AccountBackedSynchronized, actual = fakeAccountRestoreMetadataGateway.synchronizedLocalDatasetState?.mode)
+            assertEquals(expected = SyncStatus.Synchronized, actual = fakeAccountRestoreMetadataGateway.synchronizedSyncState?.status)
+            assertTrue(actual = fakeRackRestoreGateway.restoredRacks.isEmpty())
+            assertTrue(actual = fakeSlotRestoreGateway.restoredSlots.isEmpty())
+            assertTrue(actual = fakeItemRestoreGateway.restoredItems.isEmpty())
+        }
 }
 
 private fun accountSession(): AccountSession = AccountSession(
@@ -192,10 +229,26 @@ private fun remoteAccountSnapshot(): RemoteAccountSnapshot = RemoteAccountSnapsh
     ),
 )
 
+private fun emptyRemoteSnapshot(accountId: String): RemoteAccountSnapshot = RemoteAccountSnapshot(
+    accountId = accountId,
+    syncCheckpoint = RemoteSyncCheckpoint(
+        value = "initial-$accountId",
+        updatedAt = null,
+    ),
+    racks = emptyList(),
+    slots = emptyList(),
+    items = emptyList(),
+    photos = emptyList(),
+)
+
 private class FakeAccountRemoteDataSource : AccountRemoteDataSource {
     var fetchSnapshotResult: Result<DomainError, RemoteAccountSnapshot> = DomainError.Unknown(
         message = "fetchSnapshotResult not configured",
     ).err()
+    var applyMutationsResult: Result<DomainError, RemoteSyncCheckpoint> = DomainError.Unknown(
+        message = "applyMutationsResult not configured",
+    ).err()
+    var appliedMutations: List<RemoteDatasetMutation> = emptyList()
 
     override suspend fun fetchSnapshot(accountId: String): Result<DomainError, RemoteAccountSnapshot> =
         fetchSnapshotResult
@@ -203,14 +256,27 @@ private class FakeAccountRemoteDataSource : AccountRemoteDataSource {
     override suspend fun applyMutations(
         accountId: String,
         mutations: List<RemoteDatasetMutation>,
-    ): Result<DomainError, RemoteSyncCheckpoint> = DomainError.Unknown(
-        message = "Not required for this test",
-    ).err()
+    ): Result<DomainError, RemoteSyncCheckpoint> {
+        appliedMutations = mutations
+        return applyMutationsResult
+    }
 
     override suspend fun uploadPhoto(asset: RemotePhotoAsset): Result<DomainError, RemotePhotoReference> =
         DomainError.Unknown(message = "Not required for this test").err()
 
     override suspend fun deletePhoto(photoId: String): Result<DomainError, Long> = 0L.ok()
+}
+
+private class FakeLocalAccountDatasetGateway : LocalAccountDatasetGateway {
+    var loadLocalSnapshotResult: Result<DomainError, LocalAccountDatasetSnapshot> =
+        LocalAccountDatasetSnapshot(
+            racks = emptyList(),
+            slots = emptyList(),
+            items = emptyList(),
+        ).ok()
+
+    override suspend fun loadLocalSnapshot(): Result<DomainError, LocalAccountDatasetSnapshot> =
+        loadLocalSnapshotResult
 }
 
 private class FakeAccountRestoreMetadataGateway : AccountRestoreMetadataGateway {
