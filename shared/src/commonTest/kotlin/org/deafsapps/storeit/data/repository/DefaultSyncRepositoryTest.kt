@@ -13,6 +13,8 @@ import org.deafsapps.storeit.data.datasource.AccountDatasetDataSource
 import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
 import org.deafsapps.storeit.data.datasource.SyncOperationDataSource
 import org.deafsapps.storeit.data.datasource.SyncStateDataSource
+import org.deafsapps.storeit.data.datasource.SyncTelemetryDataSource
+import org.deafsapps.storeit.data.datasource.SyncTelemetryEvent
 import org.deafsapps.storeit.domain.model.AccountDataset
 import org.deafsapps.storeit.domain.model.DataMode
 import org.deafsapps.storeit.domain.model.DomainError
@@ -30,6 +32,7 @@ class DefaultSyncRepositoryTest {
     private lateinit var fakeLocalDatasetStateDataSource: FakeLocalDatasetStateDataSource
     private lateinit var fakeSyncStateDataSource: FakeSyncStateDataSource
     private lateinit var fakeSyncOperationMetadataDataSource: FakeSyncOperationMetadataDataSource
+    private lateinit var fakeSyncTelemetryDataSource: FakeSyncTelemetryDataSource
     private lateinit var sut: SyncRepository
 
     @BeforeTest
@@ -38,11 +41,13 @@ class DefaultSyncRepositoryTest {
         fakeLocalDatasetStateDataSource = FakeLocalDatasetStateDataSource()
         fakeSyncStateDataSource = FakeSyncStateDataSource()
         fakeSyncOperationMetadataDataSource = FakeSyncOperationMetadataDataSource()
+        fakeSyncTelemetryDataSource = FakeSyncTelemetryDataSource()
         sut = DefaultSyncRepository(
             accountDatasetDataSource = fakeAccountDatasetDataSource,
             localDatasetStateDataSource = fakeLocalDatasetStateDataSource,
             syncStateDataSource = fakeSyncStateDataSource,
             syncOperationDataSource = fakeSyncOperationMetadataDataSource,
+            syncTelemetryDataSource = fakeSyncTelemetryDataSource,
         )
     }
 
@@ -73,6 +78,14 @@ class DefaultSyncRepositoryTest {
 
         assertTrue(actual = result.isOk)
         assertEquals(expected = failedState, actual = fakeSyncStateDataSource.savedSyncState)
+        assertEquals(
+            expected = SyncTelemetryEvent.SyncStateSaved(
+                status = SyncStatus.Failed,
+                pendingOperationCount = 2,
+                hasFailureReason = true,
+            ),
+            actual = fakeSyncTelemetryDataSource.events.lastOrNull(),
+        )
     }
 
     @Test
@@ -97,6 +110,10 @@ class DefaultSyncRepositoryTest {
 
         assertTrue(actual = result.isOk)
         assertEquals(expected = operation, actual = fakeSyncOperationMetadataDataSource.savedOperation)
+        assertEquals(
+            expected = SyncTelemetryEvent.SyncOperationRecorded(syncOperation = operation),
+            actual = fakeSyncTelemetryDataSource.events.lastOrNull(),
+        )
     }
 
     @Test
@@ -113,6 +130,14 @@ class DefaultSyncRepositoryTest {
 
         assertTrue(actual = result.isOk)
         assertEquals(expected = true, actual = fakeSyncOperationMetadataDataSource.clearInvoked)
+    }
+}
+
+private class FakeSyncTelemetryDataSource : SyncTelemetryDataSource {
+    val events: MutableList<SyncTelemetryEvent> = mutableListOf()
+
+    override fun onEvent(event: SyncTelemetryEvent) {
+        events.add(element = event)
     }
 }
 

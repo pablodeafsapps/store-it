@@ -132,7 +132,7 @@
 
 **Purpose**: Finish observability, docs, privacy/security references, and acceptance validation across the whole feature.
 
-- [ ] T038 [P] Add sync telemetry and success-metric instrumentation points in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncTelemetry.kt`
+- [X] T038 [P] Add sync telemetry and success-metric instrumentation points in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/sync/SyncTelemetry.kt`
 - [ ] T039 [P] Update feature documentation and add the planned privacy/security document reference in `specs/005-remote-sync-auth/quickstart.md`
 - [ ] T040 Run quickstart validation scenarios and record final implementation notes in `specs/005-remote-sync-auth/quickstart.md`
 - [X] T041 Add a visible signed-in account status header with avatar/initial and restore-complete state on the account screen in `androidApp/src/main/java/org/deafsapps/storeit/androidapp/presentation/account/ui/AccountScreen.kt`
