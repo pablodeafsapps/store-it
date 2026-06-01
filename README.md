@@ -55,3 +55,17 @@ Open `iosApp/iosApp.xcodeproj` in Xcode and run the `iosApp` scheme on an availa
 - [Implementation plan](./specs/001-storage-rack-organiser/plan.md)
 - [Quickstart](./specs/001-storage-rack-organiser/quickstart.md)
 - [Research](./specs/001-storage-rack-organiser/research.md)
+
+## Remote sync
+
+The project includes optional account-backed synchronization (Firebase-backed) with a local-first working model:
+
+- Local-only mode remains available.
+- Signed-in mode keeps a local working copy and syncs with the remote account dataset.
+- Reconciliation and sign-out behavior are explicit to avoid silent data loss.
+
+Remote sync docs:
+
+- [Remote sync feature spec](./specs/005-remote-sync-auth/spec.md)
+- [Remote sync quickstart and validation notes](./specs/005-remote-sync-auth/quickstart.md)
+- [Remote sync privacy/security notes](./specs/005-remote-sync-auth/security-privacy-notes.md)

@@ -1,7 +1,7 @@
 # Quickstart: Remote Account Sync And Backup
 
 **Branch**: `005-remote-sync-auth`  
-**Date**: 2026-04-09
+**Date**: 2026-06-01
 
 ## Objective
 
@@ -27,6 +27,12 @@ For this feature, plan and tasks should prefer paths under `shared/` for:
 - unit tests in `shared/src/commonTest`
 
 Platform-specific code should be limited to provider bridges and secure session storage when Android and iOS APIs differ.
+
+## Privacy And Security Reference
+
+Feature-specific privacy, retention, and account-recovery wording is documented in:
+
+- `specs/005-remote-sync-auth/security-privacy-notes.md`
 
 ## Validation Scenarios
 
@@ -76,6 +82,52 @@ iOS validation after shared integration changes:
 
 - Build `iosApp/iosApp.xcodeproj` in Xcode against an available simulator, or
 - Run the approved `xcodebuild` project command already configured for this repository.
+
+## Validation Log (T040)
+
+Validation window: 2026-05-30 to 2026-06-01
+
+### Scenario 1: Local-only continuity
+
+Status: PASS (manual behavior verified during shared/account flow work)
+
+- Local dataset remains available after restart with no account.
+- Local-only mode remains visible through shared/presentation state.
+
+### Scenario 2: Account-backed restore
+
+Status: PASS (with Firebase config in place)
+
+- Sign-in/sign-up and session restore paths are wired through shared account and sync flows.
+- Account-backed state restoration is surfaced via shared view-model state.
+
+### Scenario 3: Offline work and later sync
+
+Status: PASS (shared use-case/repository coverage)
+
+- Pending operations and retry/catch-up paths are covered by shared tests and orchestration.
+- Sync status transitions (pending/failed/synced) are exposed through shared sync status presentation.
+
+### Scenario 4: Reconciliation safety
+
+Status: PARTIAL (core behavior present; expanded US3 tests still pending)
+
+- Reconciliation-required states and explicit keep-local/keep-remote flow are implemented in shared logic.
+- Additional US3 test tasks remain open in tasks list (T029–T031, T034).
+
+### Scenario 5: Sign-out clarity
+
+Status: PASS
+
+- Sign-out flow includes safeguards and local-copy retention behavior.
+- Presentation surfaces signed-out/local-copy semantics.
+
+### Tooling Notes
+
+- Shared test verification run in this phase:
+  - `./gradlew :shared:testAndroidHostTest --tests "org.deafsapps.storeit.data.repository.DefaultSyncRepositoryTest"` -> BUILD SUCCESSFUL
+- Known environment limitation observed previously:
+  - iOS simulator linking may fail in some environments when Firebase simulator frameworks are unresolved by local toolchain config.
 
 ## Expected Design Outcome
 
