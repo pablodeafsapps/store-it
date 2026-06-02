@@ -1,6 +1,7 @@
 package org.deafsapps.storeit.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
@@ -8,11 +9,18 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.deafsapps.storeit.base.Result
+import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.ok
+import org.deafsapps.storeit.data.datasource.AccountDatasetDataSource
 import org.deafsapps.storeit.data.datasource.ItemDataSource
 import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
 import org.deafsapps.storeit.data.datasource.RackDataSource
 import org.deafsapps.storeit.data.datasource.SlotDataSource
+import org.deafsapps.storeit.data.datasource.SyncOperationDataSource
+import org.deafsapps.storeit.data.datasource.SyncStateDataSource
+import org.deafsapps.storeit.data.datasource.SyncTelemetryDataSource
+import org.deafsapps.storeit.data.datasource.SyncTelemetryEvent
+import org.deafsapps.storeit.domain.model.AccountDataset
 import org.deafsapps.storeit.domain.model.DataMode
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
@@ -22,190 +30,341 @@ import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.domain.model.SyncEntityType
 import org.deafsapps.storeit.domain.model.SyncOperation
+import org.deafsapps.storeit.domain.model.SyncOperationStatus
+import org.deafsapps.storeit.domain.model.SyncOperationType
+import org.deafsapps.storeit.domain.model.SyncState
 import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.deafsapps.storeit.domain.repository.SlotRepository
+import org.deafsapps.storeit.domain.repository.SyncRepository
 
 class SyncAwareOrganizerRepositoriesTest {
-    private lateinit var fakeSyncOperationRepository: FakeSyncOperationRepository
-    private lateinit var fakeLocalDatasetStateDataSource: LocalDatasetStateDataSource
+    private lateinit var rackDataSource: PersistentRackDataSource
+    private lateinit var slotDataSource: PersistentSlotDataSource
+    private lateinit var itemDataSource: PersistentItemDataSource
+    private lateinit var syncOperationDataSource: PersistentSyncOperationDataSource
+    private lateinit var localDatasetStateDataSource: SyncAwareLocalDatasetStateDataSource
+    private lateinit var operationIdGenerator: IncrementingSyncOperationIdGenerator
 
     @BeforeTest
     fun setUp() {
-        fakeSyncOperationRepository = FakeSyncOperationRepository()
-        fakeLocalDatasetStateDataSource = SyncAwareLocalDatasetStateDataSource()
+        rackDataSource = PersistentRackDataSource()
+        slotDataSource = PersistentSlotDataSource()
+        itemDataSource = PersistentItemDataSource()
+        syncOperationDataSource = PersistentSyncOperationDataSource()
+        localDatasetStateDataSource = SyncAwareLocalDatasetStateDataSource()
+        operationIdGenerator = IncrementingSyncOperationIdGenerator()
     }
 
     @Test
-    fun `GIVEN rack does not exist WHEN save rack THEN enqueue create operation`() = runTest {
-        val rackDataSource = FakeRackDataSource(existingRack = null)
-        val sut: RackRepository = SqlDelightRackRepository(
-            rackDataSource = rackDataSource,
-            syncOperationRepository = fakeSyncOperationRepository,
-            localDatasetStateDataSource = fakeLocalDatasetStateDataSource,
-        )
+    fun `GIVEN offline rack create WHEN app restarts THEN local rack and pending operation are preserved`() = runTest {
+        val sut: RackRepository = rackRepository()
         val rack = Rack(id = "rack-1", name = "Rack 1")
 
         val result = sut.saveRack(rack = rack)
 
         assertTrue(actual = result.isOk)
-        assertEquals(expected = 1, actual = fakeSyncOperationRepository.createCalls.size)
-        assertEquals(expected = SyncEntityType.Rack, actual = fakeSyncOperationRepository.createCalls.first().entityType)
-        assertEquals(expected = "rack-1", actual = fakeSyncOperationRepository.createCalls.first().entityId)
+
+        val restartedRackRepository: RackRepository = rackRepository()
+        val restartedSyncRepository: SyncRepository = syncRepository()
+        val persistedOperations = restartedSyncRepository.observePendingOperations().first().getOrNull().orEmpty()
+
+        assertEquals(expected = rack, actual = restartedRackRepository.getRackById(id = rack.id).getOrNull())
+        assertEquals(expected = 1, actual = persistedOperations.size)
+        assertPersistedOperation(
+            syncOperation = persistedOperations.single(),
+            expectedId = "operation-1",
+            expectedEntityType = SyncEntityType.Rack,
+            expectedEntityId = "rack-1",
+            expectedOperationType = SyncOperationType.Create,
+        )
     }
 
     @Test
-    fun `GIVEN slot already exists WHEN save slot THEN enqueue update operation`() = runTest {
+    fun `GIVEN offline slot update and item delete WHEN app restarts THEN queued mutations survive in recorded order`() = runTest {
         val existingSlot = ShelfSlot(
             id = "slot-1",
             rackId = "rack-1",
             position = SlotPosition(x = 0f, y = 0f, xRel = 0f, yRel = 0f),
         )
-        val slotDataSource = FakeSlotDataSource(existingSlots = listOf(existingSlot))
-        val sut: SlotRepository = SqlDelightSlotRepository(
-            slotDataSource = slotDataSource,
-            syncOperationRepository = fakeSyncOperationRepository,
-            localDatasetStateDataSource = fakeLocalDatasetStateDataSource,
+        val existingItem = Item(
+            id = "item-1",
+            name = "Item 1",
+            rackId = "rack-1",
+            slotId = "slot-1",
+        )
+        slotDataSource.saveSlot(slot = existingSlot)
+        itemDataSource.saveItem(item = existingItem)
+
+        val slotRepository = slotRepository()
+        val itemRepository = itemRepository()
+
+        val updatedSlot = ShelfSlot(
+            id = existingSlot.id,
+            rackId = existingSlot.rackId,
+            position = SlotPosition(x = 10f, y = existingSlot.position.y, xRel = existingSlot.position.xRel, yRel = existingSlot.position.yRel),
         )
 
-        val result = sut.saveSlot(slot = existingSlot)
+        val saveSlotResult = slotRepository.saveSlot(slot = updatedSlot)
+        val deleteItemResult = itemRepository.deleteItem(id = existingItem.id)
 
-        assertTrue(actual = result.isOk)
-        assertEquals(expected = 1, actual = fakeSyncOperationRepository.updateCalls.size)
-        assertEquals(expected = SyncEntityType.ShelfSlot, actual = fakeSyncOperationRepository.updateCalls.first().entityType)
-        assertEquals(expected = "slot-1", actual = fakeSyncOperationRepository.updateCalls.first().entityId)
+        assertTrue(actual = saveSlotResult.isOk)
+        assertTrue(actual = deleteItemResult.isOk)
+
+        val restartedSlotRepository: SlotRepository = slotRepository()
+        val restartedItemRepository: ItemRepository = itemRepository()
+        val restartedSyncRepository: SyncRepository = syncRepository()
+        val persistedOperations = restartedSyncRepository.observePendingOperations().first().getOrNull().orEmpty()
+
+        assertEquals(
+            expected = 10f,
+            actual = restartedSlotRepository.getSlotsByRack(rackId = "rack-1").getOrNull()?.single()?.position?.x,
+        )
+        assertTrue(actual = restartedItemRepository.getItemById(id = existingItem.id).isErr)
+        assertEquals(expected = 2, actual = persistedOperations.size)
+        assertPersistedOperation(
+            syncOperation = persistedOperations[0],
+            expectedId = "operation-1",
+            expectedEntityType = SyncEntityType.ShelfSlot,
+            expectedEntityId = "slot-1",
+            expectedOperationType = SyncOperationType.Update,
+        )
+        assertPersistedOperation(
+            syncOperation = persistedOperations[1],
+            expectedId = "operation-2",
+            expectedEntityType = SyncEntityType.Item,
+            expectedEntityId = "item-1",
+            expectedOperationType = SyncOperationType.Delete,
+        )
     }
 
     @Test
-    fun `GIVEN item deletion succeeds WHEN delete item THEN enqueue delete operation`() = runTest {
-        val itemDataSource = FakeItemDataSource()
-        val sut: ItemRepository = SqlDelightItemRepository(
-            itemDataSource = itemDataSource,
-            syncOperationRepository = fakeSyncOperationRepository,
-            localDatasetStateDataSource = fakeLocalDatasetStateDataSource,
+    fun `GIVEN persisted offline mutations WHEN later sync consumes them THEN queue can be drained after restart`() = runTest {
+        val rackRepository = rackRepository()
+        val slotRepository = slotRepository()
+        val rack = Rack(id = "rack-1", name = "Rack 1")
+        val slot = ShelfSlot(
+            id = "slot-1",
+            rackId = rack.id,
+            position = SlotPosition(x = 1f, y = 2f, xRel = 0.1f, yRel = 0.2f),
         )
 
-        val result = sut.deleteItem(id = "item-1")
+        rackRepository.saveRack(rack = rack)
+        slotRepository.saveSlot(slot = slot)
 
-        assertTrue(actual = result.isOk)
-        assertEquals(expected = 1, actual = fakeSyncOperationRepository.deleteCalls.size)
-        assertEquals(expected = SyncEntityType.Item, actual = fakeSyncOperationRepository.deleteCalls.first().entityType)
-        assertEquals(expected = "item-1", actual = fakeSyncOperationRepository.deleteCalls.first().entityId)
+        val sut: SyncRepository = syncRepository()
+        val persistedOperations = sut.observePendingOperations().first().getOrNull().orEmpty()
+
+        val deleteFirstResult = sut.deleteSyncOperation(operationId = persistedOperations.first().id)
+        val clearRemainingResult = sut.clearSyncOperations()
+
+        assertTrue(actual = deleteFirstResult.isOk)
+        assertTrue(actual = clearRemainingResult.isOk)
+        assertEquals(expected = emptyList(), actual = sut.observePendingOperations().first().getOrNull())
     }
+
+    private fun rackRepository(
+    ): RackRepository = SqlDelightRackRepository(
+        rackDataSource = rackDataSource,
+        syncOperationRepository = syncOperationRepository(),
+        localDatasetStateDataSource = localDatasetStateDataSource,
+    )
+
+    private fun slotRepository(
+    ): SlotRepository = SqlDelightSlotRepository(
+        slotDataSource = slotDataSource,
+        syncOperationRepository = syncOperationRepository(),
+        localDatasetStateDataSource = localDatasetStateDataSource,
+    )
+
+    private fun itemRepository(
+    ): ItemRepository = SqlDelightItemRepository(
+        itemDataSource = itemDataSource,
+        syncOperationRepository = syncOperationRepository(),
+        localDatasetStateDataSource = localDatasetStateDataSource,
+    )
+
+    private fun syncOperationRepository(): SyncOperationRepository = DefaultSyncOperationRepository(
+        syncOperationDataSource = syncOperationDataSource,
+        operationIdGenerator = operationIdGenerator,
+    )
+
+    private fun syncRepository(): SyncRepository = DefaultSyncRepository(
+        accountDatasetDataSource = SyncAwareFakeAccountDatasetDataSource(),
+        localDatasetStateDataSource = localDatasetStateDataSource,
+        syncStateDataSource = SyncAwareFakeSyncStateDataSource(),
+        syncOperationDataSource = syncOperationDataSource,
+        syncTelemetryDataSource = SyncAwareFakeSyncTelemetryDataSource(),
+    )
 }
 
-private data class SyncCall(
-    val entityType: SyncEntityType,
-    val entityId: String,
-)
+private class IncrementingSyncOperationIdGenerator : SyncOperationIdGenerator {
+    private var nextId: Int = 1
 
-private class FakeSyncOperationRepository : SyncOperationRepository {
-    val createCalls: MutableList<SyncCall> = mutableListOf()
-    val updateCalls: MutableList<SyncCall> = mutableListOf()
-    val deleteCalls: MutableList<SyncCall> = mutableListOf()
+    override fun generate(): String = "operation-${nextId++}"
+}
 
-    override suspend fun enqueueCreate(
-        accountId: String?,
-        entityType: SyncEntityType,
-        entityId: String,
-        payloadJson: String?,
-    ): Result<DomainError, SyncOperation> {
-        createCalls += SyncCall(entityType = entityType, entityId = entityId)
-        return fakeOperation().ok()
+private class SyncAwareFakeSyncTelemetryDataSource : SyncTelemetryDataSource {
+    override fun onEvent(event: SyncTelemetryEvent) = Unit
+}
+
+private class SyncAwareFakeAccountDatasetDataSource : AccountDatasetDataSource {
+    override suspend fun getAccountDataset(accountId: String): Result<DomainError, AccountDataset?> = null.ok()
+
+    override suspend fun saveAccountDataset(
+        accountDataset: AccountDataset,
+    ): Result<DomainError, AccountDataset> = accountDataset.ok()
+
+    override suspend fun deleteAccountDataset(accountId: String): Result<DomainError, Long> = 0L.ok()
+}
+
+private class SyncAwareFakeSyncStateDataSource : SyncStateDataSource {
+    override fun observeSyncState(): Flow<Result<DomainError, SyncState?>> = flowOf(null.ok())
+
+    override suspend fun getSyncState(): Result<DomainError, SyncState?> = null.ok()
+
+    override suspend fun saveSyncState(syncState: SyncState): Result<DomainError, SyncState> = syncState.ok()
+
+    override suspend fun deleteSyncState(): Result<DomainError, Long> = 0L.ok()
+}
+
+private class PersistentSyncOperationDataSource : SyncOperationDataSource {
+    private val pendingOperations: MutableList<SyncOperation> = mutableListOf()
+
+    override fun observePendingSyncOperations(): Flow<Result<DomainError, List<SyncOperation>>> =
+        flowOf(value = pendingOperations.toList().ok())
+
+    override suspend fun getPendingSyncOperations(): Result<DomainError, List<SyncOperation>> =
+        pendingOperations.toList().ok()
+
+    override suspend fun saveSyncOperation(
+        syncOperation: SyncOperation,
+    ): Result<DomainError, SyncOperation> = syncOperation.ok().also {
+        pendingOperations.removeAll { existing -> existing.id == syncOperation.id }
+        pendingOperations += syncOperation
     }
 
-    override suspend fun enqueueUpdate(
-        accountId: String?,
-        entityType: SyncEntityType,
-        entityId: String,
-        payloadJson: String?,
-    ): Result<DomainError, SyncOperation> {
-        updateCalls += SyncCall(entityType = entityType, entityId = entityId)
-        return fakeOperation().ok()
-    }
+    override suspend fun deleteSyncOperation(operationId: String): Result<DomainError, Long> =
+        pendingOperations.removeAll { operation -> operation.id == operationId }
+            .let { removed -> if (removed) 1L else 0L }
+            .ok()
 
-    override suspend fun enqueueDelete(
-        accountId: String?,
-        entityType: SyncEntityType,
-        entityId: String,
-        payloadJson: String?,
-    ): Result<DomainError, SyncOperation> {
-        deleteCalls += SyncCall(entityType = entityType, entityId = entityId)
-        return fakeOperation().ok()
-    }
-
-    private fun fakeOperation(): SyncOperation = SyncOperation(
-        id = "operation-1",
-        entityType = SyncEntityType.Item,
-        entityId = "item-1",
-        operationType = org.deafsapps.storeit.domain.model.SyncOperationType.Update,
-        syncStatus = org.deafsapps.storeit.domain.model.SyncOperationStatus.Pending,
-    )
+    override suspend fun clearSyncOperations(): Result<DomainError, Long> =
+        pendingOperations.size.toLong().ok().also {
+            pendingOperations.clear()
+        }
 }
 
 private class SyncAwareLocalDatasetStateDataSource : LocalDatasetStateDataSource {
     override fun observeLocalDatasetState(): Flow<Result<DomainError, LocalDatasetState?>> =
-        flowOf(LocalDatasetState(
-            mode = DataMode.AccountBackedPendingSync,
-            accountId = "account-1",
-            hasPendingChanges = true,
-        ).ok())
+        flowOf(localDatasetState().ok())
 
     override suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?> =
-        LocalDatasetState(
-            mode = DataMode.AccountBackedPendingSync,
-            accountId = "account-1",
-            hasPendingChanges = true,
-        ).ok()
+        localDatasetState().ok()
 
     override suspend fun saveLocalDatasetState(
         localDatasetState: LocalDatasetState,
     ): Result<DomainError, LocalDatasetState> = localDatasetState.ok()
 
     override suspend fun deleteLocalDatasetState(): Result<DomainError, Long> = 0L.ok()
+
+    private fun localDatasetState(): LocalDatasetState = LocalDatasetState(
+        mode = DataMode.AccountBackedPendingSync,
+        accountId = "account-1",
+        hasPendingChanges = true,
+    )
 }
 
-private class FakeRackDataSource(
-    private val existingRack: Rack?,
-) : RackDataSource {
-    override fun getAllRacksFlow(): Flow<Result<DomainError, List<Rack>>> = flowOf(emptyList<Rack>().ok())
+private class PersistentRackDataSource : RackDataSource {
+    private val racksById: MutableMap<String, Rack> = linkedMapOf()
 
-    override suspend fun getRackById(id: String): Result<DomainError, Rack?> = existingRack.ok()
+    override fun getAllRacksFlow(): Flow<Result<DomainError, List<Rack>>> =
+        flowOf(racksById.values.toList().ok())
 
-    override suspend fun saveRack(rack: Rack): Result<DomainError, Rack> = rack.ok()
+    override suspend fun getRackById(id: String): Result<DomainError, Rack?> = racksById[id].ok()
 
-    override suspend fun deleteRack(id: String): Result<DomainError, Boolean> = true.ok()
+    override suspend fun saveRack(rack: Rack): Result<DomainError, Rack> = rack.ok().also {
+        racksById[rack.id] = rack
+    }
 
-    override suspend fun clear() = Unit
+    override suspend fun deleteRack(id: String): Result<DomainError, Boolean> =
+        (racksById.remove(key = id) != null).ok()
+
+    override suspend fun clear() {
+        racksById.clear()
+    }
 }
 
-private class FakeSlotDataSource(
-    private val existingSlots: List<ShelfSlot>,
-) : SlotDataSource {
-    override suspend fun getSlotsByRack(rackId: String): Result<DomainError, List<ShelfSlot>> = existingSlots.ok()
+private class PersistentSlotDataSource : SlotDataSource {
+    private val slotsById: MutableMap<String, ShelfSlot> = linkedMapOf()
 
-    override suspend fun saveSlot(slot: ShelfSlot): Result<DomainError, ShelfSlot> = slot.ok()
+    override suspend fun getSlotsByRack(rackId: String): Result<DomainError, List<ShelfSlot>> =
+        slotsById.values.filter { slot -> slot.rackId == rackId }.ok()
 
-    override suspend fun deleteByRack(rackId: String): Result<DomainError, Long> = 0L.ok()
+    override suspend fun saveSlot(slot: ShelfSlot): Result<DomainError, ShelfSlot> = slot.ok().also {
+        slotsById[slot.id] = slot
+    }
 
-    override suspend fun clear() = Unit
+    override suspend fun deleteByRack(rackId: String): Result<DomainError, Long> =
+        slotsById.values
+            .filter { slot -> slot.rackId == rackId }
+            .map { slot -> slot.id }
+            .also { ids -> ids.forEach { id -> slotsById.remove(key = id) } }
+            .size
+            .toLong()
+            .ok()
+
+    override suspend fun clear() {
+        slotsById.clear()
+    }
 }
 
-private class FakeItemDataSource : ItemDataSource {
-    override suspend fun getItemsByRack(rackId: String): Result<DomainError, List<Item>> = emptyList<Item>().ok()
+private class PersistentItemDataSource : ItemDataSource {
+    private val itemsById: MutableMap<String, Item> = linkedMapOf()
+
+    override suspend fun getItemsByRack(rackId: String): Result<DomainError, List<Item>> =
+        itemsById.values.filter { item -> item.rackId == rackId }.ok()
 
     override suspend fun getItemsBySlot(rackId: String, slotId: String): Result<DomainError, List<Item>> =
-        emptyList<Item>().ok()
+        itemsById.values.filter { item -> item.rackId == rackId && item.slotId == slotId }.ok()
 
-    override suspend fun getItemById(id: String): Result<DomainError, Item?> = null.ok()
+    override suspend fun getItemById(id: String): Result<DomainError, Item?> = itemsById[id].ok()
 
-    override suspend fun searchItems(query: String): Result<DomainError, List<Item>> = emptyList<Item>().ok()
+    override suspend fun searchItems(query: String): Result<DomainError, List<Item>> =
+        itemsById.values.filter { item -> item.name.contains(other = query, ignoreCase = true) }.ok()
 
-    override suspend fun saveItem(item: Item): Result<DomainError, Item> = item.ok()
+    override suspend fun saveItem(item: Item): Result<DomainError, Item> = item.ok().also {
+        itemsById[item.id] = item
+    }
 
-    override suspend fun deleteItem(id: String): Result<DomainError, Boolean> = true.ok()
+    override suspend fun deleteItem(id: String): Result<DomainError, Boolean> =
+        (itemsById.remove(key = id) != null).ok()
 
-    override suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Long> = 1L.ok()
+    override suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Long> =
+        itemsById.values
+            .filter { item -> item.rackId == rackId }
+            .map { item -> item.id }
+            .also { ids -> ids.forEach { id -> itemsById.remove(key = id) } }
+            .size
+            .toLong()
+            .ok()
 
-    override suspend fun clear() = Unit
+    override suspend fun clear() {
+        itemsById.clear()
+    }
+}
+
+private fun assertPersistedOperation(
+    syncOperation: SyncOperation,
+    expectedId: String,
+    expectedEntityType: SyncEntityType,
+    expectedEntityId: String,
+    expectedOperationType: SyncOperationType,
+) {
+    assertEquals(expected = expectedId, actual = syncOperation.id)
+    assertEquals(expected = "account-1", actual = syncOperation.accountId)
+    assertEquals(expected = expectedEntityType, actual = syncOperation.entityType)
+    assertEquals(expected = expectedEntityId, actual = syncOperation.entityId)
+    assertEquals(expected = expectedOperationType, actual = syncOperation.operationType)
+    assertEquals(expected = SyncOperationStatus.Pending, actual = syncOperation.syncStatus)
 }
