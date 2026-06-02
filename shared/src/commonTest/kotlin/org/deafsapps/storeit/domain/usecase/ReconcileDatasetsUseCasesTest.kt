@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.deafsapps.storeit.base.Result
+import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.ok
@@ -39,6 +40,14 @@ class ReconcileDatasetsUseCasesTest {
     }
 
     @Test
+    fun `GIVEN blank account id WHEN keep-remote selected THEN validation error is returned`() = runTest {
+        val result = keepRemoteUseCase(input = "")
+
+        assertTrue(actual = result.isErr)
+        assertTrue(actual = result.failureOrNull() is DomainError.ValidationError)
+    }
+
+    @Test
     fun `GIVEN account id WHEN keep-local selected THEN decision is saved and applied`() = runTest {
         fakeRepository.applyDecisionResult = DataMode.AccountBackedPendingSync.ok()
 
@@ -59,11 +68,36 @@ class ReconcileDatasetsUseCasesTest {
         assertEquals(expected = ReconciliationDecisionType.KeepRemote, actual = fakeRepository.savedDecision?.decisionType)
         assertEquals(expected = ReconciliationDecisionType.KeepRemote, actual = fakeRepository.appliedDecisionType)
     }
+
+    @Test
+    fun `GIVEN decision save fails WHEN keep-local selected THEN error is returned and apply decision is skipped`() = runTest {
+        val expectedError = DomainError.Unknown(message = "save failed")
+        fakeRepository.saveDecisionResult = expectedError.err()
+
+        val result = keepLocalUseCase(input = "account-1")
+
+        assertEquals(expected = expectedError, actual = result.failureOrNull())
+        assertEquals(expected = null, actual = fakeRepository.appliedDecisionType)
+    }
+
+    @Test
+    fun `GIVEN apply decision fails WHEN keep-remote selected THEN error is returned after decision is saved`() = runTest {
+        val expectedError = DomainError.Unknown(message = "apply failed")
+        fakeRepository.applyDecisionResult = expectedError.err()
+
+        val result = keepRemoteUseCase(input = "account-1")
+
+        assertEquals(expected = expectedError, actual = result.failureOrNull())
+        assertEquals(expected = "account-1", actual = fakeRepository.savedDecision?.accountId)
+        assertEquals(expected = ReconciliationDecisionType.KeepRemote, actual = fakeRepository.savedDecision?.decisionType)
+        assertEquals(expected = ReconciliationDecisionType.KeepRemote, actual = fakeRepository.appliedDecisionType)
+    }
 }
 
 private class FakeReconciliationRepository : ReconciliationRepository {
     var savedDecision: ReconciliationDecision? = null
     var appliedDecisionType: ReconciliationDecisionType? = null
+    var saveDecisionResult: Result<DomainError, ReconciliationDecision>? = null
     var applyDecisionResult: Result<DomainError, DataMode> = DataMode.AccountBackedPendingSync.ok()
 
     override suspend fun requiresReconciliation(accountId: String): Result<DomainError, Boolean> = true.ok()
@@ -84,9 +118,12 @@ private class FakeReconciliationRepository : ReconciliationRepository {
 
     override suspend fun saveDecision(
         decision: ReconciliationDecision,
-    ): Result<DomainError, ReconciliationDecision> = decision.ok().also {
-        savedDecision = decision
-    }
+    ): Result<DomainError, ReconciliationDecision> =
+        (saveDecisionResult ?: decision.ok()).also {
+            if (it.isOk) {
+                savedDecision = decision
+            }
+        }
 
     override suspend fun applyDecision(
         accountId: String,

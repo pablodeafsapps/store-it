@@ -7,8 +7,10 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.Result
+import org.deafsapps.storeit.base.err
+import org.deafsapps.storeit.base.failureOrNull
+import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.data.datasource.AccountDatasetDataSource
 import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
@@ -94,6 +96,56 @@ class DefaultReconciliationRepositoryTest {
     }
 
     @Test
+    fun `GIVEN local-only mode with a remote dataset WHEN get reconciliation summary THEN reports remote-only conflict context`() = runTest {
+        fakeReconciliationLocalDatasetStateDataSource.localState = LocalDatasetState(
+            mode = DataMode.LocalOnly,
+            hasPendingChanges = false,
+            lastLocalChangeAt = null,
+        )
+        fakeReconciliationAccountDatasetDataSource.dataset = AccountDataset(
+            accountId = "account-1",
+            datasetVersion = "remote-v3",
+            lastSyncedAt = 70L,
+        )
+
+        val result = sut.getReconciliationSummary(accountId = "account-1")
+
+        val summary = result.getOrNull()
+        assertEquals(expected = false, actual = summary?.hasLocalData)
+        assertEquals(expected = true, actual = summary?.hasRemoteData)
+        assertEquals(expected = DataMode.LocalOnly, actual = summary?.localMode)
+        assertEquals(expected = false, actual = summary?.localPendingChanges)
+        assertEquals(expected = "remote-v3", actual = summary?.remoteDatasetVersion)
+    }
+
+    @Test
+    fun `GIVEN signed-out local copy with no remote dataset WHEN requires reconciliation THEN local data is still considered present`() = runTest {
+        fakeReconciliationLocalDatasetStateDataSource.localState = LocalDatasetState(
+            mode = DataMode.SignedOutWithLocalCopy,
+            accountId = null,
+            hasPendingChanges = false,
+            lastLocalChangeAt = null,
+        )
+        fakeReconciliationAccountDatasetDataSource.dataset = null
+
+        val result = sut.getReconciliationSummary(accountId = "account-1")
+
+        val summary = result.getOrNull()
+        assertEquals(expected = true, actual = summary?.hasLocalData)
+        assertEquals(expected = false, actual = summary?.hasRemoteData)
+    }
+
+    @Test
+    fun `GIVEN local dataset lookup fails WHEN requires reconciliation THEN error is propagated`() = runTest {
+        val expectedError = DomainError.Unknown(message = "local lookup failed")
+        fakeReconciliationLocalDatasetStateDataSource.getLocalDatasetStateResult = expectedError.err()
+
+        val result = sut.requiresReconciliation(accountId = "account-1")
+
+        assertEquals(expected = expectedError, actual = result.failureOrNull())
+    }
+
+    @Test
     fun `GIVEN confirmed decision WHEN save decision THEN decision is returned`() = runTest {
         val decision = ReconciliationDecision(
             accountId = "account-1",
@@ -133,11 +185,13 @@ private class FakeReconciliationAccountDatasetDataSource : AccountDatasetDataSou
 
 private class FakeReconciliationLocalDatasetStateDataSource : LocalDatasetStateDataSource {
     var localState: LocalDatasetState? = null
+    var getLocalDatasetStateResult: Result<DomainError, LocalDatasetState?>? = null
 
     override fun observeLocalDatasetState(): Flow<Result<DomainError, LocalDatasetState?>> =
         flowOf(localState.ok())
 
-    override suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?> = localState.ok()
+    override suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?> =
+        getLocalDatasetStateResult ?: localState.ok()
 
     override suspend fun saveLocalDatasetState(
         localDatasetState: LocalDatasetState,
