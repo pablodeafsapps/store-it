@@ -113,7 +113,7 @@
 
 - [X] T029 [P] [US3] Add keep-local vs keep-remote reconciliation decision and conflict-summary coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/ReconcileDatasetsUseCaseTest.kt`
 - [X] T030 [P] [US3] Add local-only mode and sign-out-to-local-only data-retention coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/domain/usecase/SignOutAccountUseCaseTest.kt`
-- [ ] T031 [P] [US3] Add local-only, signed-out-with-local-copy, and reconciliation presentation coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/LocalModeViewModelTest.kt`
+- [X] T031 [P] [US3] Add local-only, signed-out-with-local-copy, and reconciliation presentation coverage in `shared/src/commonTest/kotlin/org/deafsapps/storeit/presentation/account/viewmodel/LocalModeViewModelTest.kt`
 
 ### Implementation for User Story 3
 
