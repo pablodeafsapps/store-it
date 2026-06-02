@@ -36,6 +36,7 @@ import org.koin.core.annotation.Single
             AccountDatasetDataSource::class,
             LocalDatasetStateDataSource::class,
             SyncStateDataSource::class,
+            AccountRestoreMetadataDataSource::class,
             SyncOperationDataSource::class,
             PhotoSyncScopeDataSource::class,
         ],
@@ -47,6 +48,7 @@ internal class SqlDelightSyncMetadataDataSource(
     AccountDatasetDataSource,
     LocalDatasetStateDataSource,
     SyncStateDataSource,
+    AccountRestoreMetadataDataSource,
     SyncOperationDataSource,
     PhotoSyncScopeDataSource {
 
@@ -248,6 +250,38 @@ internal class SqlDelightSyncMetadataDataSource(
       } catch (exception: StoreItDatabaseException) {
         exception.toUnknownDomainError().err()
       }
+
+  override suspend fun markRestoreSynchronized(
+      accountDataset: AccountDataset,
+      localDatasetState: LocalDatasetState,
+      syncState: SyncState,
+  ): Result<DomainError, Unit> =
+      saveRestoreMetadataTransition(
+          accountDataset = accountDataset,
+          localDatasetState = localDatasetState,
+          syncState = syncState,
+      )
+
+  override suspend fun markRestorePending(
+      localDatasetState: LocalDatasetState,
+      syncState: SyncState,
+  ): Result<DomainError, Unit> =
+      saveRestoreMetadataTransition(
+          accountDataset = null,
+          localDatasetState = localDatasetState,
+          syncState = syncState,
+      )
+
+  override suspend fun markReconciliationRequired(
+      accountDataset: AccountDataset,
+      localDatasetState: LocalDatasetState,
+      syncState: SyncState,
+  ): Result<DomainError, Unit> =
+      saveRestoreMetadataTransition(
+          accountDataset = accountDataset,
+          localDatasetState = localDatasetState,
+          syncState = syncState,
+      )
 
   override suspend fun deleteSyncState(): Result<DomainError, Long> =
       try {
@@ -529,6 +563,42 @@ internal class SqlDelightSyncMetadataDataSource(
         "applied" -> SyncOperationStatus.Applied
         "failed" -> SyncOperationStatus.Failed
         else -> SyncOperationStatus.Pending
+      }
+
+  private fun saveRestoreMetadataTransition(
+      accountDataset: AccountDataset?,
+      localDatasetState: LocalDatasetState,
+      syncState: SyncState,
+  ): Result<DomainError, Unit> =
+      try {
+        databaseProvider.database.storeItDatabaseQueries.transaction {
+          accountDataset?.let { dataset ->
+            databaseProvider.database.storeItDatabaseQueries.upsertRemoteAccountDataset(
+                account_id = dataset.accountId,
+                dataset_version = dataset.datasetVersion,
+                last_synced_at = dataset.lastSyncedAt,
+            )
+          }
+
+          databaseProvider.database.storeItDatabaseQueries.upsertLocalDatasetState(
+              mode = localDatasetState.mode.name,
+              account_id = localDatasetState.accountId,
+              last_local_change_at = localDatasetState.lastLocalChangeAt,
+              last_remote_sync_at = localDatasetState.lastRemoteSyncAt,
+              has_pending_changes = if (localDatasetState.hasPendingChanges) 1 else 0,
+          )
+
+          databaseProvider.database.storeItDatabaseQueries.upsertSyncState(
+              status = syncState.status.name,
+              failure_reason = syncState.failureReason,
+              last_attempt_at = syncState.lastAttemptAt,
+              pending_operation_count = syncState.pendingOperationCount.toLong(),
+          )
+        }
+
+        Unit.ok()
+      } catch (exception: StoreItDatabaseException) {
+        exception.toUnknownDomainError().err()
       }
 
   private fun String.toPhotoSyncStatus(): PhotoSyncStatus =

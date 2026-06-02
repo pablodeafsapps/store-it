@@ -177,6 +177,40 @@ class FirebaseAccountDataRestoreRepositoryTest {
             assertTrue(actual = fakeSlotRestoreGateway.restoredSlots.isEmpty())
             assertTrue(actual = fakeItemRestoreGateway.restoredItems.isEmpty())
         }
+
+    @Test
+    fun `GIVEN local-only data and non-empty remote snapshot WHEN restoreAccountData THEN marks reconciliation required without replacing local data`() =
+        runTest {
+            val session = accountSession()
+            val snapshot = remoteAccountSnapshot()
+            fakeAccountRemoteDataSource.fetchSnapshotResult = snapshot.ok()
+            fakeAccountRestoreMetadataGateway.getLocalDatasetStateResult = LocalDatasetState(
+                mode = DataMode.LocalOnly,
+                accountId = null,
+                hasPendingChanges = true,
+            ).ok()
+            fakeLocalAccountDatasetGateway.loadLocalSnapshotResult = LocalAccountDatasetSnapshot(
+                racks = listOf(
+                    Rack(
+                        id = "local-rack",
+                        name = "Local Rack",
+                    ),
+                ),
+                slots = emptyList(),
+                items = emptyList(),
+            ).ok()
+
+            val result: Result<DomainError, Unit> = sut.restoreAccountData(session = session)
+
+            assertTrue(actual = result.isOk)
+            assertEquals(expected = DataMode.ReconciliationRequired, actual = fakeAccountRestoreMetadataGateway.reconciliationLocalDatasetState?.mode)
+            assertEquals(expected = SyncStatus.BlockedByReconciliation, actual = fakeAccountRestoreMetadataGateway.reconciliationSyncState?.status)
+            assertEquals(expected = snapshot.syncCheckpoint.value, actual = fakeAccountRestoreMetadataGateway.reconciliationAccountDataset?.datasetVersion)
+            assertTrue(actual = fakeRackRestoreGateway.restoredRacks.isEmpty())
+            assertTrue(actual = fakeSlotRestoreGateway.restoredSlots.isEmpty())
+            assertTrue(actual = fakeItemRestoreGateway.restoredItems.isEmpty())
+            assertTrue(actual = fakeAccountRemoteDataSource.appliedMutations.isEmpty())
+        }
 }
 
 private fun accountSession(): AccountSession = AccountSession(
@@ -286,6 +320,9 @@ private class FakeAccountRestoreMetadataGateway : AccountRestoreMetadataGateway 
     var synchronizedSyncState: SyncState? = null
     var pendingLocalDatasetState: LocalDatasetState? = null
     var pendingSyncState: SyncState? = null
+    var reconciliationAccountDataset: AccountDataset? = null
+    var reconciliationLocalDatasetState: LocalDatasetState? = null
+    var reconciliationSyncState: SyncState? = null
 
     override suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?> =
         getLocalDatasetStateResult
@@ -307,6 +344,17 @@ private class FakeAccountRestoreMetadataGateway : AccountRestoreMetadataGateway 
     ): Result<DomainError, Unit> {
         pendingLocalDatasetState = localDatasetState
         pendingSyncState = syncState
+        return Unit.ok()
+    }
+
+    override suspend fun markReconciliationRequired(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit> {
+        reconciliationAccountDataset = accountDataset
+        reconciliationLocalDatasetState = localDatasetState
+        reconciliationSyncState = syncState
         return Unit.ok()
     }
 }

@@ -8,13 +8,11 @@ import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.base.ok
-import org.deafsapps.storeit.data.datasource.AccountDatasetDataSource
+import org.deafsapps.storeit.data.datasource.AccountRestoreMetadataDataSource
 import org.deafsapps.storeit.data.datasource.ItemDataSource
-import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
 import org.deafsapps.storeit.data.datasource.PhotoSyncScopeDataSource
 import org.deafsapps.storeit.data.datasource.RackDataSource
 import org.deafsapps.storeit.data.datasource.SlotDataSource
-import org.deafsapps.storeit.data.datasource.SyncStateDataSource
 import org.deafsapps.storeit.domain.gateway.AccountRestoreMetadataGateway
 import org.deafsapps.storeit.domain.gateway.ItemRestoreGateway
 import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetGateway
@@ -81,37 +79,39 @@ internal class PhotoSyncFeatureRestoreGateway(
 
 @Single(binds = [AccountRestoreMetadataGateway::class])
 internal class AccountSyncFeatureRestoreMetadataGateway(
-    private val accountDatasetDataSource: AccountDatasetDataSource,
-    private val localDatasetStateDataSource: LocalDatasetStateDataSource,
-    private val syncStateDataSource: SyncStateDataSource,
+    private val accountRestoreMetadataDataSource: AccountRestoreMetadataDataSource,
 ) : AccountRestoreMetadataGateway {
 
     override suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?> =
-        localDatasetStateDataSource.getLocalDatasetState()
+        accountRestoreMetadataDataSource.getLocalDatasetState()
 
     override suspend fun markRestoreSynchronized(
         accountDataset: AccountDataset,
         localDatasetState: LocalDatasetState,
         syncState: SyncState,
-    ): Result<DomainError, Unit> =
-        accountDatasetDataSource.saveAccountDataset(accountDataset = accountDataset)
-            .flatMap {
-                localDatasetStateDataSource.saveLocalDatasetState(localDatasetState = localDatasetState)
-            }
-            .flatMap {
-                syncStateDataSource.saveSyncState(syncState = syncState)
-            }
-            .map { Unit }
+    ): Result<DomainError, Unit> = accountRestoreMetadataDataSource.markRestoreSynchronized(
+        accountDataset = accountDataset,
+        localDatasetState = localDatasetState,
+        syncState = syncState,
+    )
 
     override suspend fun markRestorePending(
         localDatasetState: LocalDatasetState,
         syncState: SyncState,
-    ): Result<DomainError, Unit> =
-        localDatasetStateDataSource.saveLocalDatasetState(localDatasetState = localDatasetState)
-            .flatMap {
-                syncStateDataSource.saveSyncState(syncState = syncState)
-            }
-            .map { Unit }
+    ): Result<DomainError, Unit> = accountRestoreMetadataDataSource.markRestorePending(
+        localDatasetState = localDatasetState,
+        syncState = syncState,
+    )
+
+    override suspend fun markReconciliationRequired(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit> = accountRestoreMetadataDataSource.markReconciliationRequired(
+        accountDataset = accountDataset,
+        localDatasetState = localDatasetState,
+        syncState = syncState,
+    )
 }
 
 @Single(binds = [LocalAccountDatasetGateway::class])

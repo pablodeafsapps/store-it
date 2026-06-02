@@ -86,6 +86,15 @@ interface AccountRestoreMetadataGateway {
         localDatasetState: LocalDatasetState,
         syncState: SyncState,
     ): Result<DomainError, Unit>
+
+    /**
+     * Persists reconciliation-required state when both local-only and remote datasets contain data.
+     */
+    suspend fun markReconciliationRequired(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit>
 }
 
 /**

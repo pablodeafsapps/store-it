@@ -11,6 +11,7 @@ import org.deafsapps.storeit.base.err
 import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.ok
+import org.deafsapps.storeit.data.datasource.AccountRestoreMetadataDataSource
 import org.deafsapps.storeit.data.datasource.AccountDatasetDataSource
 import org.deafsapps.storeit.data.datasource.ItemDataSource
 import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
@@ -109,13 +110,9 @@ class FeatureAccountRestoreGatewaysTest {
     @Test
     fun `GIVEN synchronized restore metadata WHEN markRestoreSynchronized THEN saves account dataset local state and sync state`() =
         runTest {
-            val accountDatasetDataSource = FakeAccountDatasetDataSource()
-            val localDatasetStateDataSource = FakeLocalDatasetStateDataSource()
-            val syncStateDataSource = FakeSyncStateDataSource()
+            val accountRestoreMetadataDataSource = FakeAccountRestoreMetadataDataSource()
             val sut = AccountSyncFeatureRestoreMetadataGateway(
-                accountDatasetDataSource = accountDatasetDataSource,
-                localDatasetStateDataSource = localDatasetStateDataSource,
-                syncStateDataSource = syncStateDataSource,
+                accountRestoreMetadataDataSource = accountRestoreMetadataDataSource,
             )
             val accountDataset = AccountDataset(
                 accountId = "account-1",
@@ -135,9 +132,9 @@ class FeatureAccountRestoreGatewaysTest {
             )
 
             assertTrue(actual = result.isOk)
-            assertEquals(expected = accountDataset, actual = accountDatasetDataSource.savedAccountDataset)
-            assertEquals(expected = localDatasetState, actual = localDatasetStateDataSource.savedLocalDatasetState)
-            assertEquals(expected = syncState, actual = syncStateDataSource.savedSyncState)
+            assertEquals(expected = accountDataset, actual = accountRestoreMetadataDataSource.savedAccountDataset)
+            assertEquals(expected = localDatasetState, actual = accountRestoreMetadataDataSource.savedLocalDatasetState)
+            assertEquals(expected = syncState, actual = accountRestoreMetadataDataSource.savedSyncState)
         }
 }
 
@@ -318,6 +315,46 @@ private class FakeSyncStateDataSource : SyncStateDataSource {
     }
 
     override suspend fun deleteSyncState(): Result<DomainError, Long> = 0L.ok()
+}
+
+private class FakeAccountRestoreMetadataDataSource : AccountRestoreMetadataDataSource {
+    var savedAccountDataset: AccountDataset? = null
+    var savedLocalDatasetState: LocalDatasetState? = null
+    var savedSyncState: SyncState? = null
+
+    override suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?> =
+        savedLocalDatasetState.ok()
+
+    override suspend fun markRestoreSynchronized(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit> {
+        savedAccountDataset = accountDataset
+        savedLocalDatasetState = localDatasetState
+        savedSyncState = syncState
+        return Unit.ok()
+    }
+
+    override suspend fun markRestorePending(
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit> {
+        savedLocalDatasetState = localDatasetState
+        savedSyncState = syncState
+        return Unit.ok()
+    }
+
+    override suspend fun markReconciliationRequired(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit> {
+        savedAccountDataset = accountDataset
+        savedLocalDatasetState = localDatasetState
+        savedSyncState = syncState
+        return Unit.ok()
+    }
 }
 
 private fun <E, V> Result<E, V>.getOrNullForTest(): V? =

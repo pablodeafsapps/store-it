@@ -3,10 +3,10 @@ package org.deafsapps.storeit.data.repository
 import kotlin.time.Clock
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.err
-import org.deafsapps.storeit.base.failureOrNull
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.map
+import org.deafsapps.storeit.base.onErr
 import org.deafsapps.storeit.data.datasource.AccountRemoteDataSource
 import org.deafsapps.storeit.data.datasource.RemoteAccountSnapshot
 import org.deafsapps.storeit.data.datasource.RemoteDatasetMutation
@@ -46,7 +46,7 @@ internal class FirebaseAccountDataRestoreRepository(
     override suspend fun restoreAccountData(session: AccountSession): Result<DomainError, Unit> {
         val localDatasetStateResult = accountRestoreMetadataGateway.getLocalDatasetState()
         val previousState = localDatasetStateResult.getOrNull()
-        val restoreResult = localDatasetStateResult.flatMap { localDatasetState ->
+        return localDatasetStateResult.flatMap { localDatasetState ->
             accountRemoteDataSource.fetchSnapshot(accountId = session.accountId)
                 .flatMap { snapshot ->
                     validateSnapshot(
@@ -58,16 +58,13 @@ internal class FirebaseAccountDataRestoreRepository(
                         previousState = localDatasetState,
                     )
                 }
-        }
-
-        restoreResult.failureOrNull()?.let { error ->
+        }.onErr { error ->
             markRestorePending(
                 session = session,
                 previousState = previousState,
                 error = error,
             )
         }
-        return restoreResult
     }
 
     private fun validateSnapshot(
@@ -101,7 +98,7 @@ internal class FirebaseAccountDataRestoreRepository(
         snapshot: RemoteAccountSnapshot,
         previousState: LocalDatasetState?,
     ): Result<DomainError, Unit> {
-        if (!shouldBootstrapFromLocal(snapshot = snapshot, previousState = previousState)) {
+        if (previousState?.mode != DataMode.LocalOnly) {
             return applySnapshot(
                 session = session,
                 snapshot = snapshot,
@@ -111,31 +108,71 @@ internal class FirebaseAccountDataRestoreRepository(
 
         return localAccountDatasetGateway.loadLocalSnapshot()
             .flatMap { localSnapshot ->
-                if (localSnapshot.isEmpty()) {
-                    applySnapshot(
-                        session = session,
-                        snapshot = snapshot,
-                        previousState = previousState,
-                    )
-                } else {
-                    bootstrapRemoteFromLocal(
-                        session = session,
-                        localSnapshot = localSnapshot,
-                        previousState = previousState,
-                    )
+                when {
+                    shouldBootstrapFromLocal(snapshot = snapshot, localSnapshot = localSnapshot) -> {
+                        bootstrapRemoteFromLocal(
+                            session = session,
+                            localSnapshot = localSnapshot,
+                            previousState = previousState,
+                        )
+                    }
+
+                    shouldRequireReconciliation(snapshot = snapshot, localSnapshot = localSnapshot) -> {
+                        markReconciliationRequired(
+                            session = session,
+                            snapshot = snapshot,
+                            previousState = previousState,
+                        )
+                    }
+
+                    else -> {
+                        applySnapshot(
+                            session = session,
+                            snapshot = snapshot,
+                            previousState = previousState,
+                        )
+                    }
                 }
             }
     }
 
     private fun shouldBootstrapFromLocal(
         snapshot: RemoteAccountSnapshot,
-        previousState: LocalDatasetState?,
+        localSnapshot: LocalAccountDatasetSnapshot,
     ): Boolean =
-        previousState?.mode == DataMode.LocalOnly &&
-            snapshot.racks.isEmpty() &&
-            snapshot.slots.isEmpty() &&
-            snapshot.items.isEmpty() &&
-            snapshot.photos.isEmpty()
+        snapshot.isEmpty() && !localSnapshot.isEmpty()
+
+    private fun shouldRequireReconciliation(
+        snapshot: RemoteAccountSnapshot,
+        localSnapshot: LocalAccountDatasetSnapshot,
+    ): Boolean =
+        !snapshot.isEmpty() && !localSnapshot.isEmpty()
+
+    private suspend fun markReconciliationRequired(
+        session: AccountSession,
+        snapshot: RemoteAccountSnapshot,
+        previousState: LocalDatasetState?,
+    ): Result<DomainError, Unit> =
+        accountRestoreMetadataGateway.markReconciliationRequired(
+            accountDataset = AccountDataset(
+                accountId = session.accountId,
+                datasetVersion = snapshot.syncCheckpoint.value,
+                lastSyncedAt = snapshot.syncCheckpoint.updatedAt,
+            ),
+            localDatasetState = LocalDatasetState(
+                mode = DataMode.ReconciliationRequired,
+                accountId = session.accountId,
+                lastLocalChangeAt = previousState?.lastLocalChangeAt,
+                lastRemoteSyncAt = snapshot.syncCheckpoint.updatedAt ?: previousState?.lastRemoteSyncAt,
+                hasPendingChanges = previousState?.hasPendingChanges ?: true,
+            ),
+            syncState = SyncState(
+                status = SyncStatus.BlockedByReconciliation,
+                failureReason = "Local and remote datasets both contain data. Reconciliation is required.",
+                lastAttemptAt = snapshot.syncCheckpoint.updatedAt,
+                pendingOperationCount = 0,
+            ),
+        )
 
     private suspend fun bootstrapRemoteFromLocal(
         session: AccountSession,
@@ -261,3 +298,6 @@ private fun LocalAccountDatasetSnapshot.toUpsertMutations(): List<RemoteDatasetM
         slots.forEach { slot -> add(RemoteDatasetMutation.UpsertSlot(slot = slot)) }
         items.forEach { item -> add(RemoteDatasetMutation.UpsertItem(item = item)) }
     }
+
+private fun RemoteAccountSnapshot.isEmpty(): Boolean =
+    racks.isEmpty() && slots.isEmpty() && items.isEmpty() && photos.isEmpty()

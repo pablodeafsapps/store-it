@@ -50,6 +50,27 @@ internal interface SyncStateDataSource {
     suspend fun deleteSyncState(): Result<DomainError, Long>
 }
 
+internal interface AccountRestoreMetadataDataSource {
+    suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?>
+
+    suspend fun markRestoreSynchronized(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit>
+
+    suspend fun markRestorePending(
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit>
+
+    suspend fun markReconciliationRequired(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit>
+}
+
 internal interface SyncOperationDataSource {
     fun observePendingSyncOperations(): Flow<Result<DomainError, List<SyncOperation>>>
 
