@@ -19,7 +19,8 @@ import org.deafsapps.storeit.domain.model.SyncOperationStatus
 import org.deafsapps.storeit.domain.model.SyncOperationType
 import org.deafsapps.storeit.domain.model.SyncStatus
 
-class GetSyncStageUseCaseTest {
+internal class GetSyncStageUseCaseTest {
+
     private lateinit var sut: GetSyncStageUseCase
 
     @BeforeTest

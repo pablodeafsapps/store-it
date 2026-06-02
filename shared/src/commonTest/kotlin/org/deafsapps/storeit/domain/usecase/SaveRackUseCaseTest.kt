@@ -13,7 +13,8 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.fake.FakeRackRepository
 
-class SaveRackUseCaseTest {
+internal class SaveRackUseCaseTest {
+
     private lateinit var sut: SaveRackUseCase
     private lateinit var fakeRackRepository: FakeRackRepository
 

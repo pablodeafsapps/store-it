@@ -19,6 +19,7 @@ import org.deafsapps.storeit.fake.FakeRackRepository
 import org.deafsapps.storeit.fake.FakeSlotRepository
 
 internal class SearchItemsUseCaseTest {
+
     private lateinit var sut: SearchItemsUseCase
     private lateinit var fakeItemRepository: FakeItemRepository
     private lateinit var fakeRackRepository: FakeRackRepository

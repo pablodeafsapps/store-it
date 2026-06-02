@@ -19,7 +19,8 @@ import org.deafsapps.storeit.domain.model.EmailPasswordCredentials
 import org.deafsapps.storeit.domain.model.SessionState
 import org.deafsapps.storeit.domain.repository.AccountRepository
 
-class SignUpAccountUseCaseTest {
+internal class SignUpAccountUseCaseTest {
+
     private lateinit var sut: SignUpAccountUseCase
     private lateinit var fakeAccountRepository: FakeAccountRepository
 

@@ -13,7 +13,8 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.SessionState
 import org.deafsapps.storeit.domain.repository.AccountDataRestoreRepository
 
-class RestoreAccountDataUseCaseTest {
+internal class RestoreAccountDataUseCaseTest {
+
     private lateinit var sut: RestoreAccountDataUseCase
     private lateinit var fakeAccountDataRestoreRepository: FakeAccountDataRestoreRepository
 

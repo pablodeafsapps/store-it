@@ -25,7 +25,8 @@ import org.deafsapps.storeit.domain.model.SyncStatus
 import org.deafsapps.storeit.domain.repository.AccountDataRestoreRepository
 import org.deafsapps.storeit.domain.repository.SyncRepository
 
-class SyncAccountDataUseCasesTest {
+internal class SyncAccountDataUseCasesTest {
+
     private lateinit var resolveAccountSyncStageUseCase: ResolveAccountSyncStageUseCaseType
     private lateinit var retryPendingSyncUseCase: RetryPendingSyncUseCaseType
     private lateinit var catchUpSignedInSyncUseCase: CatchUpSignedInSyncUseCaseType

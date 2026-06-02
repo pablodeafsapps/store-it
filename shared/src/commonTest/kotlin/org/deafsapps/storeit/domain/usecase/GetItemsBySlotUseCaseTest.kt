@@ -13,7 +13,8 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.fake.FakeItemRepository
 
-class GetItemsBySlotUseCaseTest {
+internal class GetItemsBySlotUseCaseTest {
+
     private lateinit var sut: GetItemsBySlotUseCase
     private lateinit var fakeItemRepository: FakeItemRepository
 

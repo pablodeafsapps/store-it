@@ -14,6 +14,7 @@ import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.fake.FakeItemRepository
 
 internal class DeleteItemUseCaseTest {
+
     private lateinit var sut: DeleteItemUseCase
     private lateinit var fakeItemRepository: FakeItemRepository
 

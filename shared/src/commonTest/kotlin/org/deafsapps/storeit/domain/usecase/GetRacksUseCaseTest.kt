@@ -14,7 +14,8 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.fake.FakeRackRepository
 
-class GetRacksUseCaseTest {
+internal class GetRacksUseCaseTest {
+
     private lateinit var sut: GetRacksFlowUseCase
     private lateinit var fakeRackRepository: FakeRackRepository
     private lateinit var result: Result<DomainError, List<Rack>>

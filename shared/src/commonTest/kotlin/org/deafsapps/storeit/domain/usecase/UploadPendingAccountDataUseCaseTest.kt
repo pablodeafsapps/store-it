@@ -19,7 +19,8 @@ import org.deafsapps.storeit.domain.model.SyncState
 import org.deafsapps.storeit.domain.model.SyncStatus
 import org.deafsapps.storeit.domain.repository.SyncRepository
 
-class UploadPendingAccountDataUseCaseTest {
+ internal class UploadPendingAccountDataUseCaseTest {
+
     private lateinit var sut: UploadPendingAccountDataUseCaseType
     private lateinit var fakeSyncRepository: FakeUploadSyncRepository
 

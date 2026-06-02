@@ -20,7 +20,8 @@ import org.deafsapps.storeit.domain.repository.ItemRepository
 import org.deafsapps.storeit.domain.repository.RackRepository
 import org.deafsapps.storeit.domain.repository.SlotRepository
 
-class DeleteRackUseCaseTest {
+internal class DeleteRackUseCaseTest {
+
     private lateinit var sut: DeleteRackUseCaseType
     private lateinit var fakeRackRepository: FakeRackRepository
     private lateinit var fakeSlotRepository: FakeSlotRepository
