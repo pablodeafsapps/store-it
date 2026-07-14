@@ -1,6 +1,7 @@
 import Foundation
 
 enum AppRoute: Hashable, Codable {
+    case account
     case search
     case addRack
     case addItem

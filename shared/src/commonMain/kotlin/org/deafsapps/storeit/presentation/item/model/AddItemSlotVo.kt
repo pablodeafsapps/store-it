@@ -1,10 +1,8 @@
 package org.deafsapps.storeit.presentation.item.model
 
-import androidx.compose.runtime.Immutable
 import org.deafsapps.storeit.presentation.rack.model.RackSlotMarkerVo
 import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 
-@Immutable
 data class AddItemSlotVo(
     val id: String? = null,
     val placementType: SlotPlacementType? = null,

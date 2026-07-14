@@ -13,7 +13,8 @@ import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.fake.FakeItemRepository
 
-class GetItemsBySlotUseCaseTest {
+internal class GetItemsBySlotUseCaseTest {
+
     private lateinit var sut: GetItemsBySlotUseCase
     private lateinit var fakeItemRepository: FakeItemRepository
 
@@ -50,7 +51,7 @@ class GetItemsBySlotUseCaseTest {
 
     @Test
     fun `GIVEN fake returns error WHEN invoke THEN returns same error`() = runTest {
-        fakeItemRepository.getItemsBySlotResult = DomainError.Unknown.err()
+        fakeItemRepository.getItemsBySlotResult = DomainError.Unknown().err()
 
         val result = sut(input = GetItemsBySlotInput(rackId = "r1", slotId = "s1"))
 

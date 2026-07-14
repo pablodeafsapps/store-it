@@ -21,6 +21,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import org.deafsapps.storeit.androidapp.design.backArrowIcon
@@ -41,6 +43,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -48,6 +51,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.ImagePickerDialog
 import org.deafsapps.storeit.androidapp.R
@@ -68,6 +72,7 @@ internal fun ItemDetailScreen(
             override val viewModelStore = ViewModelStore()
         }
     }
+    val snackbarHostState = remember { SnackbarHostState() }
     val viewModel: ItemDetailViewModel = koinViewModel(
         viewModelStoreOwner = viewModelStoreOwner,
         parameters = { parametersOf(itemId) },
@@ -80,7 +85,7 @@ internal fun ItemDetailScreen(
             viewModel.uiEvent.collect { event ->
                 when (event) {
                     is ItemDetailUiEvent.NavigateBack -> onNavigateBack()
-                    is ItemDetailUiEvent.ShowError -> { }
+                    is ItemDetailUiEvent.ShowError -> snackbarHostState.showSnackbar(message = event.message)
                     null -> { }
                 }
             }
@@ -108,6 +113,7 @@ internal fun ItemDetailScreen(
         onDeleteClick = viewModel::onDeleteSelected,
         onDismissDeleteConfirm = viewModel::onDismissDeleteConfirm,
         onConfirmDelete = viewModel::onConfirmDelete,
+        snackbarHostState = snackbarHostState,
     )
 }
 
@@ -128,10 +134,14 @@ private fun ItemDetailScreenContent(
     onDeleteClick: () -> Unit,
     onDismissDeleteConfirm: () -> Unit,
     onConfirmDelete: () -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     var showImagePicker by remember { mutableStateOf(false) }
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -385,5 +395,124 @@ private fun ItemDetailPhotoSection(
                 else stringResource(R.string.photo_select),
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ItemDetailScreenLoadingPreview() {
+    MaterialTheme {
+        ItemDetailScreenContent(
+            uiState = ItemDetailUiState.getDefault(),
+            onNavigateBack = {},
+            onUpdateName = {},
+            onUpdateDescription = {},
+            onUpdateQuantity = {},
+            onUpdateOwner = {},
+            onUpdateTagInput = {},
+            onAddTag = {},
+            onRemoveTag = {},
+            onUpdatePhotoUri = {},
+            onSave = {},
+            onDeleteClick = {},
+            onDismissDeleteConfirm = {},
+            onConfirmDelete = {},
+            snackbarHostState = remember { SnackbarHostState() },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ItemDetailScreenContentPreview() {
+    MaterialTheme {
+        ItemDetailScreenContent(
+            uiState = ItemDetailUiState.getDefault().copy(
+                isLoading = false,
+                name = "Camping stove",
+                description = "Two-burner portable stove",
+                quantity = 1,
+                owner = "Pablo",
+                tags = persistentListOf("camping", "kitchen"),
+                tagInput = "",
+            ),
+            onNavigateBack = {},
+            onUpdateName = {},
+            onUpdateDescription = {},
+            onUpdateQuantity = {},
+            onUpdateOwner = {},
+            onUpdateTagInput = {},
+            onAddTag = {},
+            onRemoveTag = {},
+            onUpdatePhotoUri = {},
+            onSave = {},
+            onDeleteClick = {},
+            onDismissDeleteConfirm = {},
+            onConfirmDelete = {},
+            snackbarHostState = remember { SnackbarHostState() },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ItemDetailScreenDeleteConfirmPreview() {
+    MaterialTheme {
+        ItemDetailScreenContent(
+            uiState = ItemDetailUiState.getDefault().copy(
+                isLoading = false,
+                name = "Camping stove",
+                showDeleteConfirm = true,
+                error = "Unsaved changes need attention.",
+            ),
+            onNavigateBack = {},
+            onUpdateName = {},
+            onUpdateDescription = {},
+            onUpdateQuantity = {},
+            onUpdateOwner = {},
+            onUpdateTagInput = {},
+            onAddTag = {},
+            onRemoveTag = {},
+            onUpdatePhotoUri = {},
+            onSave = {},
+            onDeleteClick = {},
+            onDismissDeleteConfirm = {},
+            onConfirmDelete = {},
+            snackbarHostState = remember { SnackbarHostState() },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ItemDetailScreenSnackbarErrorPreview() {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(key1 = Unit) {
+        snackbarHostState.showSnackbar(message = "Unable to save item right now.")
+    }
+
+    MaterialTheme {
+        ItemDetailScreenContent(
+            uiState = ItemDetailUiState.getDefault().copy(
+                isLoading = false,
+                name = "Camping stove",
+                description = "Two-burner portable stove",
+            ),
+            onNavigateBack = {},
+            onUpdateName = {},
+            onUpdateDescription = {},
+            onUpdateQuantity = {},
+            onUpdateOwner = {},
+            onUpdateTagInput = {},
+            onAddTag = {},
+            onRemoveTag = {},
+            onUpdatePhotoUri = {},
+            onSave = {},
+            onDeleteClick = {},
+            onDismissDeleteConfirm = {},
+            onConfirmDelete = {},
+            snackbarHostState = snackbarHostState,
+        )
     }
 }

@@ -22,15 +22,18 @@ import androidx.navigation3.ui.NavDisplay
 import org.deafsapps.storeit.androidapp.presentation.item.ui.AddItemScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.ItemDetailScreen
 import org.deafsapps.storeit.androidapp.presentation.item.ui.SlotItemsScreen
+import org.deafsapps.storeit.androidapp.presentation.account.ui.AccountScreen
 import org.deafsapps.storeit.androidapp.presentation.search.ui.SearchScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.AddRackScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackBrowseScreen
 import org.deafsapps.storeit.androidapp.presentation.rack.ui.RackListScreen
+import org.deafsapps.storeit.presentation.account.viewmodel.AccountViewModel
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
 import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.deafsapps.storeit.presentation.rack.viewmodel.AddRackViewModel
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackListViewModel
 import org.deafsapps.storeit.presentation.search.viewmodel.SearchViewModel
+import org.deafsapps.storeit.presentation.sync.viewmodel.SyncStatusViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -41,6 +44,9 @@ internal fun StoreItNavDisplay(
     isDarkModeEnabled: Boolean,
     onThemeModeToggle: () -> Unit,
 ) {
+    val accountViewModel: AccountViewModel = koinViewModel()
+    val syncStatusViewModel: SyncStatusViewModel = koinViewModel()
+
     BackHandler {
         if (backStack.size > 1) {
             backStack.removeAt(backStack.lastIndex)
@@ -71,6 +77,8 @@ internal fun StoreItNavDisplay(
                     RackListNavContent(
                         backStack = backStack,
                         rackListViewModel = rackListViewModel,
+                        accountViewModel = accountViewModel,
+                        syncStatusViewModel = syncStatusViewModel,
                         isDarkModeEnabled = isDarkModeEnabled,
                         onThemeModeToggle = onThemeModeToggle,
                     )
@@ -78,6 +86,13 @@ internal fun StoreItNavDisplay(
                 entry<NavScreen.Search> {
                     SearchNavContent(
                         backStack = backStack,
+                    )
+                }
+                entry<NavScreen.Account> {
+                    AccountNavContent(
+                        backStack = backStack,
+                        accountViewModel = accountViewModel,
+                        syncStatusViewModel = syncStatusViewModel,
                     )
                 }
                 entry<NavScreen.AddRack> {
@@ -169,10 +184,14 @@ internal fun StoreItNavDisplay(
 private fun RackListNavContent(
     backStack: NavBackStack<NavKey>,
     rackListViewModel: () -> RackListViewModel,
+    accountViewModel: AccountViewModel,
+    syncStatusViewModel: SyncStatusViewModel,
     isDarkModeEnabled: Boolean,
     onThemeModeToggle: () -> Unit,
 ) {
     val uiState by rackListViewModel().uiState.collectAsStateWithLifecycle()
+    val accountUiState by accountViewModel.uiState.collectAsStateWithLifecycle()
+    val syncUiState by syncStatusViewModel.uiState.collectAsStateWithLifecycle()
     RackListScreen(
         uiState = uiState,
         uiEvent = { rackListViewModel().uiEvent },
@@ -182,8 +201,38 @@ private fun RackListNavContent(
         onNavigateToRackDetail = { id -> backStack.add(NavScreen.RackDetail(id)) },
         onNavigateToAddItem = { backStack.add(NavScreen.AddItem) },
         onNavigateToSearch = { backStack.add(NavScreen.Search) },
+        onNavigateToAccount = { backStack.add(NavScreen.Account) },
+        isAccountAuthenticated = accountUiState.isAuthenticated,
+        accountEmail = accountUiState.accountEmail,
+        isAccountReady = syncUiState.isDataBackedUp,
+        isRestoreInProgress = syncUiState.isRestoreInProgress,
+        hasPendingSyncWork = syncUiState.hasPendingWork,
+        hasAccountAttentionState = syncUiState.hasAttentionState,
         isDarkModeEnabled = isDarkModeEnabled,
         onThemeModeToggle = onThemeModeToggle,
+    )
+}
+
+@Composable
+private fun AccountNavContent(
+    backStack: NavBackStack<NavKey>,
+    accountViewModel: AccountViewModel,
+    syncStatusViewModel: SyncStatusViewModel,
+) {
+    val accountUiState by accountViewModel.uiState.collectAsStateWithLifecycle()
+    val syncUiState by syncStatusViewModel.uiState.collectAsStateWithLifecycle()
+
+    AccountScreen(
+        accountUiState = accountUiState,
+        syncUiState = syncUiState,
+        onSelectSignIn = accountViewModel::selectSignInMode,
+        onSelectSignUp = accountViewModel::selectSignUpMode,
+        onEmailChange = accountViewModel::onEmailInputChanged,
+        onPasswordChange = accountViewModel::onPasswordInputChanged,
+        onSubmitCredentials = accountViewModel::submitCredentials,
+        onSignOut = accountViewModel::signOut,
+        onRetryRestore = syncStatusViewModel::retry,
+        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
     )
 }
 
@@ -210,12 +259,12 @@ private fun SearchNavContent(
     SearchScreen(
         uiState = uiState,
         onQueryChange = searchViewModel::onQueryChange,
-        onItemSelected = { placement ->
+        onItemSelected = { result ->
             backStack.add(
                 NavScreen.ItemDetail(
-                    itemId = placement.item.id,
-                    rackId = placement.item.rackId,
-                    slotId = placement.item.slotId,
+                    itemId = result.itemId,
+                    rackId = result.rackId,
+                    slotId = result.slotId,
                     fromSearch = true,
                 ),
             )

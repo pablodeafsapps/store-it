@@ -1,17 +1,16 @@
 package org.deafsapps.storeit.presentation.item.model
 
-import androidx.compose.runtime.Immutable
-import org.deafsapps.storeit.domain.model.Item
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
-@Immutable
 data class SlotItemsUiState(
-    val items: List<Item>,
+    val items: ImmutableList<ItemSummaryVo>,
     val isLoading: Boolean,
     val error: String?,
 ) {
     companion object {
         fun getDefault(): SlotItemsUiState = SlotItemsUiState(
-            items = emptyList(),
+            items = persistentListOf(),
             isLoading = true,
             error = null,
         )

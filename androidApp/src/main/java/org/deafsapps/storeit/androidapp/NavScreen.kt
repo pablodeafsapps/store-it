@@ -12,6 +12,9 @@ internal sealed interface NavScreen : NavKey {
     data object Search : NavScreen
 
     @Serializable
+    data object Account : NavScreen
+
+    @Serializable
     data object AddRack : NavScreen
 
     @Serializable

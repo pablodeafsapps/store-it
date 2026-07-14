@@ -1,8 +1,5 @@
 package org.deafsapps.storeit.domain.model
 
-import androidx.compose.runtime.Stable
-
-@Stable
 /**
  * Combines an [Item] with the rack and slot information needed by search results.
  */

@@ -1,8 +1,8 @@
 package org.deafsapps.storeit.presentation.item.model
 
-import androidx.compose.runtime.Immutable
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
-@Immutable
 data class ItemDetailUiState(
     val isLoading: Boolean,
     val isSaving: Boolean,
@@ -11,7 +11,7 @@ data class ItemDetailUiState(
     val description: String,
     val quantity: Int?,
     val owner: String,
-    val tags: List<String>,
+    val tags: ImmutableList<String>,
     val tagInput: String,
     val photoUri: String?,
     val showDeleteConfirm: Boolean,
@@ -25,7 +25,7 @@ data class ItemDetailUiState(
             description = "",
             quantity = null,
             owner = "",
-            tags = emptyList(),
+            tags = persistentListOf(),
             tagInput = "",
             photoUri = null,
             showDeleteConfirm = false,

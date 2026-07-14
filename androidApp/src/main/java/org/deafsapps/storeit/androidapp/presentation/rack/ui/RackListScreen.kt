@@ -46,12 +46,14 @@ import org.deafsapps.storeit.androidapp.design.Dimens
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import org.deafsapps.storeit.androidapp.R
-import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.androidapp.presentation.account.ui.AccountStatusAvatar
 import org.deafsapps.storeit.presentation.rack.model.RackListUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackListUiState
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,11 +61,18 @@ internal fun RackListScreen(
     uiState: RackListUiState,
     uiEvent: () -> Flow<RackListUiEvent?>,
     onAddRackSelect: () -> Unit,
-    onRackSelected: (Rack) -> Unit,
+    onRackSelected: (RackSummaryVo) -> Unit,
     onNavigateToAddRack: () -> Unit,
     onNavigateToRackDetail: (String) -> Unit,
     onNavigateToAddItem: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    onNavigateToAccount: () -> Unit = {},
+    isAccountAuthenticated: Boolean = false,
+    accountEmail: String? = null,
+    isAccountReady: Boolean = false,
+    isRestoreInProgress: Boolean = false,
+    hasPendingSyncWork: Boolean = false,
+    hasAccountAttentionState: Boolean = false,
     isDarkModeEnabled: Boolean = false,
     onThemeModeToggle: () -> Unit = {},
 ) {
@@ -86,6 +95,21 @@ internal fun RackListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.rack_list_title)) },
                 actions = {
+                    if (isAccountAuthenticated) {
+                        IconButton(
+                            onClick = onNavigateToAccount,
+                            modifier = Modifier.testTag("rackListAccountStatusButton"),
+                        ) {
+                            AccountStatusAvatar(
+                                accountEmail = accountEmail,
+                                isAuthenticated = isAccountAuthenticated,
+                                isAccountReady = isAccountReady,
+                                isRestoreInProgress = isRestoreInProgress,
+                                hasPendingSyncWork = hasPendingSyncWork,
+                                hasAttentionState = hasAccountAttentionState,
+                            )
+                        }
+                    }
                     var showMenu by remember { mutableStateOf(false) }
                     IconButton(
                         onClick = { showMenu = true },
@@ -103,6 +127,14 @@ internal fun RackListScreen(
                             onClick = {
                                 showMenu = false
                                 onNavigateToAddItem()
+                            },
+                        )
+                        DropdownMenuItem(
+                            modifier = Modifier.testTag("rackListAccountMenuItem"),
+                            text = { Text(stringResource(R.string.rack_list_overflow_account)) },
+                            onClick = {
+                                showMenu = false
+                                onNavigateToAccount()
                             },
                         )
                         DropdownMenuItem(
@@ -246,7 +278,7 @@ private fun EmptyState(
 
 @Composable
 private fun RackListItem(
-    rack: Rack,
+    rack: RackSummaryVo,
     onClick: () -> Unit,
 ) {
     Card(
@@ -288,18 +320,16 @@ private fun RackListItem(
 @Preview(showBackground = true)
 @Composable
 private fun RackListScreenPreview() {
-    val sampleRacks = listOf(
-        Rack(
+    val sampleRacks = persistentListOf(
+        RackSummaryVo(
             id = "1",
             name = "Garage shelf",
-            description = "Main storage shelf in garage",
             location = "Garage",
             photoUri = null,
         ),
-        Rack(
+        RackSummaryVo(
             id = "2",
             name = "Kitchen pantry",
-            description = "Pantry in the kitchen",
             location = "Kitchen",
             photoUri = null,
         )
@@ -330,7 +360,7 @@ private fun RackListScreenEmptyPreview() {
     MaterialTheme {
         RackListScreen(
             uiState = RackListUiState(
-                racks = emptyList(),
+                racks = persistentListOf(),
                 isLoading = false,
                 error = null
             ),
@@ -353,7 +383,7 @@ private fun RackListScreenLoadingPreview() {
     MaterialTheme {
         RackListScreen(
             uiState = RackListUiState(
-                racks = emptyList(),
+                racks = persistentListOf(),
                 isLoading = true,
                 error = null
             ),

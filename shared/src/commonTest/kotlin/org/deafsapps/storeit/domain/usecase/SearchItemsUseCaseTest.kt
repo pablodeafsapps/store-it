@@ -19,6 +19,7 @@ import org.deafsapps.storeit.fake.FakeRackRepository
 import org.deafsapps.storeit.fake.FakeSlotRepository
 
 internal class SearchItemsUseCaseTest {
+
     private lateinit var sut: SearchItemsUseCase
     private lateinit var fakeItemRepository: FakeItemRepository
     private lateinit var fakeRackRepository: FakeRackRepository
@@ -83,7 +84,7 @@ internal class SearchItemsUseCaseTest {
 
     @Test
     fun `GIVEN search fails WHEN invoke THEN returns error`() = runTest {
-        fakeItemRepository.searchItemsResult = DomainError.Unknown.err()
+        fakeItemRepository.searchItemsResult = DomainError.Unknown().err()
 
         val result = sut(input = "q")
 
@@ -107,7 +108,7 @@ internal class SearchItemsUseCaseTest {
         fakeRackRepository.saveRack(Rack(id = "r1", name = "R"))
         fakeItemRepository.searchItemsResult =
             listOf(Item(id = "i1", rackId = "r1", slotId = "s1", name = "Box")).ok()
-        fakeSlotRepository.getSlotsByRackResult = DomainError.Unknown.err()
+        fakeSlotRepository.getSlotsByRackResult = DomainError.Unknown().err()
 
         val result = sut(input = "box")
 

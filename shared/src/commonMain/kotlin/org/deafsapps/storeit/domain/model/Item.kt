@@ -1,9 +1,7 @@
 package org.deafsapps.storeit.domain.model
 
-import androidx.compose.runtime.Stable
 import kotlin.time.Clock
 
-@Stable
 /**
  * Represents an item stored in a rack slot.
  */
@@ -21,7 +19,6 @@ interface Item {
     val updatedAt: Long?
 }
 
-@Stable
 internal data class ItemModel(
     override val id: String,
     override val rackId: String,

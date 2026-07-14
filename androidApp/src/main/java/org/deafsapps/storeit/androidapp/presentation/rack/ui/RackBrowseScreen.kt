@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -44,6 +45,8 @@ import org.deafsapps.storeit.androidapp.design.Dimens
 import org.deafsapps.storeit.androidapp.design.backArrowIcon
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiEvent
 import org.deafsapps.storeit.presentation.rack.model.RackDetailUiState
+import org.deafsapps.storeit.presentation.rack.model.RackSlotMarkerVo
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 import org.deafsapps.storeit.presentation.rack.viewmodel.RackDetailViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -278,3 +281,87 @@ private data class PendingDragConfirmation(
     val finalXRel: Float,
     val finalYRel: Float,
 )
+
+@Preview(showBackground = true)
+@Composable
+private fun RackBrowseScreenLoadingPreview() {
+    MaterialTheme {
+        RackBrowseContent(
+            uiState = RackDetailUiState.getDefault().copy(isLoading = true),
+            onNavigateBack = {},
+            onImageTap = { _, _ -> },
+            onEditSelected = {},
+            onRemoveRackSelected = {},
+            onUpdateEditName = {},
+            onUpdateEditDescription = {},
+            onUpdateEditLocation = {},
+            onDismissEditDialog = {},
+            onSaveRackEdits = {},
+            onDismissDeleteConfirm = {},
+            onConfirmDeleteRack = {},
+            onSlotMarkerDrag = { _, _, _ -> },
+            onSaveSlotMarkerPosition = { _, _, _ -> },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackBrowseScreenContentPreview() {
+    MaterialTheme {
+        RackBrowseContent(
+            uiState = RackDetailUiState.getDefault().copy(
+                rack = RackSummaryVo(
+                    id = "rack-1",
+                    name = "Garage shelf",
+                    location = "Garage",
+                    photoUri = null,
+                ),
+                slots = kotlinx.collections.immutable.persistentListOf(
+                    RackSlotMarkerVo(id = "slot-1", xRel = 0.3f, yRel = 0.4f),
+                    RackSlotMarkerVo(id = "slot-2", xRel = 0.7f, yRel = 0.5f),
+                ),
+                isLoading = false,
+            ),
+            onNavigateBack = {},
+            onImageTap = { _, _ -> },
+            onEditSelected = {},
+            onRemoveRackSelected = {},
+            onUpdateEditName = {},
+            onUpdateEditDescription = {},
+            onUpdateEditLocation = {},
+            onDismissEditDialog = {},
+            onSaveRackEdits = {},
+            onDismissDeleteConfirm = {},
+            onConfirmDeleteRack = {},
+            onSlotMarkerDrag = { _, _, _ -> },
+            onSaveSlotMarkerPosition = { _, _, _ -> },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackBrowseScreenErrorPreview() {
+    MaterialTheme {
+        RackBrowseContent(
+            uiState = RackDetailUiState.getDefault().copy(
+                isLoading = false,
+                error = "Rack data could not be loaded.",
+            ),
+            onNavigateBack = {},
+            onImageTap = { _, _ -> },
+            onEditSelected = {},
+            onRemoveRackSelected = {},
+            onUpdateEditName = {},
+            onUpdateEditDescription = {},
+            onUpdateEditLocation = {},
+            onDismissEditDialog = {},
+            onSaveRackEdits = {},
+            onDismissDeleteConfirm = {},
+            onConfirmDeleteRack = {},
+            onSlotMarkerDrag = { _, _, _ -> },
+            onSaveSlotMarkerPosition = { _, _, _ -> },
+        )
+    }
+}

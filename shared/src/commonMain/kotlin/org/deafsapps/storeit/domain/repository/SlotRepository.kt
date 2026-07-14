@@ -21,7 +21,7 @@ interface SlotRepository {
     /**
      * Deletes every slot defined for the given rack.
      */
-    suspend fun deleteByRack(rackId: String): Result<DomainError, Unit>
+    suspend fun deleteByRack(rackId: String): Result<DomainError, Long>
 
     /**
      * Removes all stored slots.

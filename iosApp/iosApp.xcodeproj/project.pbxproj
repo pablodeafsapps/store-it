@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		30BF7E637F28B40F9B1F0E1C /* Pods_iosApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5BEF69C05528A20783F5D21 /* Pods_iosApp.framework */; };
+		6E31EF7D2FA1688200CC05C3 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6E31EF7C2FA1688200CC05C3 /* FirebaseAnalytics */; };
+		6E31EF7F2FA1688200CC05C3 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6E31EF7E2FA1688200CC05C3 /* FirebaseAnalyticsCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		6ED24F392F58C48300972998 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,9 +30,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		13A543D836164274CBFE9503 /* Pods-iosApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.debug.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.debug.xcconfig"; sourceTree = "<group>"; };
 		6ED24F332F58C48300972998 /* StoreItUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StoreItUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6ED24F422F58D47900972998 /* StoreItUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StoreItUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6851826254FA7FE45543E40 /* StoreIt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StoreIt.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C757D7E27BB3D9DFF8F3874F /* Pods-iosApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iosApp.release.xcconfig"; path = "Target Support Files/Pods-iosApp/Pods-iosApp.release.xcconfig"; sourceTree = "<group>"; };
+		F5BEF69C05528A20783F5D21 /* Pods_iosApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iosApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -84,6 +93,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6E31EF7D2FA1688200CC05C3 /* FirebaseAnalytics in Frameworks */,
+				6E31EF7F2FA1688200CC05C3 /* FirebaseAnalyticsCore in Frameworks */,
+				30BF7E637F28B40F9B1F0E1C /* Pods_iosApp.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +110,8 @@
 				6ED24F342F58C48300972998 /* StoreItUITests */,
 				6ED24F432F58D47A00972998 /* StoreItUnitTests */,
 				300CF56701CCA7AEE04E9287 /* Products */,
+				AF2A950A7C5532D3B13B2EFF /* Pods */,
+				9C6384193600A53FC8F43040 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -109,6 +123,23 @@
 				6ED24F422F58D47900972998 /* StoreItUnitTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		9C6384193600A53FC8F43040 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F5BEF69C05528A20783F5D21 /* Pods_iosApp.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		AF2A950A7C5532D3B13B2EFF /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				13A543D836164274CBFE9503 /* Pods-iosApp.debug.xcconfig */,
+				C757D7E27BB3D9DFF8F3874F /* Pods-iosApp.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -131,8 +162,6 @@
 				6ED24F342F58C48300972998 /* StoreItUITests */,
 			);
 			name = StoreItUITests;
-			packageProductDependencies = (
-			);
 			productName = StoreItUITests;
 			productReference = 6ED24F332F58C48300972998 /* StoreItUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -154,8 +183,6 @@
 				6ED24F432F58D47A00972998 /* StoreItUnitTests */,
 			);
 			name = StoreItUnitTests;
-			packageProductDependencies = (
-			);
 			productName = StoreItUnitTests;
 			productReference = 6ED24F422F58D47900972998 /* StoreItUnitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -164,10 +191,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4180768A51ADADFBAF7C892A /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
+				B8D1818FB6CC166AD395648F /* [CP] Check Pods Manifest.lock */,
 				814607971C87044708278E7D /* Compile Kotlin Framework */,
 				7A26321BF314EC43389642BA /* Sources */,
 				EF3AE78E9418BED1F04B1119 /* Frameworks */,
 				214A7F36FE4EE23F03D4ABFF /* Resources */,
+				2DBBA12AF61C0A7BE4A74D64 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -178,6 +207,8 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				6E31EF7C2FA1688200CC05C3 /* FirebaseAnalytics */,
+				6E31EF7E2FA1688200CC05C3 /* FirebaseAnalyticsCore */,
 			);
 			productName = iosApp;
 			productReference = A6851826254FA7FE45543E40 /* StoreIt.app */;
@@ -215,6 +246,9 @@
 			);
 			mainGroup = 057F658966662E6D1A4E4AAF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6E31EF7B2FA1688200CC05C3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 300CF56701CCA7AEE04E9287 /* Products */;
 			projectDirPath = "";
@@ -252,6 +286,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		2DBBA12AF61C0A7BE4A74D64 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-iosApp/Pods-iosApp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		814607971C87044708278E7D /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -270,6 +325,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\nif [ \"$PLATFORM_NAME\" = \"iphonesimulator\" ]; then\n  if [ -n \"$NATIVE_ARCH_ACTUAL\" ]; then\n    export ARCHS=\"$NATIVE_ARCH_ACTUAL\"\n  elif echo \"$ARCHS\" | grep -q \"arm64\"; then\n    export ARCHS=\"arm64\"\n  fi\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode -Pcompose.ios.resources.platform=\"$PLATFORM_NAME\" -Pcompose.ios.resources.archs=\"$ARCHS\"\n";
+		};
+		B8D1818FB6CC166AD395648F /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-iosApp-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -311,14 +388,14 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-			6ED24F3C2F58C48300972998 /* Debug */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
-					CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 1;
-					ENABLE_USER_SCRIPT_SANDBOXING = NO;
-					"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
-					GENERATE_INFOPLIST_FILE = YES;
+		6ED24F3C2F58C48300972998 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.deafsapps.storeit.StoreItUITests;
@@ -333,14 +410,14 @@
 			};
 			name = Debug;
 		};
-			6ED24F3D2F58C48300972998 /* Release */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
-					CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 1;
-					ENABLE_USER_SCRIPT_SANDBOXING = NO;
-					"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
-					GENERATE_INFOPLIST_FILE = YES;
+		6ED24F3D2F58C48300972998 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.deafsapps.storeit.StoreItUITests;
@@ -355,15 +432,15 @@
 			};
 			name = Release;
 		};
-			6ED24F492F58D47A00972998 /* Debug */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
-					BUNDLE_LOADER = "$(TEST_HOST)";
-					CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 1;
-					ENABLE_USER_SCRIPT_SANDBOXING = NO;
-					"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
-					GENERATE_INFOPLIST_FILE = YES;
+		6ED24F492F58D47A00972998 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.deafsapps.storeit.StoreItUnitTests;
@@ -378,15 +455,15 @@
 			};
 			name = Debug;
 		};
-			6ED24F4A2F58D47A00972998 /* Release */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
-					BUNDLE_LOADER = "$(TEST_HOST)";
-					CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 1;
-					ENABLE_USER_SCRIPT_SANDBOXING = NO;
-					"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
-					GENERATE_INFOPLIST_FILE = YES;
+		6ED24F4A2F58D47A00972998 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.deafsapps.storeit.StoreItUnitTests;
@@ -467,19 +544,20 @@
 			};
 			name = Debug;
 		};
-			CE827B4E3B6F77B19B0436DB /* Release */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
+		CE827B4E3B6F77B19B0436DB /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C757D7E27BB3D9DFF8F3874F /* Pods-iosApp.release.xcconfig */;
+			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-					DEVELOPMENT_TEAM = "${TEAM_ID}";
-					ENABLE_USER_SCRIPT_SANDBOXING = NO;
-					ENABLE_PREVIEWS = YES;
-					"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
-					GENERATE_INFOPLIST_FILE = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Store it!";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -560,19 +638,20 @@
 			};
 			name = Release;
 		};
-			FB92326B40D2F80B07187046 /* Debug */ = {
-				isa = XCBuildConfiguration;
-				buildSettings = {
+		FB92326B40D2F80B07187046 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 13A543D836164274CBFE9503 /* Pods-iosApp.debug.xcconfig */;
+			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-					DEVELOPMENT_TEAM = "${TEAM_ID}";
-					ENABLE_USER_SCRIPT_SANDBOXING = NO;
-					ENABLE_PREVIEWS = YES;
-					"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
-					GENERATE_INFOPLIST_FILE = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Store it!";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -634,6 +713,30 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6E31EF7B2FA1688200CC05C3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6E31EF7C2FA1688200CC05C3 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6E31EF7B2FA1688200CC05C3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		6E31EF7E2FA1688200CC05C3 /* FirebaseAnalyticsCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6E31EF7B2FA1688200CC05C3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalyticsCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B5F92CDA5283E5182717A718 /* Project object */;
 }

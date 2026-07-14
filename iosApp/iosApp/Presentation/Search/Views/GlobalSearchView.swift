@@ -4,7 +4,7 @@ import Shared
 struct GlobalSearchView: View {
     let uiState: SearchUiState
     let onQueryChange: (String) -> Void
-    let onItemSelected: (ItemWithPlacement) -> Void
+    let onItemSelected: (SearchResultVo) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -33,12 +33,12 @@ struct GlobalSearchView: View {
                         .accessibilityIdentifier("searchScreenNoResults")
                     Spacer()
                 } else {
-                    List(uiState.results, id: \.item.id) { row in
+                    List(uiState.results, id: \.itemId) { row in
                         Button {
                             onItemSelected(row)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(row.item.name)
+                                Text(row.itemName)
                                     .font(.headline)
                                     .foregroundColor(.primary)
                                 Text(String(format: NSLocalizedString("search_result_rack_prefix", comment: ""), row.rackName))
@@ -50,7 +50,7 @@ struct GlobalSearchView: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .accessibilityIdentifier("searchResultRow_\(row.item.id)")
+                        .accessibilityIdentifier("searchResultRow_\(row.itemId)")
                     }
                     .accessibilityIdentifier("searchScreenResults")
                 }

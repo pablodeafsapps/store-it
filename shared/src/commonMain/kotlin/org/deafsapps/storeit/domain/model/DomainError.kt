@@ -1,5 +1,6 @@
 package org.deafsapps.storeit.domain.model
 
+import kotlinx.coroutines.CancellationException
 import org.deafsapps.storeit.base.Error
 
 /**
@@ -7,12 +8,36 @@ import org.deafsapps.storeit.base.Error
  */
 sealed interface DomainError : Error {
     /**
+     * Signals that authentication failed for the provided account details.
+     */
+    data class AuthenticationFailed(
+        override val message: String = "Authentication failed",
+        override val cause: Throwable? = null,
+    ) : DomainError
+
+    /**
+     * Signals that a required external service is unavailable or temporarily failing.
+     */
+    data class ServiceUnavailable(
+        override val message: String = "Service is temporarily unavailable",
+        override val cause: Throwable? = null,
+    ) : DomainError
+
+    /**
+     * Signals that an external dependency is not configured correctly for this build.
+     */
+    data class ConfigurationError(
+        override val message: String = "Service is not configured correctly",
+        override val cause: Throwable? = null,
+    ) : DomainError
+
+    /**
      * Signals an unexpected failure that could not be mapped to a more specific domain error.
      */
-    data object Unknown : DomainError {
-        override val message: String = "Unknown error"
-        override val cause: Throwable? = null
-    }
+    data class Unknown(
+        override val message: String = "Unknown error",
+        override val cause: Throwable? = null,
+    ) : DomainError
 
     /**
      * Signals that a requested resource does not exist.
@@ -30,4 +55,17 @@ sealed interface DomainError : Error {
             field?.let { "Validation error for field '$it': $reason" } ?: "Validation error: $reason"
         override val cause: Throwable? = null
     }
+}
+
+internal fun Throwable.toUnknownDomainError(
+    message: String = this.message ?: "Unknown error",
+): DomainError.Unknown {
+    if (this is CancellationException) {
+        throw this
+    }
+
+    return DomainError.Unknown(
+        message = message,
+        cause = this,
+    )
 }

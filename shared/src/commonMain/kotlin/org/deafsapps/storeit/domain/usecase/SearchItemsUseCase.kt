@@ -3,9 +3,9 @@ package org.deafsapps.storeit.domain.usecase
 import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.UseCase
 import org.deafsapps.storeit.base.err
+import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.base.ok
-import org.deafsapps.storeit.base.suspendFlatMap
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.domain.model.ItemWithPlacement
@@ -27,7 +27,7 @@ internal class SearchItemsUseCase(
 ) : SearchItemsUseCaseType {
     override suspend fun invoke(input: String): Result<DomainError, List<ItemWithPlacement>> =
         itemRepository.searchItems(query = input)
-            .suspendFlatMap(::enrichSearchResults)
+            .flatMap { items -> enrichSearchResults(items = items) }
 
     private suspend fun enrichSearchResults(items: List<Item>): Result<DomainError, List<ItemWithPlacement>> {
         if (items.isEmpty()) return emptyList<ItemWithPlacement>().ok()

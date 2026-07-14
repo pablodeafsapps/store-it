@@ -9,6 +9,13 @@ This document defines how agents (humans or tools) should reason about, extend, 
 
 The target audience is experienced Android engineers building or reviewing a KMP codebase.
 
+## Skill And Rule Sources
+
+- Canonical project-owned skills live under `.agents/skills/`.
+- Engine-specific overlays may also exist under `.cursor/skills/`, `.cursor/rules/`, and `.claude/commands/`.
+- User-level fallback skills may exist under `/Users/pablo/.codex/skills/`.
+- When the same workflow or guidance exists in multiple places, prefer `.agents/skills/` as the authoritative project source and keep the engine-specific copies aligned to it.
+
 ---
 
 ## 1. High-Level System Shape
@@ -127,6 +134,10 @@ The multiplatform module (`:shared`) is configured roughly as:
 - Data depends on Domain and infrastructure abstractions/platform APIs (via `expect` or injected interfaces).
 - Presentation depends on Domain (and optionally Data when the team explicitly decides to collapse them).
 - UI depends only on Presentation and **shared domain types exposed as public interfaces** from `:shared` (not internal domain implementations).
+- Cross-feature communication should use gateway interfaces when code must stay modular-ready. Gateway interfaces describe a capability needed by another feature and live in a stable shared/domain/core boundary. Koin resolves the concrete implementation provided by the feature that owns the data or behaviour.
+- Gateway implementations are feature-owned façades, not persistence adapters. Name them by feature ownership and capability, for example `RackFeatureRestoreGateway`, `SlotFeatureRestoreGateway`, or `AccountSyncFeatureRestoreMetadataGateway`; do not name them after backing technologies such as `SqlDelightSlotRestoreGateway`.
+- Gateway implementations may depend on owner-feature use cases, repositories, data sources, or internal services. Prefer the highest-level abstraction that preserves the required business rules, including local/remote strategy, validation, and reconciliation. Use data sources directly only when no owner-feature repository/use-case contract exists for the needed capability.
+- Gateway callers must depend only on the gateway interface and domain types. They must not import another feature's repositories, data sources, DTOs, or implementation classes.
 
 These rules are enforced by:
 
@@ -160,6 +171,11 @@ The following stack is designed to align with official KMP recommendations and c
   - Map infrastructure exceptions to domain errors at boundaries (e.g. `Either.catch { ... }.mapLeft { toDomainError(it) }`).
   - Presentation/UI layers `fold` or pattern-match on the result to derive UI state and user-facing messages.
 - **Building Result values**: Prefer the extension functions `value.ok()` and `error.err()` when constructing success/failure (e.g. `list.ok()`, `DomainError.NotFound(...).err()`) instead of `Result.ok(value)` / `Result.err(error)`.
+- **Result composition**: Prefer composing the project `Result` type with helpers such as `map`, `flatMap`, `suspendFlatMap`, and `fold` instead of manually branching on `Ok` and `Err` when the combinator form expresses the flow more clearly.
+- **No `Ok`/`Err` branching for ordinary flow**: Do not pattern-match on `Ok`/`Err` in use cases or repositories for normal success/failure propagation. Use the project helpers (`map`, `flatMap`, `suspendFlatMap`, `fold`, `failureOrNull`, `getOrNull`, etc.) so result handling stays consistent.
+- **Delete / clear result shape**: For datasource operations that delete or clear persisted records, prefer `Result<DomainError, Long>` when the underlying store can report affected-row counts. `ok(0L)` means the operation executed successfully and nothing matched; reserve `err(...)` for execution failures.
+- **Try/catch specificity**: Avoid generic catch clauses such as `catch (exception: Exception)` or `catch (throwable: Throwable)`. Catch the narrowest concrete exception types the block can actually throw, let programmer bugs fail loudly, and always rethrow coroutine `CancellationException`.
+- **Unknown error mapping**: When converting an unexpected `Throwable` into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Do not discard the thrown exception behind a bare `DomainError.Unknown()` unless there is no throwable available.
 - **Swift alignment**: In iOS code, mirror the same semantics with Swift enums with associated values (e.g. `Result<Success, Failure>`) or a custom `Either`-like type so success/failure handling stays consistent across the stack.
 
 ### 4.3 Networking
@@ -198,7 +214,7 @@ This project uses **Koin** with **Koin Annotations** (KSP) for dependency inject
 - **Initialisation**:
   - **Android**: Use a custom `Application` subclass (**`StoreItApplication`** in `:androidApp`) declared in the manifest. In `onCreate()` call `initKoin { androidLogger(); modules(AndroidModule().module); androidContext(this@StoreItApplication) }`. `AndroidModule` includes `AppModule` and provides the composition root.
   - **iOS**: Call `KoinInitKt.doInitKoinIos()` from the Swift app’s `init()` (e.g. in `@main struct iOSApp: App`). This runs `initKoin {}`, which starts Koin with only `AppModule().module` (no platform-specific options).
-- **Rule**: Domain/use case types remain framework-agnostic; only the composition root and ViewModel layer use Koin APIs.
+- **Rule**: Domain/use case types remain framework-agnostic; only the composition root and ViewModel layer use Koin APIs. Domain use cases depend on domain repository/use-case abstractions only; they must not inject or import data-source types. If datasource-backed orchestration is required, define a domain repository interface and implement the orchestration in the data layer.
 
 ### 4.8 UI Technologies
 
@@ -309,7 +325,9 @@ This section describes how an engineer (or automation agent) should add or modif
 - On Android:
   - Bind Compose UI to the **pure ViewModel** held by the wrapper (e.g. `androidRackListViewModel.rackListViewModel`).
   - Maintain unidirectional data flow: UI → events → ViewModel → state → UI.
-  - **Previews**: Every Compose screen must have `@Preview` composables that cover **all meaningful UI scenarios** (e.g. loading, empty state, error, success with data, different content sizes) so the screen can be reviewed in isolation without running the app.
+  - **Previews**: Every Compose screen and meaningful reusable Compose view must have `@Preview` composables that cover **all meaningful UI scenarios** (e.g. loading, empty state, error, success with data, different content sizes, different steps or modes in a flow).
+  - **Mapping rule**: The preview set must map explicitly to the composable's state branches. If the composable can render authenticated and unauthenticated layouts, empty and populated layouts, or dialog-hidden and dialog-shown variants, provide distinct previews for those branches rather than a single generic preview.
+  - **Pure content for previews**: If a screen is coupled to navigation, Koin, or a ViewModel wrapper, extract a pure content composable so previews can render direct state without depending on runtime wiring.
 - On iOS:
   - Bind SwiftUI views to the Swift wrapper; the wrapper holds and observes the pure Kotlin ViewModel.
   - Use Skie, `Observing`, or equivalent to observe KMP state/events consistently.

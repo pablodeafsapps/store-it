@@ -1,0 +1,161 @@
+package org.deafsapps.storeit.data.gateway
+
+import kotlinx.coroutines.flow.firstOrNull
+import org.deafsapps.storeit.base.Result
+import org.deafsapps.storeit.base.err
+import org.deafsapps.storeit.base.failureOrNull
+import org.deafsapps.storeit.base.flatMap
+import org.deafsapps.storeit.base.getOrNull
+import org.deafsapps.storeit.base.map
+import org.deafsapps.storeit.base.ok
+import org.deafsapps.storeit.data.datasource.AccountRestoreMetadataDataSource
+import org.deafsapps.storeit.data.datasource.ItemDataSource
+import org.deafsapps.storeit.data.datasource.PhotoSyncScopeDataSource
+import org.deafsapps.storeit.data.datasource.RackDataSource
+import org.deafsapps.storeit.data.datasource.SlotDataSource
+import org.deafsapps.storeit.domain.gateway.AccountRestoreMetadataGateway
+import org.deafsapps.storeit.domain.gateway.ItemRestoreGateway
+import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetGateway
+import org.deafsapps.storeit.domain.gateway.LocalAccountDatasetSnapshot
+import org.deafsapps.storeit.domain.gateway.PhotoRestoreGateway
+import org.deafsapps.storeit.domain.gateway.RackRestoreGateway
+import org.deafsapps.storeit.domain.gateway.SlotRestoreGateway
+import org.deafsapps.storeit.domain.model.AccountDataset
+import org.deafsapps.storeit.domain.model.DomainError
+import org.deafsapps.storeit.domain.model.Item
+import org.deafsapps.storeit.domain.model.LocalDatasetState
+import org.deafsapps.storeit.domain.model.PhotoSyncScope
+import org.deafsapps.storeit.domain.model.Rack
+import org.deafsapps.storeit.domain.model.ShelfSlot
+import org.deafsapps.storeit.domain.model.SyncState
+import org.koin.core.annotation.Single
+
+@Single(binds = [RackRestoreGateway::class])
+internal class RackFeatureRestoreGateway(
+    private val rackDataSource: RackDataSource,
+) : RackRestoreGateway {
+
+    override suspend fun replaceRestoredRacks(racks: List<Rack>): Result<DomainError, Long> {
+        rackDataSource.clear()
+        return racks.saveRestoredEntries(save = rackDataSource::saveRack)
+    }
+}
+
+@Single(binds = [SlotRestoreGateway::class])
+internal class SlotFeatureRestoreGateway(
+    private val slotDataSource: SlotDataSource,
+) : SlotRestoreGateway {
+
+    override suspend fun replaceRestoredSlots(slots: List<ShelfSlot>): Result<DomainError, Long> {
+        slotDataSource.clear()
+        return slots.saveRestoredEntries(save = slotDataSource::saveSlot)
+    }
+}
+
+@Single(binds = [ItemRestoreGateway::class])
+internal class ItemFeatureRestoreGateway(
+    private val itemDataSource: ItemDataSource,
+) : ItemRestoreGateway {
+
+    override suspend fun replaceRestoredItems(items: List<Item>): Result<DomainError, Long> {
+        itemDataSource.clear()
+        return items.saveRestoredEntries(save = itemDataSource::saveItem)
+    }
+}
+
+@Single(binds = [PhotoRestoreGateway::class])
+internal class PhotoSyncFeatureRestoreGateway(
+    private val photoSyncScopeDataSource: PhotoSyncScopeDataSource,
+) : PhotoRestoreGateway {
+
+    override suspend fun replaceRestoredPhotoSyncScope(
+        photoSyncScope: List<PhotoSyncScope>,
+    ): Result<DomainError, Long> =
+        photoSyncScopeDataSource.clearPhotoSyncScope()
+            .flatMap {
+                photoSyncScope.saveRestoredEntries(save = photoSyncScopeDataSource::savePhotoSyncScope)
+            }
+}
+
+@Single(binds = [AccountRestoreMetadataGateway::class])
+internal class AccountSyncFeatureRestoreMetadataGateway(
+    private val accountRestoreMetadataDataSource: AccountRestoreMetadataDataSource,
+) : AccountRestoreMetadataGateway {
+
+    override suspend fun getLocalDatasetState(): Result<DomainError, LocalDatasetState?> =
+        accountRestoreMetadataDataSource.getLocalDatasetState()
+
+    override suspend fun markRestoreSynchronized(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit> = accountRestoreMetadataDataSource.markRestoreSynchronized(
+        accountDataset = accountDataset,
+        localDatasetState = localDatasetState,
+        syncState = syncState,
+    )
+
+    override suspend fun markRestorePending(
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit> = accountRestoreMetadataDataSource.markRestorePending(
+        localDatasetState = localDatasetState,
+        syncState = syncState,
+    )
+
+    override suspend fun markReconciliationRequired(
+        accountDataset: AccountDataset,
+        localDatasetState: LocalDatasetState,
+        syncState: SyncState,
+    ): Result<DomainError, Unit> = accountRestoreMetadataDataSource.markReconciliationRequired(
+        accountDataset = accountDataset,
+        localDatasetState = localDatasetState,
+        syncState = syncState,
+    )
+}
+
+@Single(binds = [LocalAccountDatasetGateway::class])
+internal class LocalFeatureAccountDatasetGateway(
+    private val rackDataSource: RackDataSource,
+    private val slotDataSource: SlotDataSource,
+    private val itemDataSource: ItemDataSource,
+) : LocalAccountDatasetGateway {
+
+    override suspend fun loadLocalSnapshot(): Result<DomainError, LocalAccountDatasetSnapshot> {
+        val racksResult = rackDataSource.getAllRacksFlow().firstOrNull()
+            ?: return DomainError.Unknown(message = "Rack flow emitted no values while loading local snapshot").err()
+        val racks = racksResult.failureOrNull()?.let { error -> return error.err() }
+            ?: racksResult.getOrNull().orEmpty()
+
+        val slots = mutableListOf<ShelfSlot>()
+        val items = mutableListOf<Item>()
+        for (rack in racks) {
+            val rackSlotsResult = slotDataSource.getSlotsByRack(rackId = rack.id)
+            val rackSlots = rackSlotsResult.failureOrNull()?.let { error -> return error.err() }
+                ?: rackSlotsResult.getOrNull().orEmpty()
+            slots += rackSlots
+
+            val rackItemsResult = itemDataSource.getItemsByRack(rackId = rack.id)
+            val rackItems = rackItemsResult.failureOrNull()?.let { error -> return error.err() }
+                ?: rackItemsResult.getOrNull().orEmpty()
+            items += rackItems
+        }
+
+        return LocalAccountDatasetSnapshot(
+            racks = racks,
+            slots = slots,
+            items = items,
+        ).ok()
+    }
+}
+
+private suspend fun <T, Saved> List<T>.saveRestoredEntries(
+    save: suspend (T) -> Result<DomainError, Saved>,
+): Result<DomainError, Long> {
+    var savedCount = 0L
+    for (entry in this) {
+        save(entry).failureOrNull()?.let { error -> return error.err() }
+        savedCount += 1L
+    }
+    return savedCount.ok()
+}

@@ -8,28 +8,31 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Item
-import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.model.ShelfSlot
 import org.deafsapps.storeit.domain.model.SlotPosition
 import org.deafsapps.storeit.domain.usecase.AddItemUseCaseType
 import org.deafsapps.storeit.domain.usecase.GetRacksFlowUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
+import org.deafsapps.storeit.presentation.mapper.toRackSummaryVos
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.item.model.AddItemStep
 import org.deafsapps.storeit.presentation.item.model.AddItemUiEvent
 import org.deafsapps.storeit.presentation.item.model.AddItemUiState
 import org.deafsapps.storeit.presentation.item.model.AddItemSlotVo
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
@@ -55,7 +58,15 @@ class AddItemViewModel(
             addItemSlot = addItemSlot,
         ),
     )
-    val uiState: StateFlow<AddItemUiState> = _uiState.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<AddItemUiState> = _uiState
+        .combine(getRacksStateFlow()) { state, racksState ->
+            state.copy(
+                racks = racksState.racks,
+                error = racksState.error ?: state.error,
+            )
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_SHARE_LONG_TIMEOUT_MILLIS),
@@ -64,6 +75,7 @@ class AddItemViewModel(
                 addItemSlot = addItemSlot,
             ),
         )
+
     private val _uiEvent = MutableSharedFlow<AddItemUiEvent?>()
     val uiEvent: SharedFlow<AddItemUiEvent?> = _uiEvent.asSharedFlow()
         .shareIn(
@@ -71,28 +83,15 @@ class AddItemViewModel(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
         )
 
-    init {
-        startRacksFlowWhenSelectingRack()
-    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun startRacksFlowWhenSelectingRack() {
+    private fun getRacksStateFlow() =
         getRacksFlowUseCase(input = Unit)
             .mapLatest { result ->
                 result.fold(
-                    ifErr = { error ->
-                        _uiState.value.copy(racks = emptyList(), error = error.toErrorCause())
-                    },
-                    ifOk = { racks ->
-                        _uiState.value.copy(racks = racks, error = null)
-                    },
+                    ifErr = { error -> AddItemRacksState(racks = persistentListOf(), error = error.toErrorCause()) },
+                    ifOk = { racks -> AddItemRacksState(racks = racks.toRackSummaryVos(), error = null) },
                 )
-            }.onEach { newState ->
-                _uiState.update { state ->
-                    state.copy(racks = newState.racks, error = newState.error ?: state.error)
-                }
-            }.launchIn(viewModelScope)
-    }
+            }
 
     fun onUpdateName(name: String) {
         _uiState.update { state -> state.copy(name = name, error = null) }
@@ -118,13 +117,18 @@ class AddItemViewModel(
         val tag = _uiState.value.tagInput.trim()
         if (tag.isNotEmpty()) {
             _uiState.update { state ->
-                state.copy(tags = state.tags + tag, tagInput = "", error = null)
+                val updatedTags: ImmutableList<String> = state.tags.toPersistentList().add(element = tag)
+                state.copy(tags = updatedTags, tagInput = "", error = null)
             }
         }
     }
 
     fun onRemoveTag(tag: String) {
-        _uiState.update { state -> state.copy(tags = state.tags - tag) }
+        _uiState.update { state ->
+            val updatedTags: ImmutableList<String> =
+                state.tags.filterNot { existingTag -> existingTag == tag }.toImmutableList()
+            state.copy(tags = updatedTags)
+        }
     }
 
     fun onUpdatePhotoUri(uri: String?) {
@@ -137,7 +141,7 @@ class AddItemViewModel(
         }
     }
 
-    fun onRackSelected(rack: Rack) {
+    fun onRackSelected(rack: RackSummaryVo) {
         _uiState.update { state -> state.copy(step = AddItemStep.SELECT_SLOT, selectedRackId = rack.id) }
     }
 
@@ -214,9 +218,12 @@ class AddItemViewModel(
         addItemUseCase(item).fold(
             ifErr = { error: DomainError ->
                 val message = when (error) {
+                    is DomainError.AuthenticationFailed -> error.message
+                    is DomainError.ServiceUnavailable -> error.message
+                    is DomainError.ConfigurationError -> error.message
                     is DomainError.ValidationError -> error.reason
                     is DomainError.NotFound -> "Not found"
-                    is DomainError.Unknown -> "An unknown error occurred"
+                    is DomainError.Unknown -> error.message
                 }
                 _uiState.update { state -> state.copy(isLoading = false, error = message) }
             },
@@ -231,8 +238,16 @@ class AddItemViewModel(
     }
 }
 
+private data class AddItemRacksState(
+    val racks: ImmutableList<RackSummaryVo>,
+    val error: String?,
+)
+
 private fun DomainError.toErrorCause(): String = when (this) {
+    is DomainError.AuthenticationFailed,
+    is DomainError.ServiceUnavailable,
+    is DomainError.ConfigurationError,
+    is DomainError.Unknown -> message
     is DomainError.ValidationError -> reason
     is DomainError.NotFound -> "Item not found"
-    is DomainError.Unknown -> "An unknown error occurred"
 }

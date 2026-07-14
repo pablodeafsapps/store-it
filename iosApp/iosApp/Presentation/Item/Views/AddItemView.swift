@@ -14,7 +14,7 @@ struct AddItemView: View {
     let onUpdatePhotoUri: (String?) -> Void
     let onSelectRackAndSlotSelected: () -> Void
     let onSaveItem: () -> Void
-    let onRackSelected: (Rack) -> Void
+    let onRackSelected: (RackSummaryVo) -> Void
     let onBackFromSelectRack: () -> Void
     let onBackFromSelectSlot: () -> Void
     let onSlotSelectedForItem: (String, AddItemSlotVo) -> Void
@@ -272,4 +272,3 @@ struct AddItemView: View {
         )
     }
 }
-

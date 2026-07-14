@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import coil.compose.AsyncImage
@@ -180,4 +181,38 @@ private fun getFlashAlpha(): Float {
         ),
         label = "slotMarkerFlashAlpha",
     ).value
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackImageWithSlotsEmptyPreview() {
+    MaterialTheme {
+        RackImageWithSlots(
+            photoUri = null,
+            slots = emptyList(),
+            selectedSlot = null,
+            onTap = { _, _ -> },
+            onSlotMarkerDrag = { _, _, _ -> },
+            onSlotMarkerDragFinished = { _, _, _, _, _ -> },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RackImageWithSlotsMarkersPreview() {
+    val selectedSlot = RackSlotMarkerVo(id = "slot-1", xRel = 0.3f, yRel = 0.4f)
+    MaterialTheme {
+        RackImageWithSlots(
+            photoUri = null,
+            slots = listOf(
+                selectedSlot,
+                RackSlotMarkerVo(id = "slot-2", xRel = 0.7f, yRel = 0.6f),
+            ),
+            selectedSlot = selectedSlot,
+            onTap = { _, _ -> },
+            onSlotMarkerDrag = { _, _, _ -> },
+            onSlotMarkerDragFinished = { _, _, _, _, _ -> },
+        )
+    }
 }

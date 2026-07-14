@@ -5,13 +5,17 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.dependencyConflictAnalyzer)
 }
+
+val googleServicesConfig = "google-services.json"
 
 android {
     namespace = "org.deafsapps.storeit.androidapp"
     compileSdk = 36
 
     defaultConfig {
+        applicationId = "org.deafsapps.storeit.androidapp"
         minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -43,6 +47,9 @@ configurations.matching { it.name.contains("androidTest", ignoreCase = true) }.c
 
 dependencies {
     implementation(projects.shared)
+    implementation(project.dependencies.platform(libs.firebase.bom))
+    implementation(libs.firebase.common)
+    implementation(libs.firebase.analytics)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.annotations)
     ksp(libs.koin.ksp.compiler)
@@ -78,4 +85,12 @@ detekt {
     allRules = false
     config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
     baseline = file("${rootProject.projectDir}/config/detekt/baseline.xml")
+}
+
+dependencyConflictAnalyzer {
+    failOnConflict.set(true)
+}
+
+if (file(googleServicesConfig).exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

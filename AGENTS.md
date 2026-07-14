@@ -7,9 +7,16 @@ Apply these instructions for work in this repository.
 - This is a Kotlin Multiplatform app with `:shared` as the shared KMP module and `:androidApp` as the Android app module. There is no separate `:shared` module.
 - Maximise code in `shared/src/commonMain`. Keep `androidMain`, `iosMain`, `androidApp`, and `iosApp` thin and limited to platform-specific integration.
 - Shared business logic, repositories, use cases, shared presentation state, DI setup, and `expect` declarations belong in `commonMain`.
+- Data-source interfaces and provider/local data-source implementations belong under `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource`.
+- Name data sources with the qualifier immediately before `DataSource`, for example `FirebaseRackDataSource`, `SqlDelightItemDataSource`, `AuthRemoteDataSource`, and `AccountRemoteDataSource`. Do not use names like `RemoteAuthDataSource` where `Remote` appears to qualify the business concept instead of the data source.
 - `androidMain` and `iosMain` should only contain `actual` implementations and minimal platform services. Do not put platform UI there.
 - Android UI, app entry, and navigation belong in `:androidApp`. iOS UI belongs in `iosApp`.
 - Respect dependency direction: UI -> Presentation -> Domain -> Data -> Platform APIs.
+- Domain use cases must depend on domain repository/use-case abstractions only. Do not inject or import `data.datasource` types from domain use cases; if a use case needs datasource-backed orchestration, add a domain repository interface and implement it in the data layer.
+- Use gateways for cross-feature access that must remain modular-ready. Gateway interfaces describe the capability a caller needs and belong in a stable shared/domain/core boundary; concrete implementations are owned by the feature that owns the data or behaviour and are resolved by Koin.
+- Gateway implementations are feature façades, not persistence adapters. Name them by feature ownership and capability, for example `SlotFeatureRestoreGateway` or `AccountSyncFeatureRestoreMetadataGateway`, not by backing technology such as `SqlDelightSlotRestoreGateway`.
+- Gateway implementations may delegate to owner-feature use cases, repositories, data sources, or internal services. Prefer the highest-level owner-feature abstraction that already preserves the required business rules; use data sources directly only when no repository/use-case contract exists for that capability yet.
+- Callers of another feature's gateway must depend only on the gateway interface. They must not reach into the owner feature's repositories, data sources, DTOs, or implementation details.
 
 ## Koin And ViewModels
 
@@ -22,19 +29,24 @@ Apply these instructions for work in this repository.
 ## KMP Placement
 
 - Follow the `kmp-source-set-placement` skill when adding or moving Kotlin Multiplatform code.
-- Preferred skill path:
+- Canonical project skill path:
+  - `.agents/skills/kmp-source-set-placement/SKILL.md`
+- Engine-specific mirrors may also exist in:
   - `.cursor/skills/kmp-source-set-placement/SKILL.md`
-- Fallback skill path:
+- User-level fallback skill path:
   - `/Users/pablo/.codex/skills/kmp-source-set-placement/SKILL.md`
 
 ## Delivery workflow
 
 When starting or finishing substantive work in this repository, follow the `store-it-delivery-workflow` skill.
 
-Preferred skill path:
+Canonical project skill path:
+- `.agents/skills/store-it-delivery-workflow/SKILL.md`
+
+Engine-specific mirrors may also exist in:
 - `.cursor/skills/store-it-delivery-workflow/SKILL.md`
 
-Fallback skill path:
+User-level fallback skill path:
 - `/Users/pablo/.codex/skills/store-it-delivery-workflow/SKILL.md`
 
 This includes:
@@ -42,6 +54,12 @@ This includes:
 - running the Gradle verification steps before handoff,
 - confirming the iOS build when shared Kotlin or framework integration changed,
 - leaving changes in a commit-ready state.
+
+## Skills And Rules
+
+- Canonical project-owned skills live under `.agents/skills/`.
+- Engine-specific guidance may also live under `.cursor/skills/`, `.cursor/rules/`, `.claude/commands/`, or other engine folders. Treat those as engine adapters or overlays, not as the primary project source of truth.
+- When the same capability exists in more than one place, keep `.agents/skills/` authoritative and keep engine-specific copies aligned with it.
 
 ## Feature Workflow
 
@@ -82,7 +100,23 @@ For all new and modified Kotlin files in this project:
 - Prefer exhaustive `when` over long `if`/`else` chains for sealed hierarchies.
 - Avoid `!!`; use explicit null handling and boundary checks instead.
 - Use `value.ok()` and `error.err()` when constructing result values.
+- When working with the project `Result` type, prefer `map`, `flatMap`, `suspendFlatMap`, `fold`, and related helpers over explicit branching on `Ok` and `Err` when the combinator form is clearer.
+- Do not pattern-match on `Ok`/`Err` in use cases or repositories for ordinary success/failure flow. Use the project `Result` helpers (`map`, `flatMap`, `suspendFlatMap`, `fold`, `failureOrNull`, `getOrNull`, etc.) so error propagation remains consistent and reviewable.
+- Avoid generic catch clauses such as `catch (exception: Exception)` and `catch (throwable: Throwable)`. Catch the narrowest concrete exception types the block can actually throw, let programmer bugs fail loudly, and never swallow `CancellationException`.
+- When mapping an unexpected exception into `DomainError.Unknown`, preserve the original failure context by setting both `message` and `cause`. Do not replace thrown exceptions with a bare `DomainError.Unknown()` unless no throwable exists.
+- For datasource delete and clear operations, prefer `Result<DomainError, Long>` when the backing store can report affected-row counts. Treat `ok(0L)` as a successful no-op, not as an error.
+- For Firebase-backed or other remote datasources, apply the same rule explicitly: catch provider-specific exceptions such as `FirebaseFirestoreException`, `FirebaseStorageException`, or serialization failures instead of `Throwable`, and return affected-row/object counts from delete operations whenever the remote API lets you determine them.
 - Protect mutable in-memory repository state with `Mutex` and `withLock`.
+
+## Compose Stability And UiState
+
+- Prefer correct immutable UI-state design over Compose stability annotations.
+- Do not add `@Stable` or `@Immutable` by default to `UiState`, presentation VOs, or other shared models.
+- Use `@Immutable` only when it solves a real compiler inference problem or there is a concrete, demonstrated need to assert the contract explicitly.
+- Use `@Stable` only for mutable state holders whose public changes are fully backed by Compose-observable state. Do not use it on ordinary data classes or domain interfaces.
+- Treat both annotations as strong manual contracts, not as performance decorations. If the contract is wrong, remove the annotation instead of forcing Compose to trust it.
+- For shared presentation models, prefer immutable `val` properties, immutable collections such as `ImmutableList`, and presentation-owned VOs instead of exposing domain interfaces or standard mutable-by-contract collection types.
+- If a `UiState` or VO needs a refactor to become truly immutable, do the data-shape refactor first and add no annotation unless a concrete need remains afterward.
 
 ## Testing
 
@@ -94,6 +128,15 @@ For all new and modified Kotlin files in this project:
 - Prefer fakes over real implementations in unit tests. Use mocks only when interaction verification matters.
 - Keep unit tests pure and deterministic: no real network, database, filesystem, system clock, or randomness.
 - Prefer `commonTest` for platform-agnostic logic and use platform-specific tests only for platform behaviour.
+- Standardise `uiState` and `uiEvent` collection in tests through a shared `TestUtils` helper file (for example under `shared/src/commonTest/.../TestUtils.kt`) instead of duplicating ad-hoc collectors per test file.
+
+## Compose Previews
+
+- Every Android Compose screen and meaningful reusable Compose view must have `@Preview` composables.
+- Preview coverage must map to the composable's meaningful UI scenarios, not just exist nominally.
+- Add one preview per distinct state the composable can render, for example: loading, empty, error, success with representative data, authenticated vs unauthenticated mode, dialogs visible, optional content present/absent, and any other branch that changes layout or affordances materially.
+- If a screen is wrapped in navigation or Koin setup, extract or reuse a pure content composable so previews target UI state directly.
+- When a new UI state branch is added to a composable, update previews in the same change so the preview set stays in sync with the composable contract.
 
 ## Reference Files
 
@@ -101,3 +144,10 @@ For all new and modified Kotlin files in this project:
 - `.ai/CONVENTIONS.md`
 - `.ai/WORKFLOW_IMPLEMENT_FEATURE.md`
 - `.ai/WORKFLOW_UNIT_TEST.md`
+
+## Active Technologies
+- Kotlin Multiplatform with Swift app integration; Kotlin current project baseline, Swift 5.x for iOS shell + Kotlin Multiplatform, kotlinx-coroutines, Koin annotations, SQLDelight, Kotlinx Serialization, Firebase Authentication, Firebase Cloud Firestore, Firebase Cloud Storage (005-remote-sync-auth)
+- Local SQLDelight database plus remote account-backed dataset in Firebase; secure local session/token storage via platform-secure facilities behind shared abstractions (005-remote-sync-auth)
+
+## Recent Changes
+- 005-remote-sync-auth: Added Kotlin Multiplatform with Swift app integration; Kotlin current project baseline, Swift 5.x for iOS shell + Kotlin Multiplatform, kotlinx-coroutines, Koin annotations, SQLDelight, Kotlinx Serialization, Firebase Authentication, Firebase Cloud Firestore, Firebase Cloud Storage

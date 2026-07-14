@@ -31,13 +31,16 @@ internal class InMemorySlotRepository : SlotRepository {
         }
     }
 
-    override suspend fun deleteByRack(rackId: String): Result<DomainError, Unit> = mutex.withLock {
+    override suspend fun deleteByRack(rackId: String): Result<DomainError, Long> = mutex.withLock {
         when {
             rackId.isBlank() -> DomainError.ValidationError(field = "rackId", reason = "Rack ID cannot be blank").err()
             else -> {
-                Unit.ok().also {
-                    slots.keys.toList().filter { slots[it]?.rackId == rackId }.forEach { slots.remove(it) }
-                }
+                val deletedCount = slots.keys
+                    .toList()
+                    .count { key -> slots[key]?.rackId == rackId }
+                    .toLong()
+                slots.keys.toList().filter { key -> slots[key]?.rackId == rackId }.forEach { key -> slots.remove(key) }
+                deletedCount.ok()
             }
         }
     }

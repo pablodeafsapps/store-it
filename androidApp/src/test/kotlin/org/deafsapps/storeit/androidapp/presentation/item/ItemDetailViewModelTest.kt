@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.deafsapps.storeit.androidapp.fake.FakeAddItemUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeDeleteItemUseCase
 import org.deafsapps.storeit.androidapp.fake.FakeGetItemByIdUseCase
+import org.deafsapps.storeit.androidapp.presentation.collectUiState
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.Item
 import org.deafsapps.storeit.presentation.item.viewmodel.ItemDetailViewModel
@@ -45,10 +46,13 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
+            val states = collectUiState(uiState = sut.uiState)
+
             advanceUntilIdle()
 
-            assertFalse(sut.uiState.value.isLoading)
-            assertEquals("Drill", sut.uiState.value.name)
+            val state = states.lastOrNull()
+            assertFalse(state?.isLoading == true)
+            assertEquals("Drill", state?.name)
         }
 
     @Test
@@ -62,6 +66,8 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
+            collectUiState(uiState = sut.uiState)
+
             advanceUntilIdle()
             sut.onUpdateName("Hammer")
             sut.onSave()
@@ -81,6 +87,8 @@ internal class ItemDetailViewModelTest {
                 addItemUseCase = fakeAdd,
                 deleteItemUseCase = fakeDelete,
             )
+            collectUiState(uiState = sut.uiState)
+
             advanceUntilIdle()
             sut.onConfirmDelete()
             advanceUntilIdle()

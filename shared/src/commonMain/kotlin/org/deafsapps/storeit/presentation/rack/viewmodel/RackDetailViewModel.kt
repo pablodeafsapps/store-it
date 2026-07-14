@@ -1,16 +1,24 @@
 package org.deafsapps.storeit.presentation.rack.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import org.deafsapps.storeit.base.fold
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
@@ -20,6 +28,7 @@ import org.deafsapps.storeit.domain.usecase.DeleteRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.GetRackDataByRackIdUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveRackUseCaseType
 import org.deafsapps.storeit.domain.usecase.SaveSlotUseCaseType
+import org.deafsapps.storeit.presentation.mapper.toRackSummaryVo
 import org.deafsapps.storeit.presentation.StoreItViewModel
 import org.deafsapps.storeit.presentation.rack.mapper.toRackSlotMarkerVos
 import org.deafsapps.storeit.presentation.rack.model.RackSlotMarkerVo
@@ -31,7 +40,9 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private const val STOP_SHARE_SHORT_TIMEOUT_MILLIS = 500L
+private const val STOP_SHARE_LONG_TIMEOUT_MILLIS = 5_000L
 private const val SLOT_TAP_HIT_RADIUS_REL = 0.08f
+private const val STATE_CHANGE_BUFFER_CAPACITY = 64
 
 @Factory
 class RackDetailViewModel(
@@ -43,8 +54,35 @@ class RackDetailViewModel(
     private val saveSlotUseCase: SaveSlotUseCaseType,
 ) : StoreItViewModel(coroutineScope = coroutineScope) {
 
-    private val _uiState = MutableStateFlow(RackDetailUiState.getDefault())
-    val uiState: StateFlow<RackDetailUiState> = _uiState.asStateFlow()
+    private var latestState = RackDetailUiState.getDefault()
+    private var loadedRack: Rack? = null
+
+    private val loadRequests = MutableSharedFlow<RackDetailLoadRequest>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    private val stateChanges = MutableSharedFlow<RackDetailStateChange>(
+        extraBufferCapacity = STATE_CHANGE_BUFFER_CAPACITY,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<RackDetailUiState> = loadRequests
+        .onStart { emit(value = RackDetailLoadRequest.RefreshRackData) }
+        .flatMapLatest { request -> request.toStateChanges() }
+        .let { loadChanges -> listOf(loadChanges, stateChanges).merge() }
+        .runningFold(
+            initial = RackDetailUiState.getDefault(),
+            operation = { state, change ->
+                change.reduce(state = state).also { latestState = it }
+            },
+        )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_LONG_TIMEOUT_MILLIS),
+            initialValue = RackDetailUiState.getDefault(),
+        )
 
     private val _uiEvent = MutableSharedFlow<RackDetailUiEvent?>()
     val uiEvent: SharedFlow<RackDetailUiEvent?> = _uiEvent.asSharedFlow()
@@ -53,14 +91,10 @@ class RackDetailViewModel(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_SHARE_SHORT_TIMEOUT_MILLIS),
         )
 
-    init {
-        loadRackDataById(rackId = rackId)
-    }
-
     fun onImageTap(xRel: Float, yRel: Float) {
         viewModelScope.launch {
-            val rack = _uiState.value.rack ?: return@launch
-            val slots = _uiState.value.slots
+            val rack = latestState.rack ?: return@launch
+            val slots = latestState.slots
             slots.findNearestSlotWithinOrNull(
                 xRel = xRel,
                 yRel = yRel,
@@ -73,7 +107,7 @@ class RackDetailViewModel(
                     ),
                 )
             } ?: run {
-                navigateToAddItemWithDraftSlot(rack = rack, xRel = xRel, yRel = yRel)
+                navigateToAddItemWithDraftSlot(rackId = rack.id, xRel = xRel, yRel = yRel)
             }
         }
     }
@@ -83,7 +117,7 @@ class RackDetailViewModel(
     }
 
     fun onSaveSlotMarkerPosition(slotId: String, xRel: Float, yRel: Float) {
-        val rack = _uiState.value.rack ?: return
+        val rack = latestState.rack ?: return
         val (boundedXRel, boundedYRel) =
             applySlotMarkerPosition(slotId = slotId, xRel = xRel, yRel = yRel) ?: return
         viewModelScope.launch {
@@ -106,54 +140,43 @@ class RackDetailViewModel(
     }
 
     private fun applySlotMarkerPosition(slotId: String, xRel: Float, yRel: Float): Pair<Float, Float>? {
-        if (_uiState.value.rack == null) return null
+        if (latestState.rack == null) return null
         val boundedXRel = xRel.coerceIn(0f, 1f)
         val boundedYRel = yRel.coerceIn(0f, 1f)
-        _uiState.update { state ->
-            state.copy(
-                slots = state.slots.map { slot ->
-                    if (slot.id == slotId) {
-                        slot.copy(xRel = boundedXRel, yRel = boundedYRel)
-                    } else {
-                        slot
-                    }
+        enqueueStateChange(
+            change = RackDetailStateChange.SlotMarkersUpdated(
+                slots = latestState.slots.map { slot ->
+                    if (slot.id == slotId) slot.copy(xRel = boundedXRel, yRel = boundedYRel) else slot
                 },
-            )
-        }
+            ),
+        )
         return boundedXRel to boundedYRel
     }
 
     fun onEditSelected() {
-        val rack = _uiState.value.rack ?: return
-        _uiState.update { state ->
-            state.copy(
-                showEditDialog = true,
-                editName = rack.name,
-                editDescription = rack.description,
-                editLocation = rack.location,
-            )
-        }
+        val rack = loadedRack ?: return
+        enqueueStateChange(change = RackDetailStateChange.EditDialogOpened(rack = rack))
     }
 
     fun onUpdateEditName(name: String) {
-        _uiState.update { state -> state.copy(editName = name) }
+        enqueueStateChange(change = RackDetailStateChange.EditNameUpdated(name = name))
     }
 
     fun onUpdateEditDescription(description: String) {
-        _uiState.update { state -> state.copy(editDescription = description) }
+        enqueueStateChange(change = RackDetailStateChange.EditDescriptionUpdated(description = description))
     }
 
     fun onUpdateEditLocation(location: String) {
-        _uiState.update { state -> state.copy(editLocation = location) }
+        enqueueStateChange(change = RackDetailStateChange.EditLocationUpdated(location = location))
     }
 
     fun onDismissEditDialog() {
-        _uiState.update { state -> state.copy(showEditDialog = false) }
+        enqueueStateChange(change = RackDetailStateChange.EditDialogDismissed)
     }
 
     fun onSaveRackEdits() {
-        val state = _uiState.value
-        val rack = state.rack ?: return
+        val state = latestState
+        val rack = loadedRack ?: return
         viewModelScope.launch {
             val updatedRack = Rack(
                 id = rack.id,
@@ -167,18 +190,19 @@ class RackDetailViewModel(
             saveRackUseCase(input = updatedRack).fold(
                 ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(message = error.toErrorCause())) },
                 ifOk = {
-                    _uiState.update { s -> s.copy(rack = updatedRack, showEditDialog = false) }
+                    loadedRack = updatedRack
+                    emitStateChange(change = RackDetailStateChange.RackEditsSaved(rack = updatedRack))
                 },
             )
         }
     }
 
     fun onRemoveRackSelected() {
-        _uiState.update { state -> state.copy(showDeleteConfirm = true) }
+        enqueueStateChange(change = RackDetailStateChange.DeleteConfirmVisibilityChanged(isVisible = true))
     }
 
     fun onDismissDeleteConfirm() {
-        _uiState.update { state -> state.copy(showDeleteConfirm = false) }
+        enqueueStateChange(change = RackDetailStateChange.DeleteConfirmVisibilityChanged(isVisible = false))
     }
 
     fun onConfirmDeleteRack() {
@@ -186,49 +210,141 @@ class RackDetailViewModel(
             deleteRackUseCase(input = rackId).fold(
                 ifErr = { error -> _uiEvent.emit(RackDetailUiEvent.ShowError(message = error.toErrorCause())) },
                 ifOk = {
-                    _uiState.update { state -> state.copy(showDeleteConfirm = false) }
+                    emitStateChange(change = RackDetailStateChange.DeleteConfirmVisibilityChanged(isVisible = false))
                     _uiEvent.emit(RackDetailUiEvent.NavigateBack)
                 },
             )
         }
     }
 
-    private fun loadRackDataById(rackId: String) {
-        viewModelScope.launch {
-            getRackDataByRackIdUseCase(input = rackId).fold(
-                ifErr = { error ->
-                    _uiState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            error = error.toErrorCause(),
-                        )
-                    }
-                },
-                ifOk = { rackData ->
-                    _uiState.update { state ->
-                        val mappedSlots = rackData.shelfSlots.toRackSlotMarkerVos()
-                        state.copy(
-                            rack = rackData.rack,
-                            slots = mappedSlots,
-                            isLoading = false,
-                            error = null,
-                        )
-                    }
-                },
-            )
-        }
-    }
-
     @OptIn(ExperimentalUuidApi::class)
-    private suspend fun navigateToAddItemWithDraftSlot(rack: Rack, xRel: Float, yRel: Float) {
+    private suspend fun navigateToAddItemWithDraftSlot(rackId: String, xRel: Float, yRel: Float) {
         _uiEvent.emit(
             RackDetailUiEvent.NavigateToAddItemDraft(
-                rackId = rack.id,
+                rackId = rackId,
                 slotId = Uuid.random().toString(),
                 slotXRel = xRel,
                 slotYRel = yRel,
             ),
         )
+    }
+
+    private fun RackDetailLoadRequest.toStateChanges(): Flow<RackDetailStateChange> = flow {
+        emit(value = RackDetailStateChange.Loading)
+        when (this@toStateChanges) {
+            RackDetailLoadRequest.RefreshRackData ->
+                getRackDataByRackIdUseCase(input = rackId).fold(
+                    ifErr = { error -> emit(value = RackDetailStateChange.LoadFailed(error = error)) },
+                    ifOk = { rackData ->
+                        loadedRack = rackData.rack
+                        emit(
+                            value = RackDetailStateChange.RackDataLoaded(
+                                rack = rackData.rack,
+                                slots = rackData.shelfSlots.toRackSlotMarkerVos(),
+                            ),
+                        )
+                    },
+                )
+        }
+    }
+
+    private fun enqueueStateChange(change: RackDetailStateChange) {
+        latestState = change.reduce(state = latestState)
+        stateChanges.tryEmit(value = change)
+    }
+
+    private suspend fun emitStateChange(change: RackDetailStateChange) {
+        latestState = change.reduce(state = latestState)
+        stateChanges.emit(value = change)
+    }
+
+    private enum class RackDetailLoadRequest {
+        RefreshRackData,
+    }
+
+    private sealed interface RackDetailStateChange {
+        fun reduce(state: RackDetailUiState): RackDetailUiState
+
+        data object Loading : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(isLoading = true, error = null)
+        }
+
+        data class RackDataLoaded(
+            private val rack: Rack,
+            private val slots: List<RackSlotMarkerVo>,
+        ) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(
+                    rack = rack.toRackSummaryVo(),
+                    slots = slots.toImmutableList(),
+                    isLoading = false,
+                    error = null,
+                )
+        }
+
+        data class LoadFailed(
+            private val error: DomainError,
+        ) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(
+                    isLoading = false,
+                    error = error.toErrorCause(),
+                )
+        }
+
+        data class SlotMarkersUpdated(
+            private val slots: List<RackSlotMarkerVo>,
+        ) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(slots = slots.toImmutableList())
+        }
+
+        data class EditDialogOpened(
+            private val rack: Rack,
+        ) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(
+                    showEditDialog = true,
+                    editName = rack.name,
+                    editDescription = rack.description,
+                    editLocation = rack.location,
+                )
+        }
+
+        data class EditNameUpdated(private val name: String) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(editName = name)
+        }
+
+        data class EditDescriptionUpdated(private val description: String) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(editDescription = description)
+        }
+
+        data class EditLocationUpdated(private val location: String) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(editLocation = location)
+        }
+
+        data object EditDialogDismissed : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(showEditDialog = false)
+        }
+
+        data class DeleteConfirmVisibilityChanged(
+            private val isVisible: Boolean,
+        ) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(showDeleteConfirm = isVisible)
+        }
+
+        data class RackEditsSaved(
+            private val rack: Rack,
+        ) : RackDetailStateChange {
+            override fun reduce(state: RackDetailUiState): RackDetailUiState =
+                state.copy(rack = rack.toRackSummaryVo(), showEditDialog = false)
+        }
     }
 }
 
@@ -253,7 +369,10 @@ private fun RackSlotMarkerVo.distanceSquared(otherXRel: Float, otherYRel: Float)
 }
 
 private fun DomainError.toErrorCause(): String = when (this) {
+    is DomainError.AuthenticationFailed,
+    is DomainError.ServiceUnavailable,
+    is DomainError.ConfigurationError -> message
     is DomainError.ValidationError -> reason
     is DomainError.NotFound -> "Rack details not found"
-    is DomainError.Unknown -> "An unknown error occurred"
+    is DomainError.Unknown -> message
 }

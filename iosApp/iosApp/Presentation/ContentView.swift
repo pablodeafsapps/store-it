@@ -3,37 +3,50 @@ import Shared
 
 struct ContentView: View {
     @StateObject private var rackListViewModel: ViewModelHolder<RackListViewModel> = ViewModelHolder(IosKoinHelper().getRackListViewModel())
+    @StateObject private var accountViewModel: ViewModelHolder<AccountViewModel> = ViewModelHolder(IosKoinHelper().getAccountViewModel())
+    @StateObject private var syncStatusViewModel: ViewModelHolder<SyncStatusViewModel> = ViewModelHolder(IosKoinHelper().getSyncStatusViewModel())
     @State private var path: [AppRoute] = []
     @AppStorage("isDarkModeEnabled") private var isDarkModeEnabled = false
 
     var body: some View {
         NavigationStack(path: $path) {
             Observing(rackListViewModel.sharedVm.uiState) { state in
-                ZStack {
-                    RackListView(
-                        uiState: state,
-                        onAddRackSelected: { rackListViewModel.sharedVm.onAddRackSelected() },
-                        onRackSelected: { rack in rackListViewModel.sharedVm.onRackSelected(rack: rack) },
-                        onNavigateToSearch: { path.append(.search) },
-                        isDarkModeEnabled: isDarkModeEnabled,
-                        onThemeModeToggle: { isDarkModeEnabled.toggle() }
-                    )
+                Observing(accountViewModel.sharedVm.uiState) { accountState in
+                    Observing(syncStatusViewModel.sharedVm.uiState) { syncState in
+                        ZStack {
+                            RackListView(
+                                uiState: state,
+                                onAddRackSelected: { rackListViewModel.sharedVm.onAddRackSelected() },
+                                onRackSelected: { rack in rackListViewModel.sharedVm.onRackSelected(rack: rack) },
+                                onNavigateToSearch: { path.append(.search) },
+                                onNavigateToAccount: { path.append(.account) },
+                                isAccountAuthenticated: accountState.isAuthenticated,
+                                accountEmail: accountState.accountEmail,
+                                isAccountReady: syncState.isDataBackedUp,
+                                isRestoreInProgress: syncState.isRestoreInProgress,
+                                hasPendingSyncWork: syncState.hasPendingWork,
+                                hasAccountAttentionState: syncState.hasAttentionState,
+                                isDarkModeEnabled: isDarkModeEnabled,
+                                onThemeModeToggle: { isDarkModeEnabled.toggle() }
+                            )
 
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            Button(action: {
-                                path.append(.addItem)
-                            }) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 28))
+                            VStack {
+                                Spacer()
+                                HStack {
+                                    Spacer()
+                                    Button(action: {
+                                        path.append(.addItem)
+                                    }) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 28))
+                                    }
+                                    .disabled(state.racks.isEmpty)
+                                    .opacity(state.racks.isEmpty ? 0.5 : 1)
+                                    .padding()
+                                    .accessibilityIdentifier("addItemFloatingButton")
+                                    .accessibilityHint(state.racks.isEmpty ? "add_item_hint_add_rack_first" : "add_item_hint_add_item")
+                                }
                             }
-                            .disabled(state.racks.isEmpty)
-                            .opacity(state.racks.isEmpty ? 0.5 : 1)
-                            .padding()
-                            .accessibilityIdentifier("addItemFloatingButton")
-                            .accessibilityHint(state.racks.isEmpty ? "add_item_hint_add_rack_first" : "add_item_hint_add_item")
                         }
                     }
                 }
@@ -53,10 +66,14 @@ struct ContentView: View {
     @ViewBuilder
     private func routeDestination(_ route: AppRoute) -> some View {
         switch route {
+        case .account:
+            AccountScreen(
+                onNavigateBack: { popRoute() }
+            )
         case .search:
             SearchFlowScreen(
-                onItemSelected: { placement in
-                    path.append(.itemDetail(itemId: placement.item.id))
+                onItemSelected: { result in
+                    path.append(.itemDetail(itemId: result.itemId))
                 }
             )
         case .addRack:
@@ -143,9 +160,9 @@ struct ContentView: View {
 
 private struct SearchFlowScreen: View {
     @StateObject private var viewModel: ViewModelHolder<SearchViewModel>
-    let onItemSelected: (ItemWithPlacement) -> Void
+    let onItemSelected: (SearchResultVo) -> Void
 
-    init(onItemSelected: @escaping (ItemWithPlacement) -> Void) {
+    init(onItemSelected: @escaping (SearchResultVo) -> Void) {
         _viewModel = StateObject(wrappedValue: ViewModelHolder(IosKoinHelper().getSearchViewModel()))
         self.onItemSelected = onItemSelected
     }
@@ -227,6 +244,7 @@ private struct AddItemScreen: View {
 private struct ItemDetailScreen: View {
     private let itemId: String
     @StateObject private var itemDetailViewModel: ViewModelHolder<ItemDetailViewModel>
+    @State private var activeErrorMessage: String?
     let onNavigateBack: () -> Void
 
     init(itemId: String, onNavigateBack: @escaping () -> Void) {
@@ -266,8 +284,23 @@ private struct ItemDetailScreen: View {
             for await event in itemDetailViewModel.sharedVm.uiEvent {
                 if event is ItemDetailUiEventNavigateBack {
                     onNavigateBack()
+                } else if let error = event as? ItemDetailUiEventShowError {
+                    activeErrorMessage = error.message
                 }
             }
+        }
+        .alert(
+            NSLocalizedString("common_error_title", comment: ""),
+            isPresented: Binding(
+                get: { activeErrorMessage != nil },
+                set: { if !$0 { activeErrorMessage = nil } }
+            )
+        ) {
+            Button("common_ok", role: .cancel) {
+                activeErrorMessage = nil
+            }
+        } message: {
+            Text(activeErrorMessage ?? "")
         }
         .id(itemId)
     }

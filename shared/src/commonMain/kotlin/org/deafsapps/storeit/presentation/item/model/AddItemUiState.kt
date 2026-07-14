@@ -1,16 +1,16 @@
 package org.deafsapps.storeit.presentation.item.model
 
-import androidx.compose.runtime.Immutable
-import org.deafsapps.storeit.domain.model.Rack
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.presentation.rack.model.SlotPlacementType
+import org.deafsapps.storeit.presentation.rack.model.RackSummaryVo
 
-@Immutable
 data class AddItemUiState(
     val name: String,
     val description: String,
     val quantity: Int?,
     val owner: String,
-    val tags: List<String>,
+    val tags: ImmutableList<String>,
     val tagInput: String,
     val photoUri: String?,
     val selectedRackId: String?,
@@ -18,7 +18,7 @@ data class AddItemUiState(
     val selectedSlotPlacementType: SlotPlacementType?,
     val selectedSlotXRel: Float?,
     val selectedSlotYRel: Float?,
-    val racks: List<Rack>,
+    val racks: ImmutableList<RackSummaryVo>,
     val step: AddItemStep,
     val isLoading: Boolean,
     val error: String?,
@@ -33,7 +33,7 @@ data class AddItemUiState(
             description = "",
             quantity = null,
             owner = "",
-            tags = emptyList(),
+            tags = persistentListOf(),
             tagInput = "",
             photoUri = null,
             selectedRackId = initialRackId,
@@ -41,7 +41,7 @@ data class AddItemUiState(
             selectedSlotPlacementType = addItemSlot.placementType,
             selectedSlotXRel = addItemSlot.xRel,
             selectedSlotYRel = addItemSlot.yRel,
-            racks = emptyList(),
+            racks = persistentListOf(),
             step = AddItemStep.FORM,
             isLoading = false,
             error = null,

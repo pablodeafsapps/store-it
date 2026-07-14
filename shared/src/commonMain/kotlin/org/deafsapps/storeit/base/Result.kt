@@ -19,11 +19,11 @@ sealed interface Result<out E, out A> {
                 Err(error = mapError(t))
             }
 
-        inline fun <E, A> fromNullable(value: A?, ifNull: () -> E): Result<E, A> =
-            if (value != null) Ok(value = value) else Err(error = ifNull())
+        inline fun <E, A> A.fromNullable(ifNull: () -> E): Result<E, A> =
+            if (this != null) Ok(value = this) else Err(error = ifNull())
 
-        inline fun <E> fromBoolean(condition: Boolean, ifFalse: () -> E): Result<E, Unit> =
-            if (condition) Ok(value = Unit) else Err(error = ifFalse())
+        inline fun <T : Boolean, E> T.fromBoolean(ifFalse: () -> E): Result<E, Unit> =
+            if (this) Ok(value = Unit) else Err(error = ifFalse())
 
         inline fun <E, A, B, C> zip(
             ra: Result<E, A>,
@@ -90,9 +90,23 @@ suspend inline fun <E, V, EE> Result<E, V>.suspendFlatFailure(
 
 inline fun <E, V, R> Result<E, V>.fold(
     ifErr: (E) -> R,
-    ifOk: (V) -> R
+    ifOk: (V) -> R,
 ): R = when (val err = failureOrNull()) {
     null -> ifOk((this as Ok<V>).value)
+    else -> ifErr(err)
+}
+
+inline fun <E, V, R> Result<E, V>.foldMap(
+    ifOk: (V) -> Result<E, R>,
+): Result<E, R> = when (val err = failureOrNull()) {
+    null -> ifOk((this as Ok<V>).value)
+    else -> err.err()
+}
+
+inline fun <E, V, EE> Result<E, V>.foldFailure(
+    ifErr: (E) -> Result<EE, V>,
+): Result<EE, V> = when (val err = failureOrNull()) {
+    null -> this as Ok<V>
     else -> ifErr(err)
 }
 

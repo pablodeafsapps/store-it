@@ -26,9 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.res.stringResource
+import kotlinx.collections.immutable.persistentListOf
 import org.deafsapps.storeit.androidapp.design.Dimens
-import org.deafsapps.storeit.domain.model.ItemWithPlacement
 import org.deafsapps.storeit.androidapp.R
+import org.deafsapps.storeit.presentation.search.model.SearchResultVo
 import org.deafsapps.storeit.presentation.search.model.SearchUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,11 +37,14 @@ import org.deafsapps.storeit.presentation.search.model.SearchUiState
 internal fun SearchScreen(
     uiState: SearchUiState,
     onQueryChange: (String) -> Unit,
-    onItemSelected: (ItemWithPlacement) -> Unit,
+    onItemSelected: (SearchResultVo) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     SearchScreenContent(
-        uiState = uiState,
+        query = uiState.query,
+        results = uiState.results,
+        isLoading = uiState.isLoading,
+        error = uiState.error,
         onQueryChange = onQueryChange,
         onNavigateBack = onNavigateBack,
         onItemSelected = onItemSelected,
@@ -50,9 +54,12 @@ internal fun SearchScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchScreenContent(
-    uiState: SearchUiState,
+    query: String,
+    results: List<SearchResultVo>,
+    isLoading: Boolean,
+    error: String?,
     onQueryChange: (String) -> Unit,
-    onItemSelected: (ItemWithPlacement) -> Unit,
+    onItemSelected: (SearchResultVo) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     Scaffold(
@@ -86,7 +93,7 @@ private fun SearchScreenContent(
                 .padding(horizontal = Dimens.screenPadding),
         ) {
             OutlinedTextField(
-                value = uiState.query,
+                value = query,
                 onValueChange = onQueryChange,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,7 +107,7 @@ private fun SearchScreenContent(
                     .fillMaxWidth(),
             ) {
                 when {
-                    uiState.isLoading -> {
+                    isLoading -> {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -110,16 +117,16 @@ private fun SearchScreenContent(
                             CircularProgressIndicator()
                         }
                     }
-                    uiState.error != null -> {
+                    error != null -> {
                         Text(
-                            text = uiState.error!!,
+                            text = error,
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier
                                 .padding(top = Dimens.screenPadding)
                                 .testTag("searchScreenError"),
                         )
                     }
-                    uiState.query.isBlank() -> {
+                    query.isBlank() -> {
                         Text(
                             text = stringResource(R.string.search_hint_type_to_search),
                             style = MaterialTheme.typography.bodyMedium,
@@ -129,7 +136,7 @@ private fun SearchScreenContent(
                                 .testTag("searchScreenHint"),
                         )
                     }
-                    uiState.results.isEmpty() -> {
+                    results.isEmpty() -> {
                         Text(
                             text = stringResource(R.string.search_no_results),
                             style = MaterialTheme.typography.bodyMedium,
@@ -146,7 +153,7 @@ private fun SearchScreenContent(
                                 .padding(top = Dimens.listContentPadding)
                                 .testTag("searchScreenResults"),
                         ) {
-                            items(uiState.results, key = { it.item.id }) { row ->
+                            items(results, key = { it.itemId }) { row ->
                                 SearchResultRow(
                                     row = row,
                                     onClick = { onItemSelected(row) },
@@ -162,22 +169,22 @@ private fun SearchScreenContent(
 
 @Composable
 private fun SearchResultRow(
-    row: ItemWithPlacement,
+    row: SearchResultVo,
     onClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = Dimens.listItemSpacing / 2)
-            .testTag("searchResultRow_${row.item.id}")
+            .testTag("searchResultRow_${row.itemId}")
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = Dimens.cardElevation),
     ) {
         Column(modifier = Modifier.padding(Dimens.cardPadding)) {
             Text(
-                text = row.item.name,
+                text = row.itemName,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.testTag("searchResultItemName_${row.item.id}"),
+                modifier = Modifier.testTag("searchResultItemName_${row.itemId}"),
             )
             Text(
                 text = stringResource(R.string.search_result_rack_prefix, row.rackName),
@@ -198,12 +205,10 @@ private fun SearchResultRow(
 private fun SearchScreenContentPreview() {
     MaterialTheme {
         SearchScreenContent(
-            uiState = SearchUiState(
-                query = "tool",
-                results = emptyList(),
-                isLoading = false,
-                error = null,
-            ),
+            query = "tool",
+            results = persistentListOf(),
+            isLoading = false,
+            error = null,
             onQueryChange = {},
             onNavigateBack = {},
             onItemSelected = {},

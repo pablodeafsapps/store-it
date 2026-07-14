@@ -17,7 +17,7 @@ internal interface ItemDataSource {
 
     suspend fun deleteItem(id: String): Result<DomainError, Boolean>
 
-    suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Unit>
+    suspend fun deleteItemsByRack(rackId: String): Result<DomainError, Long>
 
     suspend fun clear()
 }

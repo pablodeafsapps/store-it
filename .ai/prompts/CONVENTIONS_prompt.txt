@@ -12,7 +12,7 @@
 
 I'd like you to review section 1.1, since I want package structure to take into account multi-modular projects. Thus, the feature should be right below the package name. Any other layer (`di`, `domain`, etc.) should be hanging from it.
 
-Include as well the possibility of having a `:core` module in which it's possible to have some common utilities and base classes.
+Include as well the chance of having a `:core` module in which it's possible to have some common utilities and base classes.
 
 -----
 
