@@ -7,6 +7,10 @@ import org.koin.core.annotation.Module
         AccountAuthModule::class,
         AccountPhotoBackupModule::class,
         AccountSyncModule::class,
+        RackAccessModule::class,
+        RackMembershipModule::class,
+        RackPermissionPolicyModule::class,
+        RackCollaborationActivityModule::class,
     ],
 )
 class AppModule
@@ -19,3 +23,15 @@ internal class AccountPhotoBackupModule
 
 @Module
 internal class AccountSyncModule
+
+@Module
+internal class RackAccessModule
+
+@Module
+internal class RackMembershipModule
+
+@Module
+internal class RackPermissionPolicyModule
+
+@Module
+internal class RackCollaborationActivityModule
