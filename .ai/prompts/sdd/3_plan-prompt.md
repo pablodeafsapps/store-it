@@ -19,3 +19,14 @@ $speckit-plan This is a feature to be integrated in a Kotlin Multi-Platform (KPM
 Firebase API differ for Android and iOS, all logic should be in the `:shared` module.
 
 Generate a proper plan for developing "Store it!".
+
+
+Sample 3
+
+/speckit.plan This project will be developed using Kotlin Multi-Platform (KMP), according to @.ai/AGENTS.md and following the conventions stated in @.ai/CONVENTIONS.md.
+
+**Project structure (post-AGP 9.0):** All shared logic and the Android app live in the `:shared` module (commonMain, androidMain, etc.). Plans and tasks must use paths under `shared/` only.
+
+Users must have a specific role in each rack they're involved in, and that role may change in the future. This role limits the actions performed by the user on a specific rack.
+
+Generate a proper plan for developing "Store it!".

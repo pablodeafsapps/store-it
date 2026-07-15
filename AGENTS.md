@@ -148,6 +148,8 @@ For all new and modified Kotlin files in this project:
 ## Active Technologies
 - Kotlin Multiplatform with Swift app integration; Kotlin current project baseline, Swift 5.x for iOS shell + Kotlin Multiplatform, kotlinx-coroutines, Koin annotations, SQLDelight, Kotlinx Serialization, Firebase Authentication, Firebase Cloud Firestore, Firebase Cloud Storage (005-remote-sync-auth)
 - Local SQLDelight database plus remote account-backed dataset in Firebase; secure local session/token storage via platform-secure facilities behind shared abstractions (005-remote-sync-auth)
+- Kotlin Multiplatform project baseline with Swift 5.x iOS shell + Kotlin Multiplatform, kotlinx-coroutines, Koin annotations, SQLDelight, Kotlinx Serialization, kotlinx.collections.immutable, GitLive Firebase Authentication, GitLive Firebase Cloud Firestore, GitLive Firebase Cloud Storage (006-rack-sharing)
+- Local SQLDelight organizer dataset plus remote Firebase-backed account dataset extended with rack membership, rack role, and collaboration-activity metadata; secure authenticated session storage remains behind shared abstractions (006-rack-sharing)
 
 ## Recent Changes
 - 005-remote-sync-auth: Added Kotlin Multiplatform with Swift app integration; Kotlin current project baseline, Swift 5.x for iOS shell + Kotlin Multiplatform, kotlinx-coroutines, Koin annotations, SQLDelight, Kotlinx Serialization, Firebase Authentication, Firebase Cloud Firestore, Firebase Cloud Storage

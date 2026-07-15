@@ -31,5 +31,13 @@ Sample 2
 
 $speckit-specify Allow "Store it!" to connect to a remote infrastructure to provide persistence across sessions.
 
-The idea is that the user can work locally if he/she wants, but also allow him/her to log in/sign up and back-up his/her data using a remote infraestructure. Doing so, there'll always be a source of truth, but also a local
+The idea is that the user can work locally if he/she wants, but also allow him/her to log in/sign up and back-up his/her data using a remote infrastructure. Doing so, there'll always be a source of truth, but also a local
 copy to work with until the next synchronization.
+
+
+Sample 3
+
+$speckit-specify Allow "Store it!" users to share racks, so they can all suggest, comment or edit their content.
+
+When a user logs in, he/she should be able to see his owned racks and also any other rack he/she has been invited to. Doing so, a rack could be potentially modified or updated  
+by any authorized user. 
