@@ -38,7 +38,7 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [X] T004 Extend rack-sharing persistence for memberships, role changes, access status, and collaboration activity in `shared/src/commonMain/sqldelight/org/deafsapps/storeit/data/database/StoreItDatabase.sq`
-- [ ] T005 [P] Create shared rack access domain models for roles, memberships, accessible rack summaries, and collaboration activity in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/model/RackAccessModels.kt`
+- [X] T005 [P] Create shared rack access domain models for roles, memberships, accessible rack summaries, and collaboration activity in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/model/RackCollaboration.kt`
 - [ ] T006 [P] Define rack access, membership, permission-policy, and collaboration repository contracts in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/repository/RackCollaborationRepositories.kt`
 - [ ] T007 [P] Implement SQLDelight-backed membership and collaboration activity data sources in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/SqlDelightRackSharingDataSource.kt`
 - [ ] T008 Implement shared role-to-permission policy resolution and access-denied error mapping in `shared/src/commonMain/kotlin/org/deafsapps/storeit/domain/usecase/ResolveRackPermissionsUseCase.kt`
