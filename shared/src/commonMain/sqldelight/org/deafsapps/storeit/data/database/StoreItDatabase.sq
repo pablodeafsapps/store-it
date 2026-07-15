@@ -101,6 +101,40 @@ CREATE TABLE photo_sync_scope (
 -- Supports pending photo-sync reads filtered by sync status and ordered by photo id.
 CREATE INDEX photo_sync_scope_status_idx ON photo_sync_scope(sync_status, photo_id);
 
+CREATE TABLE rack_memberships (
+    id TEXT NOT NULL PRIMARY KEY,
+    rack_id TEXT NOT NULL REFERENCES racks(id) ON DELETE CASCADE,
+    account_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL,
+    invited_by_account_id TEXT NOT NULL,
+    invited_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    UNIQUE(rack_id, account_id)
+);
+
+-- Supports rack-scoped collaborator reads ordered by freshest membership change.
+CREATE INDEX rack_memberships_rack_status_updated_idx ON rack_memberships(rack_id, status, updated_at DESC, account_id);
+
+-- Supports account-scoped access reads ordered by freshest membership change.
+CREATE INDEX rack_memberships_account_status_updated_idx ON rack_memberships(account_id, status, updated_at DESC, rack_id);
+
+CREATE TABLE collaboration_activity (
+    id TEXT NOT NULL PRIMARY KEY,
+    rack_id TEXT NOT NULL REFERENCES racks(id) ON DELETE CASCADE,
+    actor_account_id TEXT NOT NULL,
+    actor_role TEXT NOT NULL,
+    activity_type TEXT NOT NULL,
+    target_entity_type TEXT,
+    target_entity_id TEXT,
+    message TEXT,
+    created_at INTEGER NOT NULL,
+    superseded_at INTEGER
+);
+
+-- Supports rack activity timelines ordered by newest activity first.
+CREATE INDEX collaboration_activity_rack_created_idx ON collaboration_activity(rack_id, created_at DESC, id);
+
 selectAllRacks:
 SELECT * FROM racks
 ORDER BY COALESCE(updated_at, created_at) DESC, name COLLATE NOCASE ASC;
@@ -381,3 +415,70 @@ WHERE photo_id = ?;
 
 deleteAllPhotoSyncScope:
 DELETE FROM photo_sync_scope;
+
+selectRackMembershipsByRackId:
+SELECT * FROM rack_memberships
+WHERE rack_id = ?
+ORDER BY updated_at DESC, account_id ASC;
+
+selectRackMembershipsByAccountId:
+SELECT * FROM rack_memberships
+WHERE account_id = ?
+ORDER BY updated_at DESC, rack_id ASC;
+
+selectRackMembershipByRackIdAndAccountId:
+SELECT * FROM rack_memberships
+WHERE rack_id = ? AND account_id = ?;
+
+upsertRackMembership:
+INSERT OR REPLACE INTO rack_memberships(
+    id,
+    rack_id,
+    account_id,
+    role,
+    status,
+    invited_by_account_id,
+    invited_at,
+    updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteRackMembershipByRackIdAndAccountId:
+DELETE FROM rack_memberships
+WHERE rack_id = ? AND account_id = ?;
+
+deleteAllRackMemberships:
+DELETE FROM rack_memberships;
+
+selectCollaborationActivityByRackId:
+SELECT * FROM collaboration_activity
+WHERE rack_id = ?
+ORDER BY created_at DESC, id DESC;
+
+selectCollaborationActivityById:
+SELECT * FROM collaboration_activity
+WHERE id = ?;
+
+upsertCollaborationActivity:
+INSERT OR REPLACE INTO collaboration_activity(
+    id,
+    rack_id,
+    actor_account_id,
+    actor_role,
+    activity_type,
+    target_entity_type,
+    target_entity_id,
+    message,
+    created_at,
+    superseded_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteCollaborationActivityById:
+DELETE FROM collaboration_activity
+WHERE id = ?;
+
+deleteCollaborationActivityByRackId:
+DELETE FROM collaboration_activity
+WHERE rack_id = ?;
+
+deleteAllCollaborationActivity:
+DELETE FROM collaboration_activity;
