@@ -1,7 +1,7 @@
 package org.deafsapps.storeit.domain.model
 
 /**
- * Aggregates a rack with its slots and placed items for detail screens.
+ * Aggregates a rack with its slots and placed items for rack detail screens.
  */
 interface RackData {
     val id: String

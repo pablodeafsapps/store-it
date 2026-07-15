@@ -27,7 +27,7 @@
 
 - [X] T001 Update collaboration dependencies and generated-source wiring if needed in `shared/build.gradle.kts`
 - [X] T002 [P] Reserve DI bindings for rack access, membership, role policy, and collaboration activity components in `shared/src/commonMain/kotlin/org/deafsapps/storeit/di/AppModule.kt`
-- [ ] T003 [P] Add shared datasource contract shells for rack membership and collaboration activity in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/RackSharingDataSources.kt`
+- [X] T003 [P] Add shared datasource contract shells for rack membership and collaboration activity in `shared/src/commonMain/kotlin/org/deafsapps/storeit/data/datasource/RackSharingDataSources.kt`
 
 ---
 
