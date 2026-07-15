@@ -7,6 +7,7 @@ import org.deafsapps.storeit.base.flatMap
 import org.deafsapps.storeit.base.getOrNull
 import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.base.ok
+import org.deafsapps.storeit.data.datasource.LocalRackDataSource
 import org.deafsapps.storeit.data.datasource.LocalDatasetStateDataSource
 import org.deafsapps.storeit.data.datasource.RackDataSource
 import org.deafsapps.storeit.domain.model.DomainError
@@ -17,6 +18,7 @@ import org.koin.core.annotation.Single
 
 @Single(binds = [RackRepository::class])
 internal class SqlDelightRackRepository(
+    @param:LocalRackDataSource
     private val rackDataSource: RackDataSource,
     private val syncOperationRepository: SyncOperationRepository,
     private val localDatasetStateDataSource: LocalDatasetStateDataSource,

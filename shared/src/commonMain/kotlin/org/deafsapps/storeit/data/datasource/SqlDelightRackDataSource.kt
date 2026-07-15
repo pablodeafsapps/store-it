@@ -18,6 +18,7 @@ import org.deafsapps.storeit.domain.model.Rack
 import org.deafsapps.storeit.domain.model.toUnknownDomainError
 import org.koin.core.annotation.Single
 
+@LocalRackDataSource
 @Single(binds = [RackDataSource::class])
 internal class SqlDelightRackDataSource(
     private val databaseProvider: StoreItDatabaseProvider,

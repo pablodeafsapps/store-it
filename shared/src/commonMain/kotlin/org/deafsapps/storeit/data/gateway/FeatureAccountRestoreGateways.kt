@@ -10,6 +10,7 @@ import org.deafsapps.storeit.base.map
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.data.datasource.AccountRestoreMetadataDataSource
 import org.deafsapps.storeit.data.datasource.ItemDataSource
+import org.deafsapps.storeit.data.datasource.LocalRackDataSource
 import org.deafsapps.storeit.data.datasource.PhotoSyncScopeDataSource
 import org.deafsapps.storeit.data.datasource.RackDataSource
 import org.deafsapps.storeit.data.datasource.SlotDataSource
@@ -32,6 +33,7 @@ import org.koin.core.annotation.Single
 
 @Single(binds = [RackRestoreGateway::class])
 internal class RackFeatureRestoreGateway(
+    @param:LocalRackDataSource
     private val rackDataSource: RackDataSource,
 ) : RackRestoreGateway {
 
@@ -116,6 +118,7 @@ internal class AccountSyncFeatureRestoreMetadataGateway(
 
 @Single(binds = [LocalAccountDatasetGateway::class])
 internal class LocalFeatureAccountDatasetGateway(
+    @param:LocalRackDataSource
     private val rackDataSource: RackDataSource,
     private val slotDataSource: SlotDataSource,
     private val itemDataSource: ItemDataSource,

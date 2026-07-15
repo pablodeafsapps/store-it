@@ -6,7 +6,10 @@ import org.deafsapps.storeit.base.Result
 import org.deafsapps.storeit.base.ok
 import org.deafsapps.storeit.domain.model.DomainError
 import org.deafsapps.storeit.domain.model.Rack
+import org.koin.core.annotation.Single
 
+@RemoteRackDataSource
+@Single(binds = [RackDataSource::class])
 internal class FirebaseRackDataSource : RackDataSource {
     override fun getAllRacksFlow(): Flow<Result<DomainError, List<Rack>>> =
         flowOf(emptyList<Rack>().ok())
